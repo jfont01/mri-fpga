@@ -1,0 +1,17 @@
+__pycache__/
+.vscode/
+.venv/
+raw_data/
+*.pdf
+*.drawio
+*.docx
+*.doc
+*.h5
+*.png
+*.jpeg
+*.jpg
+*.tar
+*.zip
+*.txt
+*.bkp
+*.epub

@@ -1,0 +1,153 @@
+{
+  "fft1d": {
+    "test": "1",
+
+    "cases": {
+      "1": {
+        "N": 16
+      },
+
+      "2": {
+        "N": 16
+      },
+
+      "3": {
+        "N": 16
+      },
+
+      "4": {
+        "N": 64,
+        "k0": 2,
+        "NB": 16,
+        "NBF": 11,
+        "A": 0.05,
+        "output_dir": "plots_fft1d/test4"
+      },
+
+      "5": {
+        "N": 16,
+        "NB": 16,
+        "NBF": 11
+      },
+
+      "6": {
+        "N": 512,
+        "NB": 26,
+        "NBF": 15,
+        "A0": 0.5,
+        "A1": 1.5,
+        "Fs": 1024,
+        "f0": 2,
+        "f1": 10,
+        "output_dir": "plots_fft1d/test6"
+      }
+    }
+  },
+
+  
+  "fft2d": {
+    "test": "7",
+
+    "cases": {
+        "1": {
+        "Nx": 512,
+        "Ny": 512,
+        "kx0": 10,
+        "ky0": -10,
+        "NB": 16,
+        "NBF": 15,
+        "A": 0.05,
+        "output_dir": "plots_fft2d/test1"
+        },
+        "2": {
+        "N": 64,
+        "kx0": 6,
+        "ky0": -6,
+        "NB": 15,
+        "NBF": 13,
+        "A": 1,
+        "cast": 1,
+        "output_dir": "plots_fft2d/test2",
+        "debug":0,
+        "mode":"round",
+        "NB_round":25,
+        "NBF_round":13
+        },
+        "3": {
+        "N": 64,
+        "kx0": 6,
+        "ky0": -6,
+        "NB": 15,
+        "NBF": 13,
+        "A": 1,
+        "cast": 1,
+        "output_dir": "plots_fft2d/test3",
+        "debug":1,
+        "mode":"round",
+        "NB_round":25,
+        "NBF_round":13
+        },
+        "4": {
+        "N": 64,
+        "kx0": 31,
+        "ky0": 31,
+        "NB": 15,
+        "NBF": 13,
+        "A": 1,
+        "cast": 1,
+        "output_dir": "plots_fft2d/test4",
+        "debug":0,
+        "mode":"round",
+        "NB_round":40,
+        "NBF_round":20
+        },
+        "5": {
+        "N": 64,
+        "period_x": 8,
+        "period_y": -8,
+        "NB": 15,
+        "NBF": 13,
+        "A": 1,
+        "cast": 1,
+        "output_dir": "plots_fft2d/test5",
+        "debug":1,
+        "mode":"round",
+        "NB_round":40,
+        "NBF_round":20
+        },
+        "6": {
+        "N": 64,
+        "rings_period": 16,
+        "phase0": 0,
+        "NB": 15,
+        "NBF": 13,
+        "A": 1,
+        "cast": 1,
+        "output_dir": "plots_fft2d/test6",
+        "debug":1,
+        "mode":"round",
+        "NB_round":40,
+        "NBF_round":20
+        },
+        "7": {
+        "N": 32,
+        "centers": [
+          [16, 32],
+          [48, 32]
+        ],
+        "variance": 4.0,
+        "NB": 15,
+        "NBF": 13,
+        "A": 1.0,
+        "cast": 1,
+        "output_dir": "plots_fft2d/test7",
+        "debug": 1,
+        "mode": "round",
+        "NB_round": 21,
+        "NBF_round": 13
+        }
+    }
+  }
+}
+
+

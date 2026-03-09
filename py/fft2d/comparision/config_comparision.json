@@ -1,0 +1,108 @@
+{
+  "fft1d": {
+    "test": "2",
+
+    "cases": {
+      "1": {
+      },
+
+      "2": {
+      },
+
+      "3": {
+      },
+
+      "4": {
+      },
+
+      "5": {
+      },
+
+      "6": {
+      }
+    }
+  },
+
+  
+  "fft2d": {
+    "test": "2",
+
+    "cases": {
+      "1": {
+        "N": 32,
+        "kx0": 1,
+        "ky0": 1,
+        "NB": 17,
+        "NBF": 15,
+        "NB_round": 17,
+        "NBF_round": 15,
+        "cast": 0,
+        "shift_right_stage":0,
+        "debug": 1,
+        "A": 1,
+        "outdir": "plots_fft2d/comparision1"
+      },
+
+      "2": {
+        "N": 256,
+        "NB": 17,
+        "NBF": 15,
+        "NB_round": 17,
+        "NBF_round": 15,
+        "cast": 1,
+        "shift_right_stage":1,
+        "rings_period": 16,
+        "phase0": 0,
+        "debug": 0,
+        "A": 1,
+        "outdir": "plots_fft2d/comparision2"
+      },
+        "3": {
+        "N": 64,
+        "NB": 17,
+        "NBF": 15,
+        "NB_round": 22,
+        "NBF_round": 20,
+        "cast": 1,
+        "shift_right_stage":1,
+        "centers": [
+        [16, 32],
+        [48, 32]
+      ],
+        "variance": 2.5,
+        "debug": 0,
+        "A": 1,
+        "outdir": "plots_fft2d/comparision3"
+      },
+      "4": {
+        "N": 512,
+        "NB": 32,
+        "NBF": 30,
+        "NB_round": 32,
+        "NBF_round": 30,
+        "cast": 1,
+        "shift_right_stage":1,
+        "debug": 0,
+        "outdir": "plots_fft2d/comparision4"
+      },
+      "5": {
+        "N": 128,
+        "NB": 32,
+        "NBF": 30,
+        "NB_round": 32,
+        "NBF_round": 30,
+        "cast": 1,
+        "shift_right_stage":1,
+        "rings_period": 16,
+        "phase0": 0,
+        "debug": 0,
+        "A": 1,
+        "outdir": "plots_fft2d/comparision5"
+      }
+
+
+
+    }
+  }
+}
+
