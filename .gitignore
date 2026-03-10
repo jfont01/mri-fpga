@@ -1,6 +1,7 @@
 __pycache__/
 .vscode/
 .venv/
+doc/
 raw_data/
 *.pdf
 *.drawio
@@ -12,7 +13,6 @@ raw_data/
 *.jpg
 *.tar
 *.zip
-*.txt
 *.bkp
 *.epub
 *.npy

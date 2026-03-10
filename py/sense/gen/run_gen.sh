@@ -74,6 +74,7 @@ BASE="${FPGA_MRI_ROOT%/}/py/sense/gen/pipes"
 RUN_DIR="$BASE/N${N}_Af${AF}_L${L}_axis${AXIS}_phantom${PHANTOM}"
 
 COILS_ABS_DIR="$RUN_DIR/coils-abs"
+COILS_ALIASED_ZPADDED_DIR="$RUN_DIR/coils-aliased-zpadded"
 COILS_ALIASED_DIR="$RUN_DIR/coils-aliased"
 COILS_KSPACE_DIR="$RUN_DIR/coils-kspace"
 COILS_KSPACE_ALIASED_DIR="$RUN_DIR/coils-kspace-aliased-${AXIS}"
@@ -84,6 +85,7 @@ TARGET_DIR="$RUN_DIR/target"
 mkdir -p \
   "$COILS_ABS_DIR" \
   "$COILS_ALIASED_DIR" \
+  "$COILS_ALIASED_ZPADDED_DIR" \
   "$COILS_KSPACE_DIR" \
   "$COILS_KSPACE_ALIASED_DIR" \
   "$COILS_KSPACE_ALIASED_ZPADDED_DIR" \
@@ -94,6 +96,7 @@ echo "RUN_DIR: $RUN_DIR"
 echo "Created/checked:"
 echo "  $COILS_ABS_DIR"
 echo "  $COILS_ALIASED_DIR"
+echo "  $COILS_ALIASED_ZPADDED_DIR"
 echo "  $COILS_KSPACE_DIR"
 echo "  $COILS_KSPACE_ALIASED_DIR"
 echo "  $COILS_KSPACE_ALIASED_ZPADDED_DIR"
@@ -192,7 +195,10 @@ if [[ "$AXIS" == "x" ]]; then
   FULL_SUFFIX="fullNx"
 fi
 
-ALIased_INPUT_NPY="$COILS_KSPACE_ALIASED_ZPADDED_DIR/kspace_undersampled_zpadd_axis${AXIS}_Af${AF}_${FULL_SUFFIX}.npy"
+ALIASED_ZPADD_INPUT_NPY="$COILS_KSPACE_ALIASED_ZPADDED_DIR/kspace_undersampled_zpadd_axis${AXIS}_Af${AF}_${FULL_SUFFIX}.npy"
+ALIASED_INPUT_NPY="$COILS_KSPACE_ALIASED_DIR/kspace_undersampled_axis${AXIS}_Af${AF}.npy"
+
+
 
 ###########################################################################
 # 7) Imágenes aliasadas de bobina
@@ -200,7 +206,19 @@ ALIased_INPUT_NPY="$COILS_KSPACE_ALIASED_ZPADDED_DIR/kspace_undersampled_zpadd_a
 
 echo "Running gen_coil_aliased.py"
 python3 gen_coil_aliased.py \
-  --input-npy="$ALIased_INPUT_NPY" \
+  --input-npy="$ALIASED_INPUT_NPY" \
   --output-name="$COILS_ALIASED_DIR/coil_aliased_Af${AF}_axis${AXIS}" \
+  --cmap="$ALIASED_CMAP"
+echo ""
+
+
+###########################################################################
+# 8) Imágenes aliasadas de bobina zpadded
+###########################################################################
+
+echo "Running gen_coil_aliased.py"
+python3 gen_coil_aliased.py \
+  --input-npy="$ALIASED_ZPADD_INPUT_NPY" \
+  --output-name="$COILS_ALIASED_ZPADDED_DIR/coil_aliased_Af${AF}_axis${AXIS}_zpadd" \
   --cmap="$ALIASED_CMAP"
 echo ""
