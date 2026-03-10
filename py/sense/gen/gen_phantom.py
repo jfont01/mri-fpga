@@ -245,7 +245,7 @@ def main() -> None:
     print(f"Saved k-space to: {out_kspace_npy} (shape={K.shape}, dtype={K.dtype})")
 
     # 3) PNGs de magnitud y fase (con fftshift para visualización)
-    eps = 1e-12
+
 
     K_shift = np.fft.fftshift(K)
     mag = np.abs(K_shift)
