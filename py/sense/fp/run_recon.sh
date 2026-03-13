@@ -70,15 +70,15 @@ echo " OUTPUT_DIR creado."
 echo ""
 
 ###########################################################################
-#  Llamada a np_recon.py
+#  Llamada a compute_m_hat.py
 ###########################################################################
-echo " Ejecutando np_recon.py con:"
+echo " Ejecutando compute_m_hat.py con:"
 echo "  --smaps-npy-path        \"$SENS_MAPS_NPY_PATH\""
 echo "  --aliased-coils-npy-path \"$ALIASED_COILS_NPY_PATH\""
 echo "  --output-path           \"$OUTPUT_DIR\""
 echo "-------------------------------------------------------------------"
 
-python3 np_recon.py \
+python3 compute_m_hat.py \
   --smaps-npy-path="$SENS_MAPS_NPY_PATH" \
   --aliased-coils-npy-path="$ALIASED_COILS_NPY_PATH" \
   --output-path="$OUTPUT_DIR"
