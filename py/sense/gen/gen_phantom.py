@@ -3,7 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 from numpy.typing import NDArray
-
+from skimage.data import shepp_logan_phantom
+from skimage.transform import resize
 
 def gen_two_disks_2d(
     N: int,
@@ -11,11 +12,7 @@ def gen_two_disks_2d(
     amp1: float = 1.0,
     amp2: float = 1.0,
 ) -> NDArray[np.float64]:
-    """
-    Phantom con dos discos que se pliegan uno sobre otro para Af=2 en y.
-    - Disco 1 centrado en (cx, N/4)
-    - Disco 2 centrado en (cx, 3N/4)
-    """
+
     if r is None:
         r = N / 6.0  # radio razonable
 
@@ -30,12 +27,11 @@ def gen_two_disks_2d(
     img = amp1 * disk1.astype(np.float64) + amp2 * disk2.astype(np.float64)
     return img
 
-
 def gen_two_gaussian_dots_2d(
     N: int,
     sigma: float | None = None,
     amp1: float = 1.0,
-    amp2: float = 0.7,
+    amp2: float = 1.0,
 ) -> NDArray[np.float64]:
     """
     Phantom con dos "dots" gaussianos 2D.
@@ -61,21 +57,13 @@ def gen_two_gaussian_dots_2d(
     img = amp1 * g1.astype(np.float64) + amp2 * g2.astype(np.float64)
     return img
 
-
 def gen_concentric_rings_2d(
     N: int,
     A: float = 1.0,
     rings_period: float = 16.0,
     phase0: float = 0.0,
 ) -> NDArray[np.float64]:
-    """
-    Genera un phantom 2D de anillos concéntricos.
-
-    N            : tamaño de la imagen (N x N)
-    A            : amplitud máxima del patrón
-    rings_period : período radial de los anillos (en píxeles)
-    phase0       : fase inicial (en radianes) del coseno
-    """
+    
     c = N / 2.0
     Y, X = np.mgrid[0:N, 0:N]
     r = np.sqrt((X - c) ** 2 + (Y - c) ** 2)
@@ -86,27 +74,12 @@ def gen_concentric_rings_2d(
 
     return img_f
 
-
 def gen_shepp_logan_2d(
     N: int,
     A: float = 1.0,
 ) -> NDArray[np.float64]:
-    """
-    Phantom Shepp-Logan 2D basado en scikit-image, reescalado a NxN.
 
-    Requiere scikit-image:
-        pip install scikit-image
-    """
-    try:
-        from skimage.data import shepp_logan_phantom
-        from skimage.transform import resize
-    except ImportError as e:
-        raise ImportError(
-            "Para usar phantom_type='shepp-logan' necesitas instalar scikit-image "
-            "(pip install scikit-image)."
-        ) from e
-
-    img = shepp_logan_phantom().astype(np.float64)  # ~400x400
+    img = shepp_logan_phantom().astype(np.float64)
     img_resized = resize(
         img,
         (N, N),
@@ -119,6 +92,14 @@ def gen_shepp_logan_2d(
     img_resized *= A / (img_resized.max() + 1e-12)
     return img_resized
 
+def normalize_data(
+    img: NDArray[np.float64],
+    A: float = 1.0
+)-> NDArray[np.float64]:
+    
+    img_norm = img.copy()
+    img_norm *= A / (img_norm.max() + 1e-12)
+    return img_norm
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -159,9 +140,16 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "--input-npy",
+        type=str,
+        default=None,
+        help="Ruta a una imagen real en .npy para phantom-type='npy-knee-512'."
+    )
+
+    parser.add_argument(
         "--phantom-type",
         type=str,
-        choices=["two-disks", "rings", "two-gaussian-dots", "shepp-logan"],
+        choices=["two-disks", "rings", "two-gaussian-dots", "shepp-logan", "knee-512"],
         default="two-disks",
         help=(
             "Tipo de phantom a generar: "
@@ -204,28 +192,30 @@ def main() -> None:
     out_name = args.output_name
     cmap = args.cmap
 
-    out_npy = f"{out_name}_N{N}.npy"
-    out_png = f"{out_name}_N{N}.png"
 
-    print(
-        f"Phantom type={phantom_type}, N={N}, A={A}, "
-        f"rings_period={rings_period}, phase0={phase0}"
-    )
+
 
     # 1) Phantom en espacio imagen
-    if phantom_type == "rings":
-        img = gen_concentric_rings_2d(
-            N=N,
-            A=A,
-            rings_period=rings_period,
-            phase0=phase0,
-        )
-    elif phantom_type == "two-disks":
-        img = gen_two_disks_2d(N=N)
-    elif phantom_type == "two-gaussian-dots":
-        img = gen_two_gaussian_dots_2d(N=N)
-    else:  # "shepp-logan"
-        img = gen_shepp_logan_2d(N=N, A=A)
+    match phantom_type:
+        case "rings":
+            img = gen_concentric_rings_2d(
+                N=N,
+                A=A,
+                rings_period=rings_period,
+                phase0=phase0,
+            )
+        case "two-disks":
+            img = gen_two_disks_2d(N=N)
+        case "two-gaussian-dots":
+            img = gen_two_gaussian_dots_2d(N=N)
+        case "shepp-logan":
+            img = gen_shepp_logan_2d(N=N, A=A)
+        case "knee-512":
+            in_img = np.asarray(np.load(args.input_npy), np.float64)
+            img = normalize_data(img=in_img, A=A)
+
+    out_npy = f"{out_name}_N{N}.npy"
+    out_png = f"{out_name}_N{N}.png"
 
     # Guardar .npy del phantom
     np.save(out_npy, img)

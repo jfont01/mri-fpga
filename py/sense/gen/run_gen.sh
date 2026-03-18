@@ -3,23 +3,33 @@ set -euo pipefail
 
 : "${FPGA_MRI_ROOT:? Enviroment variable FPGA_MRI_ROOT must be defined}"
 
-# Uso: ./run_gen.sh config.conf
-if [[ $# -ne 1 ]]; then
-  echo "Uso: $0 <config.conf>"
-  echo "  config.conf"
-  exit 1
-fi
 
-CONF="$1"
+echo ""
+echo "==================================================================="
+echo " Running fp stimulus generator"
+echo "==================================================================="
+echo ""
+###########################################################################
+#  Paths de entrada
+###########################################################################
+PY_ROOT="$FPGA_MRI_ROOT/py"
+SENSE_DIR="$PY_ROOT/sense"
+NPY_DATA_DIR="$PY_ROOT/npy_data"
+GEN_DIR="$SENSE_DIR/gen"
+FP_DIR="$SENSE_DIR/fp"
+CONF_PATH="$GEN_DIR/config.conf"
+CONF="$CONF_PATH"
 
-if [[ ! -f "$CONF" ]]; then
-  echo "Error: $CONF missing"
-  exit 1
-fi
+echo "Paths:"
+echo "FPGA_MRI_ROOT   = $FPGA_MRI_ROOT"
+echo "PY_ROOT         = $PY_ROOT"
+echo "FP_DIR          = $FP_DIR"
+echo "SENSE_DIR       = $SENSE_DIR"
+echo "GEN_DIR         = $GEN_DIR"
+echo "CONF_PATH       = $CONF_PATH"
+echo ""
 
-echo "Loading config from $CONF"
-# shellcheck disable=SC1090
-source "$CONF"
+source $CONF
 
 ###########################################################################
 #  Parámetros requeridos
@@ -47,15 +57,6 @@ if [[ "$AXIS" != "x" && "$AXIS" != "y" ]]; then
   exit 1
 fi
 
-case "$PHANTOM" in
-  two-disks|rings|two-gaussian-dots|shepp-logan)
-    ;;
-  *)
-    echo "Error: PHANTOM debe ser uno de {two-disks, rings, two-gaussian-dots, shepp-logan}, recibido: '$PHANTOM'"
-    exit 1
-    ;;
-esac
-
 
 ###########################################################################
 #  Paths de salida
@@ -71,7 +72,7 @@ echo ""
 
 BASE="${FPGA_MRI_ROOT%/}/py/sense/gen/pipes"
 
-RUN_DIR="$BASE/N${N}_Af${AF}_L${L}_axis${AXIS}_phantom${PHANTOM}"
+RUN_DIR="$BASE/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}"
 
 COILS_ABS_DIR="$RUN_DIR/coils-abs"
 COILS_ALIASED_ZPADDED_DIR="$RUN_DIR/coils-aliased-zpadded"
@@ -115,6 +116,7 @@ python3 gen_phantom.py \
   --phase0="$PHASE0" \
   --phantom-type="$PHANTOM" \
   --output-name="$TARGET_DIR/phantom" \
+  --input-npy="$NPY_DATA_DIR/$PHANTOM.npy"\
   --cmap="$PHANTOM_CMAP"
 
 ###########################################################################
