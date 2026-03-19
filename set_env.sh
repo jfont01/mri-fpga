@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
 echo ""
 echo "Loading enviorment variables..."
 echo ""
