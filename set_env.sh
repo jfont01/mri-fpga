@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+echo ""
+echo "Loading enviorment variables..."
+echo ""
+
 : "${FPGA_MRI_ROOT:?Enviroment variable FPGA_MRI_ROOT must be defined}"
 
 ###########################################################################
@@ -37,19 +41,21 @@ check_var() {
 ###########################################################################
 # Variables base
 ###########################################################################
-PY_ROOT="$FPGA_MRI_ROOT/py"
-FXP_MODEL_ROOT="$PY_ROOT/fxp_model"
-NPY_DATA_ROOT="$PY_ROOT/npy_data"
-FFT2D_ROOT="$PY_ROOT/fft2d"
-SENSE_ROOT="$PY_ROOT/sense"
+export PY_ROOT="$FPGA_MRI_ROOT/py"
+export FXP_MODEL_ROOT="$PY_ROOT/fxp_model"
+export NPY_DATA_ROOT="$PY_ROOT/npy_data"
+export FFT2D_ROOT="$PY_ROOT/fft2d"
+export SENSE_ROOT="$PY_ROOT/sense"
 
-SENSE_GEN_DIR="$SENSE_ROOT/gen"
-SENSE_GEN_CONF="$SENSE_GEN_DIR/config.conf"
-SENSE_FP_DIR="$SENSE_ROOT/fp"
-SENSE_FP_CONF="$SENSE_FP_DIR/config.conf"
+export SENSE_GEN_DIR="$SENSE_ROOT/gen"
+export SENSE_GEN_CONF="$SENSE_GEN_DIR/config.conf"
+export SENSE_GEN_RUN="$SENSE_GEN_DIR/run_gen.sh"
 
+export SENSE_FP_DIR="$SENSE_ROOT/fp"
+export SENSE_FP_CONF="$SENSE_FP_DIR/config.conf"
+export SENSE_FP_RUN="$SENSE_FP_DIR/run_recon.sh"
 
-FXP_MODEL_TEST_DIR="$FXP_MODEL_ROOT/test"
+export FXP_MODEL_TEST_DIR="$FXP_MODEL_ROOT/test"
 
 ###########################################################################
 # Verificación de variables
@@ -65,6 +71,9 @@ check_var SENSE_FP_DIR
 check_var SENSE_GEN_CONF
 check_var FXP_MODEL_TEST_DIR
 check_var SENSE_FP_CONF
+check_var SENSE_FP_RUN
+check_var SENSE_GEN_RUN
+echo ""
 ###########################################################################
 # Verificación de directorios
 ###########################################################################
@@ -77,9 +86,20 @@ check_dir "$SENSE_ROOT"
 check_dir "$SENSE_GEN_DIR"
 check_dir "$SENSE_FP_DIR"
 check_dir "$FXP_MODEL_TEST_DIR"
+echo ""
 ###########################################################################
 # Verificación de archivos
 ###########################################################################
 check_file "$SENSE_GEN_CONF"
 check_file "$SENSE_FP_CONF"
+check_file "$SENSE_GEN_RUN"
+check_file "$SENSE_FP_RUN"
+echo ""
+
+dos2unix $SENSE_GEN_CONF
+dos2unix $SENSE_FP_CONF
+dos2unix $SENSE_GEN_RUN
+dos2unix $SENSE_FP_RUN
+echo ""
+
 echo "[set_env.sh] Environment loaded successfully."
