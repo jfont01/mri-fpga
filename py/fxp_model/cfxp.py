@@ -38,7 +38,18 @@ class CFxp:
     def to_complex(self) -> complex:
         return complex(self.re.get_val(), self.im.get_val())
     
-
+    @classmethod
+    def from_uint_pair(
+        cls,
+        re_raw: int,
+        im_raw: int,
+        NB: int,
+        NBF: int,
+        signed: bool = True,
+    ) -> "CFxp":
+        re_fxp = Fxp.from_uint_raw(re_raw, NB, NBF, signed=signed)
+        im_fxp = Fxp.from_uint_raw(im_raw, NB, NBF, signed=signed)
+        return cls(re=re_fxp, im=im_fxp)
 
     @classmethod
     def from_complex(cls, z: complex, NB: int, NBF: int,

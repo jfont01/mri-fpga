@@ -29,6 +29,14 @@ class Fxp:
 
 
     @classmethod
+    def from_uint_raw(cls, raw: int, NB: int, NBF: int, signed: bool = True) -> "Fxp":
+        bits_str = format(int(raw), f"0{NB}b")
+        return cls(bits_str, NB=NB, NBF=NBF, signed=signed)
+
+    def to_uint_raw(self) -> int:
+        return int("".join(str(b) for b in self.bits), 2)
+    
+    @classmethod
     def from_float(cls, x: float, NB: int, NBF: int, signed=True):
         NBI = NB - NBF
         val = APyFixed.from_float(x, int_bits=NBI, frac_bits=NBF)
