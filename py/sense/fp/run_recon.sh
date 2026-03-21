@@ -44,7 +44,7 @@ echo "  AF            = $AF"
 echo "  L             = $L"
 echo "  AXIS          = $AXIS"
 echo "  PHANTOM       = $PHANTOM"
-echo "  COMPUTE_TYPE  = $COMPUTE_TYPE"
+echo "  SAVE_ALL      = $SAVE_ALL"
 echo ""
 
 ###########################################################################
@@ -85,11 +85,11 @@ echo ""
 echo "Ejecutando sense.py"
 echo ""
 
-python3 "$SENSE_FP_DIR/sense.py" \
-  --smaps-npy-path="$SENS_MAPS_NPY_PATH" \
-  --aliased-coils-npy-path="$ALIASED_COILS_NPY_PATH" \
-  --output-path="$OUTPUT_DIR" \
-  --compute-type="$COMPUTE_TYPE"
+python3 "$SENSE_FP_DIR/sense.py"                          \
+  --smaps-npy-path="$SENS_MAPS_NPY_PATH"                  \
+  --aliased-coils-npy-path="$ALIASED_COILS_NPY_PATH"      \
+  --output-path="$OUTPUT_DIR"                             \
+  --save-all="$SAVE_ALL"
 
 echo ""
 echo "Done"

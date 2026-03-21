@@ -17,12 +17,7 @@ def compute_A_ij(
     A00 = 0.0 + 0.0j
     A11 = 0.0 + 0.0j
     A01 = 0.0 + 0.0j
-
-    #s0 = S[:, nx, ny0]        
-    #s1 = S[:, nx, ny1]        
-    #S_block = np.stack([s0, s1], axis=1)
-    #A = S_block.conj().T @ S_block
-
+    
     for l in range(L):
         s0 = S[l, nx, ny0]  # s_l[nx, ny^(0)]
         s1 = S[l, nx, ny1]  # s_l[nx, ny^(1)]
@@ -55,7 +50,7 @@ def compute_A(
 
 
 def main() -> None:
-    # 1) Cargar mapas de sensibilidad
+
     S = np.load("smap_N32.npy").astype(np.complex128)
     print(S.shape)
 
