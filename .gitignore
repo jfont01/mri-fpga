@@ -16,4 +16,5 @@ raw_data/
 *.bkp
 *.epub
 *.npy
+*.npz
 *.rpt

@@ -29,12 +29,17 @@ class Fxp:
 
 
     @classmethod
-    def from_uint_raw(cls, raw: int, NB: int, NBF: int, signed: bool = True) -> "Fxp":
+    def from_uint(cls, raw: int, NB: int, NBF: int, signed: bool = True) -> "Fxp":
         bits_str = format(int(raw), f"0{NB}b")
         return cls(bits_str, NB=NB, NBF=NBF, signed=signed)
 
-    def to_uint_raw(self) -> int:
+    def to_uint(self) -> int:
         return int("".join(str(b) for b in self.bits), 2)
+    
+    def to_hex(self) -> str:
+        raw = int("".join(str(b) for b in self.bits), 2)
+        nhex = (self.NB + 3) // 4
+        return format(raw, f"0{nhex}X")
     
     @classmethod
     def from_float(cls, x: float, NB: int, NBF: int, signed=True):

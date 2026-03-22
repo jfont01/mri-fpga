@@ -52,6 +52,10 @@ export SENSE_FP_DIR="$SENSE_ROOT/fp"
 export SENSE_FP_CONF="$SENSE_FP_DIR/config.conf"
 export SENSE_FP_RUN="$SENSE_FP_DIR/run_recon.sh"
 
+export SENSE_FXP_DIR="$SENSE_ROOT/fxp"
+export SENSE_FXP_QUANTIZER_DIR="$SENSE_FXP_DIR/quantizer"
+export SENSE_FXP_QUANTIZER_CONF="$SENSE_FXP_QUANTIZER_DIR/config.conf"
+
 export FXP_MODEL_TEST_DIR="$FXP_MODEL_ROOT/test"
 
 ###########################################################################
@@ -70,6 +74,9 @@ check_var FXP_MODEL_TEST_DIR
 check_var SENSE_FP_CONF
 check_var SENSE_FP_RUN
 check_var SENSE_GEN_RUN
+check_var SENSE_FXP_DIR
+check_var SENSE_FXP_QUANTIZER_DIR
+check_var SENSE_FXP_QUANTIZER_CONF
 echo ""
 ###########################################################################
 # Verificación de directorios
@@ -83,6 +90,8 @@ check_dir "$SENSE_ROOT"
 check_dir "$SENSE_GEN_DIR"
 check_dir "$SENSE_FP_DIR"
 check_dir "$FXP_MODEL_TEST_DIR"
+check_dir "$SENSE_FXP_DIR"
+check_dir  "$SENSE_FXP_QUANTIZER_DIR"
 echo ""
 ###########################################################################
 # Verificación de archivos
@@ -91,12 +100,14 @@ check_file "$SENSE_GEN_CONF"
 check_file "$SENSE_FP_CONF"
 check_file "$SENSE_GEN_RUN"
 check_file "$SENSE_FP_RUN"
+check_file "$SENSE_FXP_QUANTIZER_CONF"
 echo ""
 
 dos2unix $SENSE_GEN_CONF
 dos2unix $SENSE_FP_CONF
 dos2unix $SENSE_GEN_RUN
 dos2unix $SENSE_FP_RUN
+dos2unix $SENSE_FXP_QUANTIZER_CONF
 echo ""
 
 echo "[set_env.sh] Environment loaded successfully."

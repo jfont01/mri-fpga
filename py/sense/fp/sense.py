@@ -51,7 +51,7 @@ def save_compare_report(
 
     with open(out_rpt_path, "w", encoding="utf-8") as f:
         f.write("=========================================================\n")
-        f.write("SENSE SOLVER COMPARISON REPORT\n")
+        f.write("SENSE SOLVER FLOATING POINT COMPARISON REPORT\n")
         f.write("=========================================================\n\n")
 
         f.write("---------------------------------------------------------\n")

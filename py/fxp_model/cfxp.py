@@ -37,6 +37,12 @@ class CFxp:
 
     def to_complex(self) -> complex:
         return complex(self.re.get_val(), self.im.get_val())
+
+    def to_hex(self) -> tuple[str, str]:
+        return (self.re.to_hex(), self.im.to_hex())
+    
+    def to_uint(self) -> tuple[int, int]:
+        return (self.re.to_uint(), self.im.to_uint())
     
     @classmethod
     def from_uint_pair(
@@ -47,8 +53,8 @@ class CFxp:
         NBF: int,
         signed: bool = True,
     ) -> "CFxp":
-        re_fxp = Fxp.from_uint_raw(re_raw, NB, NBF, signed=signed)
-        im_fxp = Fxp.from_uint_raw(im_raw, NB, NBF, signed=signed)
+        re_fxp = Fxp.from_uint(re_raw, NB, NBF, signed=signed)
+        im_fxp = Fxp.from_uint(im_raw, NB, NBF, signed=signed)
         return cls(re=re_fxp, im=im_fxp)
 
     @classmethod
@@ -161,3 +167,14 @@ class CFxp:
             "SNR_dB": snr_db,
             "PSNR_dB": psnr_db,
         }
+    
+
+if __name__ == "__main__":
+    z = CFxp.quantize(-3.0, -3.0, 4, 0)
+
+    w = z*z.conj()
+
+    print(w)
+
+
+
