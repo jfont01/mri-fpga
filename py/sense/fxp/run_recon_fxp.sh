@@ -53,6 +53,8 @@ echo "[run_recon_fxp.sh]     Sensitivity Maps  : $SENS_MAPS_NPY_PATH"
 echo "[run_recon_fxp.sh]     Aliased coils     : $ALIASED_COILS_NPY_PATH"
 echo ""
 echo "[run_recon_fxp.sh] Conf file read       : $CONF"
+echo "[run_recon_fxp.sh] MAX_WORKERS          : $MAX_WORKERS"
+echo "[run_recon_fxp.sh] CHUNKSIZE            : $CHUNKSIZE"
 echo ""
 
 ##########################################################################
@@ -75,19 +77,17 @@ for idx in "${!NB_LIST[@]}"; do
   Y_NPZ_PATH="$NPZ_DIR/y_q_NB${NB}_NBF${NBF}.npz"
   
 
-  printf "[run_recon_fxp.sh] ${YELLOW}Running fxp_sense.py ${NC}\n"
-  echo ""
+  printf "[run_recon_fxp.sh] ${YELLOW}Running fxp_sense.py with NB=${NB} NBF=${NBF}${NC}\n"
 
-  python3 "$SENSE_FXP_DIR/fxp_sense.py" \
-    --smaps-npy-path="$SENS_MAPS_NPY_PATH" \
-    --aliased-coils-npy-path="$ALIASED_COILS_NPY_PATH" \
-    --smaps-npz-path="$S_NPZ_PATH" \
-    --aliased-coils-npz-path="$Y_NPZ_PATH" \
-    --output-dir="$OUTPUT_DIR"              \
-    --NB="$NB" \
-    --NBF="$NBF" \
-    --signed="$signed" \
-    --mode="$mode"
+  python3 "$SENSE_FXP_DIR/fxp_sense.py"                   \
+    --smaps-npy-path="$SENS_MAPS_NPY_PATH"                \
+    --aliased-coils-npy-path="$ALIASED_COILS_NPY_PATH"    \
+    --smaps-npz-path="$S_NPZ_PATH"                        \
+    --aliased-coils-npz-path="$Y_NPZ_PATH"                \
+    --output-dir="$OUTPUT_DIR"                            \
+    --max-workers=$MAX_WORKERS                            \
+    --chunksize=$CHUNKSIZE
+
 
   if [[ $? -ne 0 ]]; then
     printf "[run_recon_fxp.sh] ${RED}ERROR running quantizer.py for NB=${NB}, NBF=${NBF}${NC}\n"

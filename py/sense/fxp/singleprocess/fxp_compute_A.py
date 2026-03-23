@@ -101,8 +101,6 @@ def fxp_compute_A(S_q: NpzFile) -> np.ndarray:
 
     for nx in range(Nx):
         for ny_alias in range(offset):
-            if nx % 32 == 0 and ny_alias == 0:
-                print(f"Procesando nx={nx}/{Nx-1}")
             Aij_fxp = fxp_compute_A_ij(S_q, nx, ny_alias)
             A[:, :, nx, ny_alias] = np.array([
                     [Aij_fxp[0, 0].to_complex(), Aij_fxp[0, 1].to_complex()],

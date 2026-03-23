@@ -19,11 +19,6 @@ def fp_compute_b_i(
     b0 = 0.0 + 0.0j
     b1 = 0.0 + 0.0j
 
-    #s0 = S[:, nx, ny0]        
-    #s1 = S[:, nx, ny1]        
-    #S_block = np.stack([s0, s1], axis=1)
-    #A = S_block.conj().T @ S_block
-
     for l in range(L):
         s0 = S[l, nx, ny0]  # s_l[nx, ny^(0)]
         s1 = S[l, nx, ny1]  # s_l[nx, ny^(1)]
