@@ -6,7 +6,7 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 printf "\n"
-printf "[run_cuantizer.sh] ${CYAN}Running run_cuantizer.sh${NC}\n"
+printf "[run_cuantizer.sh] ${GREEN}Running run_cuantizer.sh${NC}\n"
 printf "\n"
 
 ###########################################################################
@@ -18,20 +18,27 @@ printf "\n"
 : "${SENSE_GEN_DIR:?Env var SENSE_GEN_DIR must be defined (source set_env.sh)}"
 : "${SENSE_FP_DIR:?Env var SENSE_FP_DIR must be defined (source set_env.sh)}"
 : "${SENSE_FP_CONF:?Env var SENSE_FP_CONF must be defined (source set_env.sh)}"
-
 : "${SENSE_FP_RUN:?Env var SENSE_FP_RUN must be defined (source set_env.sh)}"
+: "${SENSE_FXP_QUANTIZER_CONF:?Env var SENSE_FXP_QUANTIZER_CONF must be defined}"
+: "${SENSE_FXP_QUANTIZER_DIR:?Env var SENSE_FXP_QUANTIZER_DIR must be defined}"
 
 CONF_PATH="$SENSE_FXP_QUANTIZER_CONF"
 CONF="$CONF_PATH"
 
-
 if [[ ! -f "$CONF" ]]; then
-  printf "[run_cuantizer.sh]    ${RED}ERROR: config file not found: $CONF${NC}\n"
+  printf "[run_cuantizer.sh] ${RED}ERROR: config file not found: $CONF${NC}\n"
   exit 1
 fi
 
 source "$CONF"
 
+###########################################################################
+# Validaciones de listas
+###########################################################################
+if [[ ${#NB_LIST[@]} -ne ${#NBF_LIST[@]} ]]; then
+  printf "[run_cuantizer.sh] ${RED}ERROR: NB_LIST and NBF_LIST must have the same length${NC}\n"
+  exit 1
+fi
 
 ###########################################################################
 #  Construcción de paths de phantom / smaps / coils aliasadas
@@ -40,16 +47,6 @@ PHANTOM_DIR="$SENSE_GEN_DIR/pipes/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}"
 
 SENS_MAPS_NPY_PATH="$PHANTOM_DIR/sens-maps/smap_N${N}.npy"
 ALIASED_COILS_NPY_PATH="$PHANTOM_DIR/coils-aliased/coil_aliased_Af${AF}_axis${AXIS}.npy"
-
-OUTPUT_DIR="$SENSE_FXP_QUANTIZER_DIR/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}/NB${NB}_NBF${NBF}"
-
-mkdir -p $OUTPUT_DIR
-
-OUTPUT_NAME_S="S_q_NB${NB}_NBF${NBF}"
-OUTPUT_NAME_y="y_q_NB${NB}_NBF${NBF}"
-
-OUTPUT_SMAPS_PATH="$OUTPUT_DIR/$OUTPUT_NAME_S"
-OUTPUT_Y_PATH="$OUTPUT_DIR/$OUTPUT_NAME_y"
 
 if [[ ! -f "$SENS_MAPS_NPY_PATH" ]]; then
   printf "[run_cuantizer.sh] ${RED}ERROR: smaps .npy not found: $SENS_MAPS_NPY_PATH${NC}\n"
@@ -64,46 +61,56 @@ fi
 ###########################################################################
 #  Parámetros cargados desde config.conf
 ###########################################################################
-echo "[run_cuantizer.sh]  Files to quantize:"
-echo "[run_cuantizer.sh]      Sensitivity Maps  : $SENS_MAPS_NPY_PATH"
-echo "[run_cuantizer.sh]      Aliased coils     : $ALIASED_COILS_NPY_PATH"
+echo "[run_cuantizer.sh] Files to quantize:"
+echo "[run_cuantizer.sh]     Sensitivity Maps  : $SENS_MAPS_NPY_PATH"
+echo "[run_cuantizer.sh]     Aliased coils     : $ALIASED_COILS_NPY_PATH"
 echo ""
-
-echo "[run_cuantizer.sh]  Conf file readed      : $CONF"
+echo "[run_cuantizer.sh] Conf file read       : $CONF"
 echo ""
-
-echo "[run_cuantizer.sh]  Parameters for quantization:"
-echo "[run_cuantizer.sh]      NB             = $NB"
-echo "[run_cuantizer.sh]      NBF            = $NBF"
-echo "[run_cuantizer.sh]      signed         = $signed"
-echo "[run_cuantizer.sh]      mode           = $mode"
-echo ""
-
-
 
 ##########################################################################
-# Llamada a quantizer.py
+# Loop de regresión
 ##########################################################################
+for idx in "${!NB_LIST[@]}"; do
+  NB="${NB_LIST[$idx]}"
+  NBF="${NBF_LIST[$idx]}"
 
-if [[ ! -f "$CONF" ]]; then
-  printf "[run_cuantizer.sh]  ${RED}ERROR: config file not found: $CONF${NC}\n"
-  exit 1
-fi
+  OUTPUT_DIR="$SENSE_FXP_QUANTIZER_DIR/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}/NB${NB}_NBF${NBF}"
+  mkdir -p "$OUTPUT_DIR"
 
-printf "[run_cuantizer.sh]  ${YELLOW}Running quantizer.py${NC}\n"
-printf "\n"
+  OUTPUT_NAME_S="S_q_NB${NB}_NBF${NBF}"
+  OUTPUT_NAME_y="y_q_NB${NB}_NBF${NBF}"
 
-python3 "$SENSE_FXP_QUANTIZER_DIR/quantizer.py" \
- --smaps-npy-path="$SENS_MAPS_NPY_PATH" \
- --aliased-coils-npy-path="$ALIASED_COILS_NPY_PATH" \
- --output-smaps-path="$OUTPUT_SMAPS_PATH" \
- --output-y-path="$OUTPUT_Y_PATH" \
- --NB=$NB \
- --NBF=$NBF \
- --signed="$signed" \
- --mode="$mode"
+  OUTPUT_SMAPS_PATH="$OUTPUT_DIR/$OUTPUT_NAME_S"
+  OUTPUT_Y_PATH="$OUTPUT_DIR/$OUTPUT_NAME_y"
+
+  printf "[run_cuantizer.sh] ${YELLOW}Running quantizer.py for NB=${NB}, NBF=${NBF}${NC}\n"
+  echo "[run_cuantizer.sh] Parameters for quantization:"
+  echo "[run_cuantizer.sh]     NB             = $NB"
+  echo "[run_cuantizer.sh]     NBF            = $NBF"
+  echo "[run_cuantizer.sh]     signed         = $signed"
+  echo "[run_cuantizer.sh]     mode           = $mode"
+  echo ""
+
+  python3 "$SENSE_FXP_QUANTIZER_DIR/quantizer.py" \
+    --smaps-npy-path="$SENS_MAPS_NPY_PATH" \
+    --aliased-coils-npy-path="$ALIASED_COILS_NPY_PATH" \
+    --output-smaps-path="$OUTPUT_SMAPS_PATH" \
+    --output-y-path="$OUTPUT_Y_PATH" \
+    --NB="$NB" \
+    --NBF="$NBF" \
+    --signed="$signed" \
+    --mode="$mode"
+
+  if [[ $? -ne 0 ]]; then
+    printf "[run_cuantizer.sh] ${RED}ERROR running quantizer.py for NB=${NB}, NBF=${NBF}${NC}\n"
+    exit 1
+  fi
+
+  printf "[run_cuantizer.sh] ${YELLOW}Done for NB=${NB}, NBF=${NBF}${NC}\n"
+  printf "\n"
+done
 
 
-printf "\n"
-printf "[run_cuantizer.sh]  ${GREEN}Done${NC}\n"
+printf "[run_cuantizer.sh] ${GREEN}Regression finished successfully${NC}\n"
 printf "\n"

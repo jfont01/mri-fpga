@@ -1,4 +1,3 @@
-
 from apytypes import APyFixed, QuantizationMode, OverflowMode
 import math
 

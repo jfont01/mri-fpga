@@ -1,5 +1,12 @@
+# Colores
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
 echo ""
-echo "Loading enviorment variables..."
+printf "[set_env.sh]    ${CYAN}Loading enviorment variables...${NC}\n"
 echo ""
 
 : "${FPGA_MRI_ROOT:?Enviroment variable FPGA_MRI_ROOT must be defined}"
@@ -10,29 +17,29 @@ echo ""
 check_dir() {
   local path="$1"
   if [[ ! -d "$path" ]]; then
-    echo "[set_env.sh] ERROR: directory not found: $path"
+    printf "[set_env.sh]    ${RED}ERROR:${NC} directory not found: $path"
     return 1
   fi
-  echo "[set_env.sh] OK dir : $path"
+  echo "[set_env.sh]    OK dir : $path"
 }
 
 check_file() {
   local path="$1"
   if [[ ! -f "$path" ]]; then
-    echo "[set_env.sh] ERROR: file not found: $path"
+    printf "[set_env.sh]    ${RED}ERROR:${NC} file not found: $path"
     return 1
   fi
-  echo "[set_env.sh] OK file: $path"
+  echo "[set_env.sh]    OK file: $path"
 }
 
 check_var() {
   local name="$1"
   local value="${!name:-}"
   if [[ -z "$value" ]]; then
-    echo "[set_env.sh] ERROR: variable '$name' is empty or undefined"
+    printf "[set_env.sh]    ${RED}ERROR:${NC} variable '$name' is empty or undefined"
     return 1
   fi
-  echo "[set_env.sh] OK var : $name=$value"
+  echo "[set_env.sh]    OK var : $name=$value"
 }
 
 ###########################################################################
@@ -50,9 +57,11 @@ export SENSE_GEN_RUN="$SENSE_GEN_DIR/run_gen.sh"
 
 export SENSE_FP_DIR="$SENSE_ROOT/fp"
 export SENSE_FP_CONF="$SENSE_FP_DIR/config.conf"
-export SENSE_FP_RUN="$SENSE_FP_DIR/run_recon.sh"
+export SENSE_FP_RUN="$SENSE_FP_DIR/run_recon_fp.sh"
 
 export SENSE_FXP_DIR="$SENSE_ROOT/fxp"
+export SENSE_FXP_CONF="$SENSE_FXP_DIR/config.conf"
+
 export SENSE_FXP_QUANTIZER_DIR="$SENSE_FXP_DIR/quantizer"
 export SENSE_FXP_QUANTIZER_CONF="$SENSE_FXP_QUANTIZER_DIR/config.conf"
 
@@ -77,6 +86,7 @@ check_var SENSE_GEN_RUN
 check_var SENSE_FXP_DIR
 check_var SENSE_FXP_QUANTIZER_DIR
 check_var SENSE_FXP_QUANTIZER_CONF
+check_var SENSE_FXP_CONF
 echo ""
 ###########################################################################
 # Verificación de directorios
@@ -91,7 +101,7 @@ check_dir "$SENSE_GEN_DIR"
 check_dir "$SENSE_FP_DIR"
 check_dir "$FXP_MODEL_TEST_DIR"
 check_dir "$SENSE_FXP_DIR"
-check_dir  "$SENSE_FXP_QUANTIZER_DIR"
+check_dir "$SENSE_FXP_QUANTIZER_DIR"
 echo ""
 ###########################################################################
 # Verificación de archivos
@@ -101,13 +111,21 @@ check_file "$SENSE_FP_CONF"
 check_file "$SENSE_GEN_RUN"
 check_file "$SENSE_FP_RUN"
 check_file "$SENSE_FXP_QUANTIZER_CONF"
+check_file "$SENSE_FXP_CONF"
 echo ""
+
+printf "[set_env.sh]    Running dos2unix on scripts and config files...\n"
 
 dos2unix $SENSE_GEN_CONF
 dos2unix $SENSE_FP_CONF
 dos2unix $SENSE_GEN_RUN
 dos2unix $SENSE_FP_RUN
 dos2unix $SENSE_FXP_QUANTIZER_CONF
+dos2unix $SENSE_FXP_CONF
 echo ""
 
-echo "[set_env.sh] Environment loaded successfully."
+printf "[set_env.sh]    Sourcing .venv/bin/activate ...\n"
+source .venv/bin/activate
+
+printf "[set_env.sh]    ${GREEN}Environment loaded successfully.${NC}\n"
+
