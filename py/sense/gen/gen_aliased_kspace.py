@@ -208,14 +208,10 @@ def main() -> None:
     use_full = args.full   
     axis = args.axis
 
-    if not os.path.isfile(in_npy):
-        raise FileNotFoundError(f"No se encontró el archivo de entrada: {in_npy}")
-
-    print(f"Cargando k-space desde: {in_npy}")
     K = np.load(in_npy)
     K = np.asarray(K, dtype=np.complex128)
 
-    print(f"  Forma original de K: {K.shape}")
+    print(f"[gen_aliased_kspace.py]      Original k-space shape: {K.shape}")
     L, Nx_full, Ny_full = K.shape
 
     # Undersampling según eje seleccionado
@@ -228,12 +224,12 @@ def main() -> None:
     else:
         raise ValueError(f"Eje de undersampling no soportado: {axis}")
 
-    print(f"  Nueva forma de K_alias: {K_alias.shape}")
+    print(f"[gen_aliased_kspace.py]    New aliased k-space shape: {K_alias.shape}")
 
     # Guardamos SIEMPRE el k-space reducido
-    out_npy_alias = f"{out_name}_Af{Af}.npy"
+    out_npy_alias = f"{out_name}.npy"
     np.save(out_npy_alias, K_alias)
-    print("Guardado (reducido):", out_npy_alias)
+    print("[gen_aliased_kspace.py]   Saved:", out_npy_alias)
 
     # Si el usuario pide tamaño completo, construimos K_full rellenando con ceros
     if use_full:
@@ -253,19 +249,13 @@ def main() -> None:
             out_npy_full = f"{out_name}_Af{Af}_fullNx.npy"
 
         np.save(out_npy_full, K_for_imgs)
-        print("Guardado (full size):", out_npy_full)
+        print("[gen_aliased_kspace.py]    Saved zpadded:", out_npy_full)
     else:
         # Si no se pide full, usamos el reducido para generar PNGs
         K_for_imgs = K_alias
 
     # Guardar magnitud y fase de cada bobina para K_for_imgs
     L, Nx_img, Ny_img = K_for_imgs.shape
-    print(
-        f"Guardando PNGs de magnitud y fase para L={L} coils, "
-        f"tamaño ({Nx_img}, {Ny_img}) ..."
-    )
-
-    eps = 1e-12
 
     for l in range(L):
         K_l = K_for_imgs[l]
@@ -280,7 +270,7 @@ def main() -> None:
 
         fname_mag = f"{out_name}_coil{l}_Af{Af}{suffix}.png"
         plt.imsave(fname_mag, mag, cmap=cmap)
-        print("  Saved:", fname_mag)
+        print("[gen_aliased_kspace.py]      Saved mag .png:", fname_mag)
 
         # Fase en [-pi, pi] → [0, 1]
         phase = np.angle(K_l)
@@ -292,7 +282,7 @@ def main() -> None:
 
         fname_phase = f"{out_name}_coil{l}_Af{Af}{suffix_p}.png"
         plt.imsave(fname_phase, phase, cmap=cmap)
-        print("  Saved:", fname_phase)
+        print("[gen_aliased_kspace.py]      Saved phase .png:", fname_phase)
 
 
 if __name__ == "__main__":

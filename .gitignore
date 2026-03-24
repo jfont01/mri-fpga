@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 doc/
 raw_data/
+log/
 *.pdf
 *.drawio
 *.docx
@@ -18,3 +19,4 @@ raw_data/
 *.npy
 *.npz
 *.rpt
+.log*

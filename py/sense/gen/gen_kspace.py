@@ -67,11 +67,11 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    print(f"Cargando imágenes de bobina desde: {args.input}")
+    print(f"[gen_kspace.py]    Loading coil images from: {args.input}")
     coil_imgs = np.load(args.input)
     print(f"  shape: {coil_imgs.shape}, dtype: {coil_imgs.dtype}")
 
-    print("Computando FFT2D por bobina...")
+    print("[gen_kspace.py]    Computing coil-wise fft2d")
     K = compute_kspace_from_coils(
         coil_imgs,
         use_fftshift=args.fftshift,
@@ -79,12 +79,12 @@ def main() -> None:
     )
 
     # Guardar .npy con todo el k-space
-    print(f"Guardando k-space en: {args.output}")
+
     np.save(args.output, K)
+    print(f"[gen_kspace.py]    K-space saved in: {args.output}")
 
     # Guardar PNG por bobina: magnitud y fase
     L, N1, N2 = K.shape
-    print(f"Guardando PNG de magnitud y fase para {L} bobinas...")
 
     for l in range(L):
         Kl = K[l]
@@ -93,14 +93,12 @@ def main() -> None:
         mag = np.abs(Kl)
         fname_mag = f"{args.output}_coil{l}_mag.png"
         plt.imsave(fname_mag, mag, cmap="gray")
-        print("  Saved:", fname_mag)
+        print("[gen_kspace.py]    mag .png saved:", fname_mag)
 
         phase = np.angle(Kl)
         fname_phase = f"{args.output}_coil{l}_phase.png"
         plt.imsave(fname_phase, phase, cmap="gray")
-        print("  Saved:", fname_phase)
-
-    print("Listo.")
+        print("[gen_kspace.py]    phase .png saved:", fname_phase)
 
 
 if __name__ == "__main__":

@@ -95,18 +95,15 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    print(f"Cargando phantom desde: {args.phantom}")
     m = load_phantom(args.phantom)
-
-    print(f"Cargando mapas de sensibilidad desde: {args.sens_maps}")
     S = load_sens_maps(args.sens_maps)
 
-    print("Computando imágenes de bobina (y_l = s_l * m)...")
+    print("[gen_coils.py]    Computing coil images (y_l = s_l * m)...")
     y = compute_coil_images(m, S)
 
     # Guardar .npy
     np.save(args.output_npy, y)
-    print(f"Guardado: {args.output_npy}  (shape={y.shape}, dtype={y.dtype})")
+    print(f"[gen_coils.py]    Saved .npy: {args.output_npy}  (shape={y.shape}, dtype={y.dtype})")
 
     # Opcional: guardar PNG de magnitud para cada bobina
     if args.png_prefix is not None:
@@ -117,7 +114,7 @@ def main() -> None:
 
             fname = f"{args.png_prefix}_coil{l}.png"
             plt.imsave(fname, mag_norm, cmap="gray")
-            print("Guardado PNG:", fname)
+            print("[gen_coils.py]    Saved mag .npy:", fname)
 
 
 if __name__ == "__main__":

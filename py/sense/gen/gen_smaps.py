@@ -131,12 +131,12 @@ def main() -> None:
     normalize = not args.no_normalize
 
     out_name = args.output_name
-    out_npy = out_name + f"_N{N}" + ".npy"
+    out_npy = out_name + ".npy"
     cmap = args.cmap
 
-    print(f"Generating sensitivity maps: N={N}, L={L}")
-    print(f" radius_factor={radius_factor}, sigma_factor={sigma_factor}")
-    print(f" phase_scale={phase_scale}, normalize={normalize}")
+    print(f"[gen_smaps.py]    Generating sensitivity maps: N={N}, L={L}")
+    print(f"[gen_smaps.py]    Radius_factor={radius_factor}, sigma_factor={sigma_factor}")
+    print(f"[gen_smaps.py]    Phase_scale={phase_scale}, normalize={normalize}")
 
     S = gen_sensitivity_maps_2d(
         N,
@@ -149,24 +149,24 @@ def main() -> None:
 
     # 1) Guardar TODOS los mapas en un .npy (para SENSE)
     np.save(out_npy, S)
-    print("Saved:", out_npy)
+    print("[gen_smaps.py]    Tensor .npy saved:", out_npy)
 
     # 2) Guardar imágenes PNG para magnitud y fase
     for l in range(L):
         # Magnitud
         mag = np.abs(S[l])
         mag_norm = (mag - mag.min()) / (mag.max() - mag.min() + 1e-12)
-        fname_mag = f"{out_name}_coil{l}_L{L}_N{N}_mag.png"
+        fname_mag = f"{out_name}_coil{l}_mag.png"
         plt.imsave(fname_mag, mag_norm, cmap=cmap)
-        print("Saved:", fname_mag)
+        print("[gen_smaps.py]    Mag .png saved:", fname_mag)
 
         # Fase en [-pi, pi] → normalizamos a [0,1]
         phase = np.angle(S[l])
         phase_norm = (phase + np.pi) / (2 * np.pi)
-        fname_phase = f"{out_name}_coil{l}_L{L}_N{N}_phase.png"
+        fname_phase = f"{out_name}_coil{l}_phase.png"
         # twilight es un colormap pensado para fases, pero puedes usar 'hsv' si prefieres
         plt.imsave(fname_phase, phase_norm, cmap=cmap)
-        print("Saved:", fname_phase)
+        print("[gen_smaps.py]    Phase .png saved:", fname_phase)
 
 
 if __name__ == "__main__":

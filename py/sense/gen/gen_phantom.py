@@ -33,13 +33,7 @@ def gen_two_gaussian_dots_2d(
     amp1: float = 1.0,
     amp2: float = 1.0,
 ) -> NDArray[np.float64]:
-    """
-    Phantom con dos "dots" gaussianos 2D.
-    - Gaussiana 1 centrada en (cx, N/4)
-    - Gaussiana 2 centrada en (cx, 3N/4)
-
-    sigma controla el ancho; por defecto se toma N/16.
-    """
+    
     if sigma is None:
         sigma = N / 16.0
 
@@ -214,39 +208,39 @@ def main() -> None:
             in_img = np.asarray(np.load(args.input_npy), np.float64)
             img = normalize_data(img=in_img, A=A)
 
-    out_npy = f"{out_name}_N{N}.npy"
-    out_png = f"{out_name}_N{N}.png"
+    out_npy = f"{out_name}.npy"
+    out_png = f"{out_name}.png"
 
     # Guardar .npy del phantom
     np.save(out_npy, img)
-    print(f"Saved phantom to: {out_npy} (shape={img.shape}, dtype={img.dtype})")
-
+    print(f"[gen_phantom.py]    Saved phantom to: {out_npy} (shape={img.shape}, dtype={img.dtype})")
+    
     # Guardar PNG del phantom
     img_norm = (img - img.min()) / (img.max() - img.min() + 1e-12)
     plt.imsave(out_png, img_norm, cmap=cmap)
-    print(f"Saved PNG to: {out_png}")
+    print(f"[gen_phantom.py]    Saved PNG to: {out_png}")
 
     # 2) FFT2D del phantom (k-space)
-    print("Computando FFT2D del phantom (k-space)...")
+    print("[gen_phantom.py]     Running fft2d of phantom ...")
     K = np.fft.fft2(img.astype(np.complex128))
 
-    out_kspace_npy = f"{out_name}_kspace_N{N}.npy"
+    out_kspace_npy = f"{out_name}_kspace.npy"
     np.save(out_kspace_npy, K)
-    print(f"Saved k-space to: {out_kspace_npy} (shape={K.shape}, dtype={K.dtype})")
+    print(f"[gen_phantom.py]    Saved k-space to: {out_kspace_npy} (shape={K.shape}, dtype={K.dtype})")
 
     # 3) PNGs de magnitud y fase (con fftshift para visualización)
 
 
     K_shift = np.fft.fftshift(K)
     mag = np.abs(K_shift)
-    out_kspace_mag_png = f"{out_name}_kspace_N{N}_mag.png"
+    out_kspace_mag_png = f"{out_name}_kspace_mag.png"
     plt.imsave(out_kspace_mag_png, mag, cmap=cmap)
-    print(f"Saved k-space magnitude PNG to: {out_kspace_mag_png}")
+    print(f"[gen_phantom.py]    Saved k-space magnitude PNG to: {out_kspace_mag_png}")
 
     phase = np.angle(K_shift)
-    out_kspace_phase_png = f"{out_name}_kspace_N{N}_phase.png"
+    out_kspace_phase_png = f"{out_name}_kspace_phase.png"
     plt.imsave(out_kspace_phase_png, phase, cmap=cmap)
-    print(f"Saved k-space phase PNG to: {out_kspace_phase_png}")
+    print(f"[gen_phantom.py]    Saved k-space phase PNG to: {out_kspace_phase_png}")
 
 
 if __name__ == "__main__":

@@ -38,14 +38,6 @@ def parse_args() -> argparse.Namespace:
         help="Directorio de salida donde se guardan .npy y .png de la reconstrucción.",
     )
 
-    parser.add_argument(
-        "--save-all",
-        type=str,
-        required=True,
-        help="Directorio de salida donde se guardan .npy y .png de la reconstrucción.",
-    )
-
-
 
 
     return parser.parse_args()
@@ -57,7 +49,7 @@ def main() -> None:
     smaps_path = args.smaps_npy_path
     coils_alias_path = args.aliased_coils_npy_path
     out_dir = args.output_path
-    save_all = True if (args.save_all == "True") else False
+    save_all = True
 
     os.makedirs(out_dir, exist_ok=True)
 
@@ -96,9 +88,9 @@ def main() -> None:
         np.save(os.path.join(out_dir, "sense_rec_llh.npy"), img_llh)
         np.save(os.path.join(out_dir, "sense_rec_np_l.npy"), img_np_l)
 
-        plt.imsave(os.path.join(out_dir, "sense_rec_solve_mag.png"), img_solve, cmap="gray")
-        plt.imsave(os.path.join(out_dir, "sense_rec_np_l_mag.png"), img_np_l, cmap="gray")
-        plt.imsave(os.path.join(out_dir, "sense_rec_llh_mag.png"), img_llh, cmap="gray")
+        plt.imsave(os.path.join(out_dir, "sense_rec_solve.png"), img_solve, cmap="gray")
+        plt.imsave(os.path.join(out_dir, "sense_rec_np_l.png"), img_np_l, cmap="gray")
+        plt.imsave(os.path.join(out_dir, "sense_rec_llh.png"), img_llh, cmap="gray")
 
 
     np.save(os.path.join(out_dir, "sense_rec_ldlh.npy"), img_ldlh)
