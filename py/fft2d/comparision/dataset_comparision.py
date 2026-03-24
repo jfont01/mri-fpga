@@ -35,7 +35,7 @@ for flist in (PY_FLIST_FXP_MODEL, PY_FLIST_FFT2D):
 
 from fft1d import build_twiddles
 from fft2d import fft2d, ifft2d
-from cfxp2d import CFxp2D
+from old.cfxp2d import CFxp2D
 
 
 # ---------------------------------------------------------

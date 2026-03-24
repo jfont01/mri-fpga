@@ -1,6 +1,6 @@
 import math, numpy as np
 from cfxp import CFxp
-from cfxp2d import CFxp2D
+from old.cfxp2d import CFxp2D
 from typing import List, Tuple
 from numpy.typing import NDArray
 from numpy import float64

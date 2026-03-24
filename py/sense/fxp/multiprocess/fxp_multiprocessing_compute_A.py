@@ -14,35 +14,21 @@ sys.path.insert(0, FXP_MODEL_ROOT)
 
 from fxp import Fxp
 from cfxp import CFxp
+from cfxptensor import CFxpTensor
 # ------------------------------------------------------------------
 
 
 # ------------------------------------------------------------------
 # Variables globales en workers
 # ------------------------------------------------------------------
-_RE_RAW = None
-_IM_RAW = None
-_NB_S = None
-_NBF_S = None
-_SIGNED = None
+_S_Q = None
 
 
 def _init_worker_A(
-    re_raw: np.ndarray,
-    im_raw: np.ndarray,
-    NB_S: int,
-    NBF_S: int,
-    signed: bool,
+    S_q: CFxpTensor,
 ) -> None:
-    global _RE_RAW, _IM_RAW, _NB_S, _NBF_S, _SIGNED
-    _RE_RAW = re_raw
-    _IM_RAW = im_raw
-    _NB_S = NB_S
-    _NBF_S = NBF_S
-    _SIGNED = signed
-
-
-
+    global _S_Q
+    _S_Q = S_q
 
 def _get_all_stats() -> Dict[str, int]:
     """
@@ -53,9 +39,6 @@ def _get_all_stats() -> Dict[str, int]:
 
     if hasattr(Fxp, "get_fxp_stats"):
         stats.update(Fxp.get_fxp_stats())
-
-    if hasattr(CFxp, "get_cfxp_stats"):
-        stats.update(CFxp.get_cfxp_stats())
 
     return stats
 
@@ -70,29 +53,24 @@ def _sum_stats(total: Dict[str, int], part: Dict[str, int]) -> Dict[str, int]:
 
 
 def _fxp_compute_A_ij(
-    re_raw: np.ndarray,
-    im_raw: np.ndarray,
-    NB_S: int,
-    NBF_S: int,
-    signed: bool,
+    S_q: CFxpTensor,
     nx: int,
     ny_alias: int,
 ) -> np.ndarray:
 
-    if re_raw.shape != im_raw.shape:
-        raise ValueError("re_raw e im_raw deben tener el mismo shape")
+    L, Nx, Ny = S_q.shape
+    NB_S = S_q.NB
+    NBF_S = S_q.NBF
+    signed = S_q.signed
 
-    L, Nx, Ny = re_raw.shape
+
     Af = 2
-
-    if Ny % Af != 0:
-        raise ValueError("Ny debe ser par para Af = 2")
 
     offset = Ny // Af
     ny0 = ny_alias
     ny1 = ny_alias + offset
 
-    grow_bits = int(np.ceil(np.log2(L))) if L > 1 else 0
+    grow_bits = int(np.ceil(np.log2(L)))
     NB_A = 2 * NB_S + grow_bits
     NBF_A = 2 * NBF_S
 
@@ -103,21 +81,8 @@ def _fxp_compute_A_ij(
     A01 = CFxp.from_complex(0.0 + 0.0j, NB_A, NBF_A, mode="round", signed=signed)
 
     for l in range(L):
-        s0 = CFxp.from_uint_pair(
-            re_raw[l, nx, ny0],
-            im_raw[l, nx, ny0],
-            NB=NB_S,
-            NBF=NBF_S,
-            signed=signed
-        )
-
-        s1 = CFxp.from_uint_pair(
-            re_raw[l, nx, ny1],
-            im_raw[l, nx, ny1],
-            NB=NB_S,
-            NBF=NBF_S,
-            signed=signed
-        )
+        s0 = S_q[l, nx, ny0]
+        s1 = S_q[l, nx, ny1]
 
         A00 += CFxp((s0.re * s0.re + s0.im * s0.im), zero)
         A11 += CFxp((s1.re * s1.re + s1.im * s1.im), zero)
@@ -134,11 +99,11 @@ def _fxp_compute_A_ij(
 
 
 def _worker_compute_A_nx(nx: int) -> Tuple[int, np.ndarray, Dict[str, int]]:
-    global _RE_RAW, _IM_RAW, _NB_S, _NBF_S, _SIGNED
+    global _S_Q
 
     Fxp.reset_fxp_stats()
 
-    _, _, Ny = _RE_RAW.shape
+    _, _, Ny = _S_Q.shape
     Af = 2
     offset = Ny // Af
 
@@ -146,7 +111,7 @@ def _worker_compute_A_nx(nx: int) -> Tuple[int, np.ndarray, Dict[str, int]]:
 
     for ny_alias in range(offset):
         A_nx[:, :, ny_alias] = _fxp_compute_A_ij(
-            _RE_RAW, _IM_RAW, _NB_S, _NBF_S, _SIGNED, nx, ny_alias
+            _S_Q, nx, ny_alias
         )
 
     stats_nx = _get_all_stats()
@@ -155,18 +120,12 @@ def _worker_compute_A_nx(nx: int) -> Tuple[int, np.ndarray, Dict[str, int]]:
 
 
 def fxp_compute_A(
-    S_q: NpzFile,
+    S_q: CFxpTensor,
     max_workers: int | None = None,
     chunksize: int = 4,
 ) -> Dict[str, Any]:
     
-    re_raw = S_q["re_raw"]
-    im_raw = S_q["im_raw"]
-    NB_S = int(S_q["NB"])
-    NBF_S = int(S_q["NBF"])
-    signed = bool(int(S_q["signed"]))
-
-    _, Nx, Ny = re_raw.shape
+    _, Nx, Ny = S_q.shape
     Af = 2
 
     offset = Ny // Af
@@ -180,7 +139,7 @@ def fxp_compute_A(
     with ProcessPoolExecutor(
         max_workers=max_workers,
         initializer=_init_worker_A,
-        initargs=(re_raw, im_raw, NB_S, NBF_S, signed),
+        initargs=(S_q,),
     ) as executor:
 
         for nx, A_nx, stats_nx in executor.map(

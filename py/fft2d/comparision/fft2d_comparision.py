@@ -46,7 +46,7 @@ if not PY_FFT2D_CONFIG_COMPARISION_JSON:
 from stimulus_gen import gen_tone_cos_2d, gen_concentric_rings_2d, gen_gaussian_spots_2d
 from fft1d import build_twiddles
 from fft2d import fft2d, ifft2d
-from cfxp2d import CFxp2D
+from old.cfxp2d import CFxp2D
 
 
 def run_comparision1(

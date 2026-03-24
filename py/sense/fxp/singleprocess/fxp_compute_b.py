@@ -11,34 +11,27 @@ sys.path.insert(0, FXP_MODEL_ROOT)
 
 from fxp import Fxp
 from cfxp import CFxp
+from cfxptensor import CFxpTensor
 # ------------------------------------------------------------------
 
 
 
 def fxp_compute_b_ij(
-    S_q: NpzFile,
-    y_q: NpzFile,
+    S_q: CFxpTensor,
+    y_q: CFxpTensor,
     nx: int,
     ny_alias: int
 ) -> np.ndarray:
 
-    S_re_raw = S_q["re_raw"]
-    S_im_raw = S_q["im_raw"]
+    NB_S = S_q.NB
+    NBF_S = S_q.NBF
+    signed = S_q.signed
 
-    y_re_raw = y_q["re_raw"]
-    y_im_raw = y_q["im_raw"]
-
-
-    NB_S = int(S_q["NB"])
-    NBF_S = int(S_q["NBF"])
-
-    NB_Y = int(y_q["NB"])
-    NBF_Y = int(y_q["NBF"])
-    
-    signed = True if (S_q["signed"]==1) else False
+    NB_Y = y_q.NB
+    NBF_Y = y_q.NBF
 
 
-    L, Nx, Ny = S_re_raw.shape
+    L, Nx, Ny = S_q.shape
     Af = 2
 
     offset = Ny // Af
@@ -53,29 +46,9 @@ def fxp_compute_b_ij(
     ny1 = ny_alias + offset
 
     for l in range(L):
-        s0 = CFxp.from_uint_pair(
-            S_re_raw[l, nx, ny0],
-            S_im_raw[l, nx, ny0],
-            NB=NB_S,
-            NBF=NBF_S,
-            signed=signed
-        )
-
-        s1 = CFxp.from_uint_pair(
-            S_re_raw[l, nx, ny1],
-            S_im_raw[l, nx, ny1],
-            NB=NB_S,
-            NBF=NBF_S,
-            signed=signed
-        )
-
-        y0 = CFxp.from_uint_pair(
-            y_re_raw[l, nx, ny_alias],
-            y_im_raw[l, nx, ny_alias],
-            NB=NB_Y,
-            NBF=NBF_Y,
-            signed=signed
-        )
+        s0 = S_q[l, nx, ny0]
+        s1 = S_q[l, nx, ny1]
+        y0 = y_q[l, nx, ny_alias]
 
         b0 += (s0.conj() * y0).cast(NB_B, NBF_B, mode="round")
         b1 += (s1.conj() * y0).cast(NB_B, NBF_B, mode="round")
@@ -86,13 +59,11 @@ def fxp_compute_b_ij(
 
 
 def fxp_compute_b(
-        S_q: NpzFile,
-        y_q: NpzFile
+        S_q: CFxpTensor,
+        y_q: CFxpTensor
     ) -> np.ndarray:
 
-    re_raw = S_q["re_raw"]
-
-    _, Nx, Ny = re_raw.shape
+    L, Nx, Ny = S_q.shape
     Af = 2
 
 

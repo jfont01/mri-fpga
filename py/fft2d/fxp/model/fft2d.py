@@ -1,5 +1,5 @@
 from cfxp import CFxp
-from cfxp2d import CFxp2D
+from old.cfxp2d import CFxp2D
 from fft1d import fft, build_twiddles
 from typing import Optional, Dict, Tuple, List
 from helpers import _accum_ops

@@ -11,24 +11,21 @@ sys.path.insert(0, FXP_MODEL_ROOT)
 
 from fxp import Fxp
 from cfxp import CFxp
+from cfxptensor import CFxpTensor
 # ------------------------------------------------------------------
 
 
 
 def fxp_compute_A_ij(
-    S_q: NpzFile,
+    S_q: CFxpTensor,
     nx: int,
     ny_alias: int
 ) -> np.ndarray:
 
-    re_raw = S_q["re_raw"]
-    im_raw = S_q["im_raw"]
-    NB_S = int(S_q["NB"])
-    NBF_S = int(S_q["NBF"])
-    signed = True if (S_q["signed"]==1) else False
-
-
-    L, Nx, Ny = re_raw.shape
+    NB_S = S_q.NB
+    NBF_S = S_q.NBF
+    signed = S_q.signed
+    L, Nx, Ny = S_q.shape
     Af = 2
 
     offset = Ny // Af
@@ -47,22 +44,8 @@ def fxp_compute_A_ij(
     zero = Fxp.quantize(0.0, NB_A, NBF_A)
 
     for l in range(L):
-        s0 = CFxp.from_uint_pair(
-            re_raw[l, nx, ny0],
-            im_raw[l, nx, ny0],
-            NB=NB_S,
-            NBF=NBF_S,
-            signed=signed
-        )
-
-        s1 = CFxp.from_uint_pair(
-            re_raw[l, nx, ny1],
-            im_raw[l, nx, ny1],
-            NB=NB_S,
-            NBF=NBF_S,
-            signed=signed
-        )
-
+        s0 = S_q[l, nx, ny0]
+        s1 = S_q[l, nx, ny1]
 
         A00 += CFxp((s0.re*s0.re + s0.im*s0.im), zero)
         A11 += CFxp((s1.re*s1.re + s1.im*s1.im), zero)
@@ -79,24 +62,14 @@ def fxp_compute_A_ij(
 
 
 
-def fxp_compute_A(S_q: NpzFile) -> np.ndarray:
-    re_raw = S_q["re_raw"]
-    im_raw = S_q["im_raw"]
+def fxp_compute_A(
+    S_q: CFxpTensor
+) -> np.ndarray:
 
-    if re_raw.shape != im_raw.shape:
-        raise ValueError("re_raw e im_raw deben tener el mismo shape")
 
-    if re_raw.ndim != 3:
-        raise ValueError(f"re_raw debe ser 3D, recibió shape={re_raw.shape}")
-
-    _, Nx, Ny = re_raw.shape
+    L, Nx, Ny = S_q.shape
     Af = 2
-
-    if Ny % Af != 0:
-        raise ValueError("Ny debe ser par para Af = 2")
-
     offset = Ny // Af
-
     A = np.zeros((2, 2, Nx, offset), dtype=np.complex128)
 
     for nx in range(Nx):

@@ -19,7 +19,14 @@ sys.path.insert(0, SENSE_FP_DIR)
 
 from fp_compute_A       import fp_compute_A
 from fp_compute_b       import fp_compute_b
-from fp_compute_m_hat   import fp_compute_m_hat
+
+FXP_MODEL_ROOT = os.environ.get("FXP_MODEL_ROOT")
+if FXP_MODEL_ROOT is None:
+    raise RuntimeError("[ERROR] FXP_MODEL_ROOT not defined")
+
+sys.path.insert(0, FXP_MODEL_ROOT)
+
+from cfxptensor import CFxpTensor
 # ------------------------------------------------------------------
 
 
@@ -99,8 +106,8 @@ def main() -> None:
     S_fp = np.load(smaps_path_npy).astype(np.complex128)
     y_fp = np.load(coils_alias_path_npy).astype(np.complex128)
 
-    S_fxp = np.load(smaps_path_npz)
-    y_fxp = np.load(coils_alias_path_npz)
+    S_fxp = CFxpTensor.from_npz(smaps_path_npz)
+    y_fxp = CFxpTensor.from_npz(coils_alias_path_npz)
 
     # ---------------------------------------------------------
     # A
@@ -133,28 +140,28 @@ def main() -> None:
     # ---------------------------------------------------------
     # m_hat
     # ---------------------------------------------------------
-    print("[fxp_sense.py]   Running fp_compute_m_hat ...")
-    m_hat_fp = fp_compute_m_hat(
-        A_fp,
-        b_fp,
-        compute_type="numpy-linalg-solve",
-        cholesky_type=None,
-    )
+    # print("[fxp_sense.py]   Running fp_compute_m_hat ...")
+    # m_hat_fp = fp_compute_m_hat(
+    #     A_fp,
+    #     b_fp,
+    #     compute_type="numpy-linalg-solve",
+    #     cholesky_type=None,
+    # )
 
-    print("[fxp_sense.py]   Running fxp_compute_m_hat ...")
-    m_hat_fxp = fxp_compute_m_hat(
-        A_fxp,
-        b_fxp,
-        compute_type="numpy-linalg-solve",
-        cholesky_type=None,
-    )
+    # print("[fxp_sense.py]   Running fxp_compute_m_hat ...")
+    # m_hat_fxp = fxp_compute_m_hat(
+    #     A_fxp,
+    #     b_fxp,
+    #     compute_type="numpy-linalg-solve",
+    #     cholesky_type=None,
+    # )
 
     # si todavía no tenés stats propias del solver de m_hat,
     # podés dejar dict vacío o agregar una marca descriptiva
-    stats_m = {}
+    # stats_m = {}
 
-    print("[fxp_sense.py]   Running compare_fxp_vs_fp for m_hat ...")
-    m_data = compare_fxp_vs_fp(m_hat_fp, m_hat_fxp, stats_m)
+    # print("[fxp_sense.py]   Running compare_fxp_vs_fp for m_hat ...")
+    # m_data = compare_fxp_vs_fp(m_hat_fp, m_hat_fxp, stats_m)
 
     # ---------------------------------------------------------
     # reporte
