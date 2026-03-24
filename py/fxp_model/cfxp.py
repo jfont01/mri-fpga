@@ -58,6 +58,37 @@ class CFxp:
         return cls(re=re_fxp, im=im_fxp)
 
     @classmethod
+    def div_by_real(
+        cls,
+        num: "CFxp",
+        den: Fxp,
+        NB_out: int,
+        NBF_out: int,
+        mode: str = "round",
+        overflow: str = "saturate",
+        signed_out: bool | None = None,
+    ) -> "CFxp":
+        if signed_out is None:
+            signed_out = bool(num.re.signed or den.signed)
+
+        return cls(
+            re=Fxp.div(
+                num.re, den,
+                NB_out, NBF_out,
+                mode=mode,
+                overflow=overflow,
+                signed_out=signed_out
+            ),
+            im=Fxp.div(
+                num.im, den,
+                NB_out, NBF_out,
+                mode=mode,
+                overflow=overflow,
+                signed_out=signed_out
+            ),
+        )
+
+    @classmethod
     def from_complex(cls, z: complex, NB: int, NBF: int,
             mode: str = "round", signed: bool = True) -> "CFxp":
         """

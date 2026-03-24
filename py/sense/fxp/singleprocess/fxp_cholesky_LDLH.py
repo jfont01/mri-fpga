@@ -23,42 +23,6 @@ class FXP_LDLH_2x2:
     l10: CFxp
 
 
-# ------------------------------------------------------------------
-# HELPERS DE DIVISIÓN
-# ------------------------------------------------------------------
-def fxp_div_fxp(
-    num: Fxp,
-    den: Fxp,
-    NB_out: int,
-    NBF_out: int,
-    mode: str = "round",
-    signed: bool = True,
-) -> Fxp:
-    """
-    Placeholder: división real fixed num / den.
-
-    Reemplazar por tu implementación real de división o recíproco.
-    """
-    raise NotImplementedError("Falta implementar fxp_div_fxp según tu librería fixed-point")
-
-
-def fxp_div_cfxp_by_real(
-    num: CFxp,
-    den: Fxp,
-    NB_out: int,
-    NBF_out: int,
-    mode: str = "round",
-    signed: bool = True,
-) -> CFxp:
-    """
-    Placeholder: división compleja por real positivo.
-
-    num / den = (num.re / den) + j (num.im / den)
-    """
-    re_q = fxp_div_fxp(num.re, den, NB_out, NBF_out, mode=mode, signed=signed)
-    im_q = fxp_div_fxp(num.im, den, NB_out, NBF_out, mode=mode, signed=signed)
-    return CFxp(re_q, im_q)
-
 
 # ------------------------------------------------------------------
 # FACTORIZACIÓN LDLH
@@ -127,27 +91,28 @@ def fxp_compute_LD(
             f"A no es HPD: d0=a00={float(d0.get_val())} no es estrictamente positivo"
         )
 
-    # l10 = a10 / d0
-    l10 = fxp_div_cfxp_by_real(
+    l10 = CFxp.div_by_real(
         a10,
         d0,
         NB_out=NB_L,
         NBF_out=NBF_L,
         mode="round",
-        signed=signed,
+        overflow="saturate",
+        signed_out=signed,
     )
 
-    # |a10|^2 = a10.re^2 + a10.im^2
-    # y luego term = |a10|^2 / d0
-    abs_a10_sq = (a10.re * a10.re + a10.im * a10.im).cast(NB_D, NBF_D, mode="round")
+    abs_a10_sq = (a10.re * a10.re + a10.im * a10.im).cast(
+        NB_D, NBF_D, mode="round"
+    )
 
-    term = fxp_div_fxp(
+    term = Fxp.div(
         abs_a10_sq,
         d0,
         NB_out=NB_D,
         NBF_out=NBF_D,
         mode="round",
-        signed=signed,
+        overflow="saturate",
+        signed_out=signed,
     )
 
     d1 = (a11_re - term).cast(NB_D, NBF_D, mode="round")
@@ -199,18 +164,13 @@ def fxp_forward_subst_ldlh(
 # ------------------------------------------------------------------
 def fxp_diagonal_subst(
     LD: FXP_LDLH_2x2,
-    y: np.ndarray,   # shape (2,), CFxp
+    y: np.ndarray,
     NB_Z: int,
     NBF_Z: int,
     signed: bool = True,
     eps: float = 1e-12,
 ) -> np.ndarray:
-    """
-    Resuelve D z = y con D = diag(d0, d1)
 
-    z0 = y0 / d0
-    z1 = y1 / d1
-    """
     if y.shape != (2,):
         raise ValueError(f"Se esperaba y con shape (2,), recibido {y.shape}")
 
@@ -222,16 +182,20 @@ def fxp_diagonal_subst(
             f"D no es invertible o no es positiva: d0={float(LD.d0.get_val())}, d1={float(LD.d1.get_val())}"
         )
 
-    z0 = fxp_div_cfxp_by_real(
+    z0 = CFxp.div_by_real(
         y0, LD.d0,
         NB_out=NB_Z, NBF_out=NBF_Z,
-        mode="round", signed=signed
+        mode="round",
+        overflow="saturate",
+        signed_out=signed
     )
 
-    z1 = fxp_div_cfxp_by_real(
+    z1 = CFxp.div_by_real(
         y1, LD.d1,
         NB_out=NB_Z, NBF_out=NBF_Z,
-        mode="round", signed=signed
+        mode="round",
+        overflow="saturate",
+        signed_out=signed
     )
 
     return np.array([z0, z1], dtype=object)

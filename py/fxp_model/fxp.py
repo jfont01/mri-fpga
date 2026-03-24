@@ -5,11 +5,12 @@ DEBUG_FXP_ASSERTS = False
 
 FXP_STATS = {
     "fxp_add": 0,
-    "fxp_mul": 0,
     "fxp_sub": 0,
+    "fxp_mul": 0,
+    "fxp_div": 0,
     "sat": 0,
     "underflow": 0,
-    }
+}
 
 class Fxp:
     def __init__(self, bits, NB, NBF, signed=True):
@@ -356,9 +357,6 @@ class Fxp:
 
         return Fxp.from_apyfixed(res_val, signed=self.signed)
 
-
-
-
     
     ################## Cuantización ##################
     @classmethod
@@ -412,7 +410,43 @@ class Fxp:
         if NB is not None:
             assert len(bits) == NB, f"len(bits)={len(bits)} != NB={NB}"
 
+    @classmethod
+    def div(
+        cls,
+        num: "Fxp",
+        den: "Fxp",
+        NB_out: int,
+        NBF_out: int,
+        mode: str = "round",
+        overflow: str = "saturate",
+        signed_out: bool | None = None,
+    ) -> "Fxp":
 
+        if not isinstance(num, Fxp):
+            raise TypeError(f"num debe ser Fxp, recibido {type(num)}")
+        if not isinstance(den, Fxp):
+            raise TypeError(f"den debe ser Fxp, recibido {type(den)}")
+
+        den_f = float(den.get_val())
+        if den_f == 0.0:
+            raise ZeroDivisionError("División por cero en Fxp.div()")
+
+        if signed_out is None:
+            signed_out = bool(num.signed or den.signed)
+
+        if "fxp_div" in FXP_STATS:
+            FXP_STATS["fxp_div"] += 1
+
+        res_val = num._val / den._val
+
+        res_fxp = cls.from_apyfixed(res_val, signed=signed_out)
+
+        return res_fxp.cast(
+            NB_out=NB_out,
+            NBF_out=NBF_out,
+            mode=mode,
+            overflow=overflow,
+        )
 
     @staticmethod
     def _arith_shift_right_bits(bits, k: int):
