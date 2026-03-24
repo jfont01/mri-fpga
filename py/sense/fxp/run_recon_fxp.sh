@@ -86,11 +86,12 @@ for idx in "${!NB_LIST[@]}"; do
     --aliased-coils-npz-path="$Y_NPZ_PATH"                \
     --output-dir="$OUTPUT_DIR"                            \
     --max-workers=$MAX_WORKERS                            \
-    --chunksize=$CHUNKSIZE
+    --chunksize=$CHUNKSIZE                                \
+    --save-images=$SAVE_IMAGES 
 
 
   if [[ $? -ne 0 ]]; then
-    printf "[run_recon_fxp.sh] ${RED}ERROR running quantizer.py for NB=${NB}, NBF=${NBF}${NC}\n"
+    printf "[run_recon_fxp.sh] ${RED}ERROR running fxp_sense.py for NB=${NB}, NBF=${NBF}${NC}\n"
     exit 1
   fi
 

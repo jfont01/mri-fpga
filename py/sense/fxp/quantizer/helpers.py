@@ -108,6 +108,22 @@ def write_quant_report(
     idx_max = np.unravel_index(np.argmax(err_c), err_c.shape)
     l_max, nx_max, ny_max = idx_max
 
+    # ---------------- RANGOS FP ----------------
+    fp_re_min = float(np.min(S_ref.real))
+    fp_re_max = float(np.max(S_ref.real))
+    fp_im_min = float(np.min(S_ref.imag))
+    fp_im_max = float(np.max(S_ref.imag))
+    fp_abs_min = float(np.min(np.abs(S_ref)))
+    fp_abs_max = float(np.max(np.abs(S_ref)))
+
+    # ---------------- RANGOS FXP ----------------
+    fxp_re_min = float(np.min(S_q.real))
+    fxp_re_max = float(np.max(S_q.real))
+    fxp_im_min = float(np.min(S_q.imag))
+    fxp_im_max = float(np.max(S_q.imag))
+    fxp_abs_min = float(np.min(np.abs(S_q)))
+    fxp_abs_max = float(np.max(np.abs(S_q)))
+
     with open(out_rpt_path, "w", encoding="utf-8") as f:
         f.write("QUANTIZATION REPORT\n")
         f.write("=========================================================\n\n")
@@ -128,6 +144,24 @@ def write_quant_report(
         f.write(f"mode                  : {mode}\n")
         f.write(f"range_realizable      : [{qmin}, {qmax}]\n\n")
 
+        f.write("VALUE RANGES\n")
+        f.write("---------------------------------------------------------\n")
+        f.write("[fp]\n")
+        f.write(f"real_min              : {fp_re_min:.12e}\n")
+        f.write(f"real_max              : {fp_re_max:.12e}\n")
+        f.write(f"imag_min              : {fp_im_min:.12e}\n")
+        f.write(f"imag_max              : {fp_im_max:.12e}\n")
+        f.write(f"abs_min               : {fp_abs_min:.12e}\n")
+        f.write(f"abs_max               : {fp_abs_max:.12e}\n\n")
+
+        f.write("[fxp]\n")
+        f.write(f"real_min              : {fxp_re_min:.12e}\n")
+        f.write(f"real_max              : {fxp_re_max:.12e}\n")
+        f.write(f"imag_min              : {fxp_im_min:.12e}\n")
+        f.write(f"imag_max              : {fxp_im_max:.12e}\n")
+        f.write(f"abs_min               : {fxp_abs_min:.12e}\n")
+        f.write(f"abs_max               : {fxp_abs_max:.12e}\n\n")
+
         f.write("GLOBAL METRICS\n")
         f.write("---------------------------------------------------------\n")
         f.write(f"max_abs_err_re        : {max_abs_err_re:.12e}\n")
@@ -136,7 +170,7 @@ def write_quant_report(
         f.write(f"mean_abs_err_re       : {mean_abs_err_re:.12e}\n")
         f.write(f"mean_abs_err_im       : {mean_abs_err_im:.12e}\n")
         f.write(f"mean_abs_err_complex  : {mean_abs_err_c:.12e}\n")
-        f.write(f"rmse_complex          : {rmse_c:.12e}\n")
+        f.write(f"rmse_complex          : {rmse_c:.12e}\n\n")
 
         f.write("POWER AND SNR\n")
         f.write("---------------------------------------------------------\n")

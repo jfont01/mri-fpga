@@ -102,6 +102,7 @@ def fxp_compute_b(
 
     for nx in range(Nx):
         for ny_alias in range(offset):
+            print(f"[{nx},{ny_alias}]")
 
             bi_fxp = fxp_compute_b_ij(S_q, y_q, nx, ny_alias)
             b[:, nx, ny_alias] = np.array([bi_fxp[0].to_complex(),

@@ -97,11 +97,9 @@ def main() -> None:
 
     print("[quantizer.py] Running cuantization of : ", smaps_path)
     S_q_re, S_q_im  = quantize_complex_tensor_3d(S_f, NB, NBF, mode, signed)
-    print("[quantizer.py] Quantization done")
 
     print("[quantizer.py] Running cuantization of : ", coils_alias_path)
     y_q_re, y_q_im  = quantize_complex_tensor_3d(y_f, NB, NBF, mode, signed)
-    print("[quantizer.py] Quantization done")
 
 
     
@@ -117,7 +115,7 @@ def main() -> None:
     print("[quantizer.py] Saved quantized aliased coils tensor to: ", out_path_y_npz)
 
     y_q = cast_q_to_f_complex(y_q_re, y_q_im, NB, NBF, signed)
-    write_quant_report(out_path_y_rpt, S_f, S_q, NB, NBF, coils_alias_path, out_path_y_npz, mode, signed)
+    write_quant_report(out_path_y_rpt, y_f, y_q, NB, NBF, coils_alias_path, out_path_y_npz, mode, signed)
     print("[quantizer.py] Saved aliased coils cuantization report to: ", out_path_y_rpt)
 
 if __name__ == "__main__":

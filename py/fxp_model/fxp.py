@@ -3,6 +3,14 @@ import math
 
 DEBUG_FXP_ASSERTS = False
 
+FXP_STATS = {
+    "fxp_add": 0,
+    "fxp_mul": 0,
+    "fxp_sub": 0,
+    "sat": 0,
+    "underflow": 0,
+    }
+
 class Fxp:
     def __init__(self, bits, NB, NBF, signed=True):
         self.NB = NB
@@ -25,6 +33,17 @@ class Fxp:
         self._val = APyFixed(value_int,
                             bits=NB,
                             int_bits=self.NBI)
+        
+
+                
+    @staticmethod
+    def reset_fxp_stats():
+        for k in FXP_STATS:
+            FXP_STATS[k] = 0
+
+    @staticmethod
+    def get_fxp_stats():
+        return dict(FXP_STATS)
 
 
     @classmethod
@@ -150,6 +169,7 @@ class Fxp:
             raise ValueError("No se soporta (por ahora) sumar signed con unsigned mezclados")
 
         res_val = self._val + sumando._val
+        FXP_STATS["fxp_add"] += 1
         return Fxp.from_apyfixed(res_val, signed=self.signed)
 
 
@@ -164,7 +184,9 @@ class Fxp:
             return NotImplemented
         if self.signed != restando.signed:
             raise ValueError("No se soporta mezclar signed/unsigned")
-        return self + (-restando)
+        FXP_STATS["fxp_sub"] += 1
+        res_val = self._val - restando._val
+        return Fxp.from_apyfixed(res_val, signed=self.signed)
 
     
     def __neg__(self):
@@ -249,58 +271,88 @@ class Fxp:
             raise ValueError("No se soporta (por ahora) multiplicar signed con unsigned mezclados")
 
         res_val = self._val * multiplicador._val
+        FXP_STATS["fxp_mul"] += 1
         return Fxp.from_apyfixed(res_val, signed=self.signed)
 
 
 
     ################## Casteo ##################
-    def cast(self, NB_out, NBF_out, mode='round', overflow='saturate'):
+    def cast(
+        self,
+        NB_out: int,
+        NBF_out: int,
+        mode: str = "round",
+        overflow: str = "saturate"
+    ) -> "Fxp":
         """
-        Re-castea el valor a un nuevo formato S(NB_out, NBF_out),
-        usando APyFixed.cast para hacer cuantización y control de overflow.
+        Recuantiza/castea el valor actual al formato de salida S(NB_out, NBF_out).
 
-        mode:       'round'     redondeo TIES_EVEN
-                    'trunc'     truncado TO_NEG
-        overflow:   'saturate'  saturación en min/max representable
-                    'wrap'      wrap-around
+        Cuenta:
+        - FXP_STATS["sat"]       : si el valor original no entra en el rango del formato destino
+        - FXP_STATS["underflow"] : si el valor original es no nulo, entra en rango,
+                                pero el resultado cuantizado queda exactamente en 0
         """
 
-        assert isinstance(NB_out, int) and NB_out > 0
-        assert isinstance(NBF_out, int) and 0 <= NBF_out <= NB_out
-        assert mode in ('round', 'trunc')
-        assert overflow in ('saturate', 'wrap')
-        assert self.signed is True, "por ahora solo signed=True"
-
-        NB_in  = self.NB
+        # formato actual
+        NB_in = self.NB
         NBF_in = self.NBF
+        NBI_in = NB_in - NBF_in
 
-        # Misma semántica que antes: si el formato destino es "más grande" en todo, no hacemos nada
-        if NB_out >= NB_in and NBF_out >= NBF_in:
-            return self
-
-        # Por compatibilidad con tu implementación previa
-        if NBF_out > NBF_in:
-            raise NotImplementedError("Por ahora solo NBF_out <= NBF_in")
-
-        # Mapeo de modos de cuantización a APyTypes
-        if mode == 'round':
-            qmode = QuantizationMode.TIES_EVEN
-        else:  # 'trunc'
-            qmode = QuantizationMode.TO_NEG
-
-        # Mapeo de modos de overflow a APyTypes
-        if overflow == 'saturate':
-            omode = OverflowMode.SAT
-        else:
-            omode = OverflowMode.WRAP
-
-        # Formato destino en APyFixed
+        # formato destino
         NBI_out = NB_out - NBF_out
 
-        res_val = self._val.cast(bits=NB_out,
-                                 int_bits=NBI_out,
-                                 quantization=qmode,
-                                 overflow=omode)
+        # si el formato destino preserva o amplia tanto parte entera como fraccional,
+        # el valor es exactamente representable en el nuevo formato
+        if NBF_out >= NBF_in and NBI_out >= NBI_in:
+            return self
+
+        # mapeo de modos
+        qmode_map = {
+            "trunc": QuantizationMode.TRN,
+            "round": QuantizationMode.TIES_EVEN,
+        }
+        omode_map = {
+            "saturate": OverflowMode.SAT,
+            "wrap": OverflowMode.WRAP,
+        }
+
+        if mode not in qmode_map:
+            raise ValueError(f"Modo de cuantización inválido: {mode}")
+        if overflow not in omode_map:
+            raise ValueError(f"Modo de overflow inválido: {overflow}")
+
+        # valor real de entrada
+        x_in = float(self.get_val())
+
+        # rango representable del formato destino
+        if self.signed:
+            qmin = -(2 ** (NBI_out - 1))
+            qmax = (2 ** (NBI_out - 1)) - (2 ** (-NBF_out))
+        else:
+            qmin = 0.0
+            qmax = (2 ** NBI_out) - (2 ** (-NBF_out))
+
+        # contar saturación si el valor está fuera de rango antes del cast
+        saturated = (x_in < qmin) or (x_in > qmax)
+        if saturated:
+            FXP_STATS["sat"] += 1
+
+        # cast real usando APyFixed
+        res_val = self._val.cast(
+            int_bits=NBI_out,
+            frac_bits=NBF_out,
+            quantization=qmode_map[mode],
+            overflow=omode_map[overflow],
+        )
+
+        x_out = float(res_val)
+
+        # contar underflow sólo si:
+        # - el valor de entrada era no nulo
+        # - no hubo saturación
+        # - el resultado terminó exactamente en 0
+        if (x_in != 0.0) and (not saturated) and (x_out == 0.0):
+            FXP_STATS["underflow"] += 1
 
         return Fxp.from_apyfixed(res_val, signed=self.signed)
 
@@ -317,9 +369,9 @@ class Fxp:
         # 2) redondeo/truncado
         if mode == 'round':
             if v >= 0:
-                q = int(v + 0.5)
+                q = math.floor(v + 0.5)
             else:
-                q = int(v - 0.5)
+                q = math.ceil(v - 0.5)
         else:
             q = math.floor(v)
 
@@ -331,14 +383,21 @@ class Fxp:
             q_max = (2**NB) - 1
             q_min = 0
 
-        if q > q_max: q = q_max
-        if q < q_min: q = q_min
+        if q > q_max: 
+            q = q_max
+            FXP_STATS["sat"] += 1
+        if q < q_min: 
+            q = q_min
+            FXP_STATS["sat"] += 1
 
         mask = (2**NB) - 1
         raw = q & mask
 
         bits_str = format(raw, f'0{NB}b')
         bits_list = [int(b) for b in bits_str]
+
+        if x != 0.0 and q == 0:
+            FXP_STATS["underflow"] += 1
 
         return cls(bits_list, NB, NBF, signed)
 

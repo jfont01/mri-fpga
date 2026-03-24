@@ -6,10 +6,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from multiprocess.fxp_multiprocessing_compute_A              import fxp_compute_A   # A: (2, 2, Nx, offset)
-from multiprocess.fxp_multiprocessing_compute_b              import fxp_compute_b   # A: (2, 2, Nx, offset)
-from helpers.comparision                                     import compare_A, compare_b
+from multiprocess.fxp_multiprocessing_compute_b                             import fxp_compute_b   # A: (2, 2, Nx, offset)
+from helpers.comparision                                     import compare_fxp_vs_fp
 from helpers.rpt_writer                                      import write_compare_report
-
+from helpers.img_savers                                      import *
 # ------------------------- ENVIRONMENT SET -------------------------
 SENSE_FP_DIR = os.environ.get("SENSE_FP_DIR")
 if SENSE_FP_DIR is None:
@@ -76,6 +76,13 @@ def parse_args() -> argparse.Namespace:
         help="round/trunc",
     )
 
+    parser.add_argument(
+        "--save-images",
+        type=str,
+        required=True,
+        help="round/trunc",
+    )
+
     return parser.parse_args()
 
 
@@ -90,6 +97,7 @@ def main() -> None:
     out_dir              = args.output_dir
     max_workers          = args.max_workers
     chunksize            = args.chunksize
+    save_images        = True if (args.save_images == "True") else False
 
     print("[fxp_sense.py]   Running fxp sense with smaps:", smaps_path_npz)
     print("[fxp_sense.py]   Running fxp sense with coils:", coils_alias_path_npz)
@@ -107,21 +115,24 @@ def main() -> None:
     A_fp    = fp_compute_A(S_fp)
 
     print(f"[fxp_sense.py]   Running fxp_compute_A ...")
-    A_fxp = fxp_compute_A(S_fxp, max_workers, chunksize)
 
-    print("[fxp_sense.py]   Running compare_A ...")
-    A_data = compare_A(A_fp, A_fxp)
+    A_result = fxp_compute_A(S_fxp, max_workers, chunksize)
 
+    A_fxp = A_result["A"]
+    stats_A = A_result["stats"]
 
+    print("[fxp_sense.py]   Running compare_fxp_vs_fp for A ...")
+    A_data = compare_fxp_vs_fp(A_fp, A_fxp, stats_A)
 
     print("[fxp_sense.py]   Running fp_compute_b ...")
     b_fp    = fp_compute_b(S_fp, y_fp)
 
     print(f"[fxp_sense.py]   Running fxp_compute_b ...")
-    b_fxp = fxp_compute_b(S_fxp, y_fxp, max_workers, chunksize)
-
-    print("[fxp_sense.py]   Running compare_b ...")
-    b_data = compare_b(b_fp, b_fxp)
+    b_result = fxp_compute_b(S_fxp, y_fxp, max_workers, chunksize)
+    b_fxp = b_result["b"]
+    stats_b = b_result["stats"]
+    print("[fxp_sense.py]   Running compare_fxp_vs_fp for b ...")
+    b_data = compare_fxp_vs_fp(b_fp, b_fxp, stats_b)
 
 
 
@@ -136,50 +147,14 @@ def main() -> None:
         A_data=A_data                           ,  
         b_data=b_data
     )
-    
 
+    if save_images:
+        print("[fxp_sense.py]   Saving A comparison figures ...")
+        save_A_compare_figures(A_fp, A_fxp, out_dir, prefix="A")
 
-    print(f"[fxp_sense.py]   Report saved in : {out_rpt_path}")
-
-
-
-    # b = fp_compute_b(S, y)
-
-    # print("A shape:", A.shape)
-    # print("b shape:", b.shape)
-
-    # # referencia
-    # m_hat_solve = fp_compute_m_hat(A, b, compute_type="numpy-linalg-solve", cholesky_type=None)
-    # img_solve = fp_img_recon(m_hat_solve)
-
-    # # L via numpy
-    # m_hat_np_l = fp_compute_m_hat(A, b, compute_type="numpy-linalg-cholesky", cholesky_type=None)
-    # img_np_l = fp_img_recon(m_hat_np_l)
-
-
-    # # LLH
-    # m_hat_llh = fp_compute_m_hat(A, b, compute_type="manual-solve", cholesky_type="LLH")
-    # img_llh = fp_img_recon(m_hat_llh)
-
-    # # LDLH
-    # m_hat_ldlh = fp_compute_m_hat(A, b, compute_type="manual-solve", cholesky_type="LDLH")
-    # img_ldlh = fp_img_recon(m_hat_ldlh)
-
-
-    # if save_all:
-    #     np.save(os.path.join(out_dir, "sense_rec_solve.npy"), img_solve)
-    #     np.save(os.path.join(out_dir, "sense_rec_llh.npy"), img_llh)
-    #     np.save(os.path.join(out_dir, "sense_rec_np_l.npy"), img_np_l)
-
-    #     plt.imsave(os.path.join(out_dir, "sense_rec_solve_mag.png"), img_solve, cmap="gray")
-    #     plt.imsave(os.path.join(out_dir, "sense_rec_np_l_mag.png"), img_np_l, cmap="gray")
-    #     plt.imsave(os.path.join(out_dir, "sense_rec_llh_mag.png"), img_llh, cmap="gray")
-
-
-    # np.save(os.path.join(out_dir, "sense_rec_ldlh.npy"), img_ldlh)
-    # plt.imsave(os.path.join(out_dir, "sense_rec_ldlh.png"), img_ldlh, cmap="gray")
-
-
+        print("[fxp_sense.py]   Saving b comparison figures ...")
+        save_b_compare_figures(b_fp, b_fxp, out_dir, prefix="b")
+            
 
     
 

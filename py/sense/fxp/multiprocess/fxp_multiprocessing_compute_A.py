@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from numpy.lib.npyio import NpzFile
 from concurrent.futures import ProcessPoolExecutor
-from typing import Tuple
+from typing import Tuple, Dict, Any
 
 # ------------------------- ENVIRONMENT SET -------------------------
 FXP_MODEL_ROOT = os.environ.get("FXP_MODEL_ROOT")
@@ -34,13 +34,39 @@ def _init_worker_A(
     NBF_S: int,
     signed: bool,
 ) -> None:
-
     global _RE_RAW, _IM_RAW, _NB_S, _NBF_S, _SIGNED
     _RE_RAW = re_raw
     _IM_RAW = im_raw
     _NB_S = NB_S
     _NBF_S = NBF_S
     _SIGNED = signed
+
+
+
+
+def _get_all_stats() -> Dict[str, int]:
+    """
+    Lee stats disponibles en Fxp y, si existe, también en CFxp.
+    Devuelve un único dict plano.
+    """
+    stats: Dict[str, int] = {}
+
+    if hasattr(Fxp, "get_fxp_stats"):
+        stats.update(Fxp.get_fxp_stats())
+
+    if hasattr(CFxp, "get_cfxp_stats"):
+        stats.update(CFxp.get_cfxp_stats())
+
+    return stats
+
+
+def _sum_stats(total: Dict[str, int], part: Dict[str, int]) -> Dict[str, int]:
+    """
+    Acumula stats parciales dentro del proceso padre.
+    """
+    for k, v in part.items():
+        total[k] = total.get(k, 0) + int(v)
+    return total
 
 
 def _fxp_compute_A_ij(
@@ -93,8 +119,8 @@ def _fxp_compute_A_ij(
             signed=signed
         )
 
-        A00 += CFxp((s0.re*s0.re + s0.im*s0.im), zero)
-        A11 += CFxp((s1.re*s1.re + s1.im*s1.im), zero)
+        A00 += CFxp((s0.re * s0.re + s0.im * s0.im), zero)
+        A11 += CFxp((s1.re * s1.re + s1.im * s1.im), zero)
         A01 += s0.conj() * s1
 
     A10 = A01.conj()
@@ -107,11 +133,12 @@ def _fxp_compute_A_ij(
     return Aij_np
 
 
-def _worker_compute_A_nx(nx: int) -> Tuple[int, np.ndarray]:
-
+def _worker_compute_A_nx(nx: int) -> Tuple[int, np.ndarray, Dict[str, int]]:
     global _RE_RAW, _IM_RAW, _NB_S, _NBF_S, _SIGNED
 
-    L, Nx, Ny = _RE_RAW.shape
+    Fxp.reset_fxp_stats()
+
+    _, _, Ny = _RE_RAW.shape
     Af = 2
     offset = Ny // Af
 
@@ -122,32 +149,25 @@ def _worker_compute_A_nx(nx: int) -> Tuple[int, np.ndarray]:
             _RE_RAW, _IM_RAW, _NB_S, _NBF_S, _SIGNED, nx, ny_alias
         )
 
-    return nx, A_nx
+    stats_nx = _get_all_stats()
+
+    return nx, A_nx, stats_nx
 
 
 def fxp_compute_A(
     S_q: NpzFile,
     max_workers: int | None = None,
     chunksize: int = 4,
-) -> np.ndarray:
-
+) -> Dict[str, Any]:
+    
     re_raw = S_q["re_raw"]
     im_raw = S_q["im_raw"]
     NB_S = int(S_q["NB"])
     NBF_S = int(S_q["NBF"])
     signed = bool(int(S_q["signed"]))
 
-    if re_raw.shape != im_raw.shape:
-        raise ValueError("re_raw e im_raw deben tener el mismo shape")
-
-    if re_raw.ndim != 3:
-        raise ValueError(f"re_raw debe ser 3D, recibió shape={re_raw.shape}")
-
     _, Nx, Ny = re_raw.shape
     Af = 2
-
-    if Ny % Af != 0:
-        raise ValueError("Ny debe ser par para Af = 2")
 
     offset = Ny // Af
     A = np.zeros((2, 2, Nx, offset), dtype=np.complex128)
@@ -155,13 +175,23 @@ def fxp_compute_A(
     if max_workers is None:
         max_workers = os.cpu_count() or 1
 
+    stats_total: Dict[str, int] = {}
+
     with ProcessPoolExecutor(
         max_workers=max_workers,
         initializer=_init_worker_A,
         initargs=(re_raw, im_raw, NB_S, NBF_S, signed),
     ) as executor:
 
-        for nx, A_nx in executor.map(_worker_compute_A_nx, range(Nx), chunksize=chunksize):
+        for nx, A_nx, stats_nx in executor.map(
+            _worker_compute_A_nx,
+            range(Nx),
+            chunksize=chunksize
+        ):
             A[:, :, nx, :] = A_nx
+            _sum_stats(stats_total, stats_nx)
 
-    return A
+    return {
+        "A": A,
+        "stats": stats_total,
+    }
