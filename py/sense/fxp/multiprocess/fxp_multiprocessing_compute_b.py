@@ -1,7 +1,6 @@
 import os
 import sys
 import numpy as np
-from numpy.lib.npyio import NpzFile
 from concurrent.futures import ProcessPoolExecutor
 from typing import Tuple, Dict, Any
 
@@ -13,8 +12,18 @@ if FXP_MODEL_ROOT is None:
 sys.path.insert(0, FXP_MODEL_ROOT)
 
 from fxp import Fxp
-from cfxp import CFxp
-from cfxptensor import  CFxpTensor
+from cfxptensor import CFxpTensor
+
+SENSE_FXP_DIR = os.environ.get("SENSE_FXP_DIR")
+if SENSE_FXP_DIR is None:
+    raise RuntimeError("[ERROR] SENSE_FXP_DIR not defined")
+
+sys.path.insert(0, os.path.join(SENSE_FXP_DIR, "singleprocess"))
+
+from fxp_compute_b import fxp_compute_b_i
+
+sys.path.insert(0, os.path.join(SENSE_FXP_DIR, "helpers"))
+from fxp_stats import _get_all_stats, _sum_stats
 # ------------------------------------------------------------------
 
 
@@ -34,115 +43,106 @@ def _init_worker_b(
     _Y_Q = y_q
 
 
-def _get_all_stats() -> Dict[str, int]:
-    stats: Dict[str, int] = {}
-    stats.update(Fxp.get_fxp_stats())
 
-    return stats
+def _worker_compute_b_nx(nx: int) -> Tuple[int, CFxpTensor, Dict[str, Any]]:
+    global _S_Q, _Y_Q
+
+    Fxp.reset_fxp_stats()
+
+    NB_S = _S_Q.NB
+    NBF_S = _S_Q.NBF
+    NB_Y = _Y_Q.NB
+    NBF_Y = _Y_Q.NBF
+    signed = _S_Q.signed
+
+    if _Y_Q.signed != signed:
+        raise ValueError("S_q e y_q tienen signed distinto")
+
+    L, _, Ny = _S_Q.shape
+    Ly, _, offset_y = _Y_Q.shape
+    Af = 2
+
+    if Ny % Af != 0:
+        raise ValueError("Ny debe ser par para Af = 2")
+
+    offset = Ny // Af
+
+    if Ly != L or offset_y != offset:
+        raise ValueError(
+            f"Shapes incompatibles en worker: "
+            f"S_q.shape={_S_Q.shape}, y_q.shape={_Y_Q.shape}"
+        )
+
+    grow_bits = int(np.ceil(np.log2(L))) if L > 1 else 0
+    NB_B = NB_S + NB_Y + grow_bits
+    NBF_B = NBF_S + NBF_Y
+
+    b_nx = CFxpTensor.zeros(
+        shape=(2, offset),
+        NB=NB_B,
+        NBF=NBF_B,
+        signed=signed,
+    )
+
+    # stats locales del worker
+    stats_nx: Dict[str, Any] = {}
+
+    for ny_alias in range(offset):
+        bi = fxp_compute_b_i(_S_Q, _Y_Q, nx, ny_alias, stats_nx)   # shape (2,)
+
+        b_nx[0, ny_alias] = bi[0]
+        b_nx[1, ny_alias] = bi[1]
+
+    # fusionar contadores de bajo nivel de Fxp
+    low_level_stats = _get_all_stats()
+    _sum_stats(stats_nx, low_level_stats)
+
+    return nx, b_nx, stats_nx
 
 
-def _sum_stats(total: Dict[str, int], part: Dict[str, int]) -> Dict[str, int]:
-    for k, v in part.items():
-        total[k] = total.get(k, 0) + int(v)
-    return total
-
-
-def _fxp_compute_b_ij(
+def fxp_multiprocessing_compute_b(
     S_q: CFxpTensor,
     y_q: CFxpTensor,
-    nx: int,
-    ny_alias: int
-) -> np.ndarray:
-
-
-    Ls, NxS, Ny = S_q.shape
-    Ly, NxY, offset = y_q.shape
+    max_workers: int | None = None,
+    chunksize: int = 4,
+) -> Tuple[CFxpTensor, Dict[str, Any]]:
 
     NB_S = S_q.NB
     NBF_S = S_q.NBF
-    signed = S_q.signed
-
     NB_Y = y_q.NB
     NBF_Y = y_q.NBF
+    signed = S_q.signed
 
+    if y_q.signed != signed:
+        raise ValueError("S_q e y_q tienen signed distinto")
+
+    Ls, Nx, Ny = S_q.shape
+    Ly, NxY, offset = y_q.shape
     Af = 2
+
+    if Ny % Af != 0:
+        raise ValueError("Ny debe ser par para Af = 2")
+
+    if Ly != Ls or NxY != Nx or offset != Ny // Af:
+        raise ValueError(
+            f"Shapes incompatibles: S_q.shape={S_q.shape}, y_q.shape={y_q.shape}"
+        )
 
     grow_bits = int(np.ceil(np.log2(Ls))) if Ls > 1 else 0
     NB_B = NB_S + NB_Y + grow_bits
     NBF_B = NBF_S + NBF_Y
 
-    b0 = CFxp.from_complex(0.0 + 0.0j, NB_B, NBF_B, mode="round", signed=signed)
-    b1 = CFxp.from_complex(0.0 + 0.0j, NB_B, NBF_B, mode="round", signed=signed)
-
-    ny0 = ny_alias
-    ny1 = ny_alias + offset
-
-    for l in range(Ls):
-        s0 = S_q[l, nx, ny0]
-        s1 = S_q[l, nx, ny1]
-
-        y0 = y_q[l, nx, ny_alias]
-
-        p0 = (s0.conj() * y0).cast(NB_B, NBF_B, mode="round")
-        p1 = (s1.conj() * y0).cast(NB_B, NBF_B, mode="round")
-
-        b0 = b0 + p0
-        b1 = b1 + p1
-
-    bi_np = np.array(
-        [b0.to_complex(), b1.to_complex()],
-        dtype=np.complex128
+    b = CFxpTensor.zeros(
+        shape=(2, Nx, offset),
+        NB=NB_B,
+        NBF=NBF_B,
+        signed=signed,
     )
-
-    return bi_np
-
-
-def _worker_compute_b_nx(nx: int) -> Tuple[int, np.ndarray, Dict[str, int]]:
-
-    global _S_Q, _Y_Q
-
-    Fxp.reset_fxp_stats()
-
-    _, _, Ny = _S_Q.shape
-
-    Af = 2
-    offset = Ny // Af
-
-    b_nx = np.zeros((2, offset), dtype=np.complex128)
-
-    for ny_alias in range(offset):
-        b_nx[:, ny_alias] = _fxp_compute_b_ij(_S_Q, _Y_Q, nx, ny_alias)
-
-    stats_nx = _get_all_stats()
-
-    return nx, b_nx, stats_nx
-
-
-def fxp_compute_b(
-    S_q: CFxpTensor,
-    y_q: CFxpTensor,
-    max_workers: int | None = None,
-    chunksize: int = 4,
-) -> Dict[str, Any]:
-
-    Ls, Nx, Ny = S_q.shape
-    Ly, NxY, offset = y_q.shape
-
-    NB_S = S_q.NB
-    NBF_S = S_q.NBF
-    signed = S_q.signed
-
-    NB_Y = y_q.NB
-    NBF_Y = y_q.NBF
-
-    Af = 2
-
-    b = np.zeros((2, Nx, offset), dtype=np.complex128)
 
     if max_workers is None:
         max_workers = os.cpu_count() or 1
 
-    stats_total: Dict[str, int] = {}
+    stats_total: Dict[str, Any] = {}
 
     with ProcessPoolExecutor(
         max_workers=max_workers,
@@ -155,10 +155,10 @@ def fxp_compute_b(
             range(Nx),
             chunksize=chunksize
         ):
-            b[:, nx, :] = b_nx
+            for ny_alias in range(offset):
+                b[0, nx, ny_alias] = b_nx[0, ny_alias]
+                b[1, nx, ny_alias] = b_nx[1, ny_alias]
+
             _sum_stats(stats_total, stats_nx)
 
-    return {
-        "b": b,
-        "stats": stats_total,
-    }
+    return b, stats_total

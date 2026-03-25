@@ -4,24 +4,16 @@ from typing import Any, Iterable
 
 from fxp import Fxp
 from cfxp import CFxp
+import numpy as np
+from typing import Any
+
+from cfxp import CFxp
+
+
 
 
 class CFxpTensor:
-    """
-    Tensor complejo fixed-point de n dimensiones.
-
-    Internamente almacena:
-        - shape
-        - data: list[CFxp] en orden row-major (C-order)
-
-    Esta primera versión prioriza claridad del modelo.
-    """
-
-    def __init__(
-        self,
-        data: list[CFxp],
-        shape: tuple[int, ...],
-    ):
+    def __init__(self, data: list[CFxp], shape: tuple[int, ...]):
         if len(shape) < 1:
             raise ValueError(f"shape inválido: {shape}")
 
@@ -41,8 +33,26 @@ class CFxpTensor:
             if not isinstance(z, CFxp):
                 raise TypeError(f"data[{i}] no es CFxp, es {type(z)}")
 
+        # verificar formato homogéneo
+        z0 = data[0]
+        NB = z0.re.NB
+        NBF = z0.re.NBF
+        signed = z0.re.signed
+
+        for i, z in enumerate(data):
+            if z.re.NB != NB or z.im.NB != NB:
+                raise ValueError(f"Formato NB inconsistente en data[{i}]")
+            if z.re.NBF != NBF or z.im.NBF != NBF:
+                raise ValueError(f"Formato NBF inconsistente en data[{i}]")
+            if z.re.signed != signed or z.im.signed != signed:
+                raise ValueError(f"Formato signed inconsistente en data[{i}]")
+
         self._data = data
         self._shape = tuple(shape)
+        self._NB = NB
+        self._NBF = NBF
+        self._signed = signed
+
 
     # ------------------------------------------------------------
     # propiedades básicas
@@ -307,7 +317,7 @@ class CFxpTensor:
 
         return X
 
-    def to_npz(self, out_path: str, mode: str = "round") -> None:
+    def save_as_npz(self, out_path: str, mode: str = "round") -> None:
         # detecta formato desde el primer elemento
         if self.size == 0:
             raise ValueError("Tensor vacío")
@@ -350,6 +360,7 @@ class CFxpTensor:
             shape=np.array(self.shape, dtype=np.int32),
         )
 
+
     # ------------------------------------------------------------
     # utilidades
     # ------------------------------------------------------------
@@ -358,3 +369,96 @@ class CFxpTensor:
 
     def copy(self) -> "CFxpTensor":
         return CFxpTensor(data=list(self._data), shape=self.shape)
+    
+
+    # ------------------------------------------------------------
+    # pickling custom
+    # ------------------------------------------------------------
+    def __getstate__(self) -> dict[str, Any]:
+        re_raw, im_raw = self.to_uint_ndarrays()
+
+        return {
+            "re_raw": re_raw,
+            "im_raw": im_raw,
+            "NB": self.NB,
+            "NBF": self.NBF,
+            "signed": self.signed,
+            "shape": self.shape,
+        }
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        tmp = self.from_uint_ndarrays(
+            re_raw=state["re_raw"],
+            im_raw=state["im_raw"],
+            NB=int(state["NB"]),
+            NBF=int(state["NBF"]),
+            signed=bool(state["signed"]),
+        )
+
+        self._data = tmp._data
+        self._shape = tmp._shape
+        self._NB = tmp._NB
+        self._NBF = tmp._NBF
+        self._signed = tmp._signed
+
+    # ------------------------------------------------------------
+    # utilidades raw
+    # ------------------------------------------------------------
+    @staticmethod
+    def raw_dtype_from_NB(NB: int):
+        if NB <= 8:
+            return np.uint8
+        elif NB <= 16:
+            return np.uint16
+        elif NB <= 32:
+            return np.uint32
+        elif NB <= 64:
+            return np.uint64
+        else:
+            raise ValueError(f"NB={NB} no soportado para almacenamiento raw")
+
+    def to_uint_ndarrays(self) -> tuple[np.ndarray, np.ndarray]:
+        raw_dtype = self.raw_dtype_from_NB(self.NB)
+
+        re_raw = np.zeros(self.shape, dtype=raw_dtype)
+        im_raw = np.zeros(self.shape, dtype=raw_dtype)
+
+        for flat, z in enumerate(self._data):
+            idx = np.unravel_index(flat, self.shape)
+            re_u, im_u = z.to_uint()
+            re_raw[idx] = re_u
+            im_raw[idx] = im_u
+
+        return re_raw, im_raw
+
+    @classmethod
+    def from_uint_ndarrays(
+        cls,
+        re_raw: np.ndarray,
+        im_raw: np.ndarray,
+        NB: int,
+        NBF: int,
+        signed: bool = True,
+    ) -> "CFxpTensor":
+        re_raw = np.asarray(re_raw)
+        im_raw = np.asarray(im_raw)
+
+        if re_raw.shape != im_raw.shape:
+            raise ValueError(
+                f"re_raw e im_raw deben tener el mismo shape: "
+                f"{re_raw.shape} vs {im_raw.shape}"
+            )
+
+        data: list[CFxp] = []
+        for idx in np.ndindex(re_raw.shape):
+            data.append(
+                CFxp.from_uint_pair(
+                    int(re_raw[idx]),
+                    int(im_raw[idx]),
+                    NB=NB,
+                    NBF=NBF,
+                    signed=signed,
+                )
+            )
+
+        return cls(data=data, shape=re_raw.shape)

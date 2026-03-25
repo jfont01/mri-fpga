@@ -29,14 +29,6 @@ if [[ ${#NB_LIST[@]} -ne ${#NBF_LIST[@]} ]]; then
 fi
 
 ###########################################################################
-#  Construcción de paths de phantom / smaps / coils aliasadas
-###########################################################################
-PHANTOM_DIR="$SENSE_GEN_DIR/output/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}"
-SENS_MAPS_NPY_PATH="$PHANTOM_DIR/sens-maps/smap.npy"
-ALIASED_COILS_NPY_PATH="$PHANTOM_DIR/coils-aliased/coil_aliased.npy"
-
-
-###########################################################################
 #  Parámetros cargados desde config.conf
 ###########################################################################
 echo "[run_sense_fxp.sh] Files to quantize:"
@@ -71,8 +63,6 @@ for idx in "${!NB_LIST[@]}"; do
   printf "[run_sense_fxp.sh] ${YELLOW}Running fxp_sense.py with NB=${NB} NBF=${NBF}${NC}\n"
 
   python3 "$SENSE_FXP_DIR/fxp_sense.py"                   \
-    --smaps-npy-path="$SENS_MAPS_NPY_PATH"                \
-    --aliased-coils-npy-path="$ALIASED_COILS_NPY_PATH"    \
     --smaps-npz-path="$S_NPZ_PATH"                        \
     --aliased-coils-npz-path="$Y_NPZ_PATH"                \
     --output-dir="$OUTPUT_DIR"                            \

@@ -5,21 +5,10 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from multiprocess.fxp_multiprocessing_compute_A              import fxp_compute_A   # A: (2, 2, Nx, offset)
-from multiprocess.fxp_multiprocessing_compute_b                             import fxp_compute_b   # A: (2, 2, Nx, offset)
-from helpers.comparision                                     import compare_fxp_vs_fp
-from helpers.rpt_writer                                      import write_compare_report
-from helpers.img_savers                                      import *
+from multiprocess.fxp_multiprocessing_compute_A              import fxp_multiprocessing_compute_A
+from multiprocess.fxp_multiprocessing_compute_b              import fxp_multiprocessing_compute_b
+from helpers.fxp_rpt_writer                                  import fxp_rpt_writer
 # ------------------------- ENVIRONMENT SET -------------------------
-SENSE_FP_DIR = os.environ.get("SENSE_FP_DIR")
-if SENSE_FP_DIR is None:
-    raise RuntimeError("[ERROR] SENSE_FP_DIR not defined")
-
-sys.path.insert(0, SENSE_FP_DIR)
-
-from fp_compute_A       import fp_compute_A
-from fp_compute_b       import fp_compute_b
-
 FXP_MODEL_ROOT = os.environ.get("FXP_MODEL_ROOT")
 if FXP_MODEL_ROOT is None:
     raise RuntimeError("[ERROR] FXP_MODEL_ROOT not defined")
@@ -27,23 +16,19 @@ if FXP_MODEL_ROOT is None:
 sys.path.insert(0, FXP_MODEL_ROOT)
 
 from cfxptensor import CFxpTensor
+
+SENSE_FXP_DIR = os.environ.get("SENSE_FXP_DIR")
+if SENSE_FXP_DIR is None:
+    raise RuntimeError("[ERROR] SENSE_FXP_DIR not defined")
+
+
+sys.path.insert(0, os.path.join(SENSE_FXP_DIR, "helpers"))
+from fxp_stats import *
 # ------------------------------------------------------------------
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-    )
-
-    parser.add_argument(
-        "--smaps-npy-path",
-        type=str,
-        required=True
-    )
-
-    parser.add_argument(
-        "--aliased-coils-npy-path",
-        type=str,
-        required=True
     )
 
     parser.add_argument(
@@ -89,8 +74,6 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    smaps_path_npy       = args.smaps_npy_path
-    coils_alias_path_npy = args.aliased_coils_npy_path
     smaps_path_npz       = args.smaps_npz_path
     coils_alias_path_npz = args.aliased_coils_npz_path
     out_dir              = args.output_dir
@@ -103,88 +86,96 @@ def main() -> None:
 
     os.makedirs(out_dir, exist_ok=True)
 
-    S_fp = np.load(smaps_path_npy).astype(np.complex128)
-    y_fp = np.load(coils_alias_path_npy).astype(np.complex128)
-
     S_fxp = CFxpTensor.from_npz(smaps_path_npz)
     y_fxp = CFxpTensor.from_npz(coils_alias_path_npz)
 
     # ---------------------------------------------------------
     # A
     # ---------------------------------------------------------
-    print("[fxp_sense.py]   Running fp_compute_A ...")
-    A_fp = fp_compute_A(S_fp)
+    print("[fxp_sense.py]   Running fxp_multiprocessing_compute_A ...")
+    A_fxp, stats_A = fxp_multiprocessing_compute_A(S_fxp, max_workers, chunksize)
 
-    print("[fxp_sense.py]   Running fxp_compute_A ...")
-    A_result = fxp_compute_A(S_fxp, max_workers, chunksize)
-    A_fxp = A_result["A"]
-    stats_A = A_result["stats"]
-
-    print("[fxp_sense.py]   Running compare_fxp_vs_fp for A ...")
-    A_data = compare_fxp_vs_fp(A_fp, A_fxp, stats_A)
+    A_hermitian_stats = hermitian_error_metrics_A(A_fxp)
+    stats_A["hermitian_checks"] = A_hermitian_stats
+    stats_A["structure_checks"] = A_structure_metrics(A_fxp, eps=1e-12)
+    
+    print("[fxp_sense.py]   Saving A_fxp ...")
+    A_dir = os.path.join(out_dir, "A")
+    os.makedirs(A_dir, exist_ok=True)
+    A_fxp.save_as_npz(os.path.join(A_dir, "A.npz"))
+    fxp_rpt_writer(os.path.join(A_dir, "A.rpt"), stats_A, os.path.join(A_dir, "A.npz"))
 
     # ---------------------------------------------------------
     # b
     # ---------------------------------------------------------
-    print("[fxp_sense.py]   Running fp_compute_b ...")
-    b_fp = fp_compute_b(S_fp, y_fp)
+    print("[fxp_sense.py]   Running fxp_multiprocessing_compute_b ...")
+    b_fxp, stats_b = fxp_multiprocessing_compute_b(S_fxp, y_fxp, max_workers, chunksize)
 
-    print("[fxp_sense.py]   Running fxp_compute_b ...")
-    b_result = fxp_compute_b(S_fxp, y_fxp, max_workers, chunksize)
-    b_fxp = b_result["b"]
-    stats_b = b_result["stats"]
+    print("[fxp_sense.py]   Saving b_fxp ...")
+    b_dir = os.path.join(out_dir, "b")
+    os.makedirs(b_dir, exist_ok=True)
+    b_fxp.save_as_npz(os.path.join(b_dir, "b.npz"))
+    fxp_rpt_writer(os.path.join(b_dir, "b.rpt"), stats_b, os.path.join(b_dir, "b.npz"))
 
-    print("[fxp_sense.py]   Running compare_fxp_vs_fp for b ...")
-    b_data = compare_fxp_vs_fp(b_fp, b_fxp, stats_b)
+    # ---------------------------------------------------------
+    # LD
+    # ---------------------------------------------------------
+    """   
+    print("[fxp_sense.py]   Running fxp_compute_LD ...")
+    L_fxp, D_fxp, stats_L, stats_D = fxp_multiprocessing_compute_LD(A_fxp, max_workers, chunksize)
 
+
+    print("[fxp_sense.py]   Saving L_fxp ...")
+    L_dir = os.path.join(out_dir, "L")
+    os.makedirs(L_dir, exist_ok=True)
+    L_fxp.save_as_npz(os.path.join(L_dir, "L.npz"))
+    fxp_rpt_writer(os.path.join(L_dir, "L.rpt"), stats_L, os.path.join(L_dir, "L.npz"))
+
+    print("[fxp_sense.py]   Saving D_fxp ...")
+    D_dir = os.path.join(out_dir, "D")
+    os.makedirs(D_dir, exist_ok=True)
+    D_fxp.save_as_npz(os.path.join(D_dir, "D.npz"))
+    fxp_rpt_writer(os.path.join(D_dir, "D.rpt"), stats_D, os.path.join(D_dir, "D.npz"))
+    """
     # ---------------------------------------------------------
     # m_hat
     # ---------------------------------------------------------
-    # print("[fxp_sense.py]   Running fp_compute_m_hat ...")
-    # m_hat_fp = fp_compute_m_hat(
-    #     A_fp,
-    #     b_fp,
-    #     compute_type="numpy-linalg-solve",
-    #     cholesky_type=None,
-    # )
+    """    
+    print("[fxp_sense.py]   Running fxp_compute_m_hat ...")
+    m_hat_fxp, stats_m_hat = fxp_multiprocessing_compute_m_hat(A_fxp, b_fxp, max_workers, chunksize)
 
-    # print("[fxp_sense.py]   Running fxp_compute_m_hat ...")
-    # m_hat_fxp = fxp_compute_m_hat(
-    #     A_fxp,
-    #     b_fxp,
-    #     compute_type="numpy-linalg-solve",
-    #     cholesky_type=None,
-    # )
-
-    # si todavía no tenés stats propias del solver de m_hat,
-    # podés dejar dict vacío o agregar una marca descriptiva
-    # stats_m = {}
-
-    # print("[fxp_sense.py]   Running compare_fxp_vs_fp for m_hat ...")
-    # m_data = compare_fxp_vs_fp(m_hat_fp, m_hat_fxp, stats_m)
-
+    print("[fxp_sense.py]   Saving m_hat_fxp ...")
+    m_hat_dir = os.path.join(out_dir, "m_hat")
+    os.makedirs(m_hat_dir, exist_ok=True)
+    m_hat_fxp.save_as_npz(os.path.join(m_hat_dir, "m_hat.npz"))
+    fxp_rpt_writer(os.path.join(m_hat_dir, "m_hat.rpt"), stats_m_hat, os.path.join(m_hat_dir, "m_hat.npz"))
+    """
     # ---------------------------------------------------------
     # reporte
     # ---------------------------------------------------------
-    print("[fxp_sense.py]   Running write_compare_report ...")
-    out_rpt_path = os.path.join(out_dir, "report.rpt")
-    write_compare_report(
-        out_rpt_path=out_rpt_path,
-        S_f_input_path=smaps_path_npy,
-        S_q_input_path=smaps_path_npz,
-        y_f_input_path=coils_alias_path_npy,
-        y_q_input_path=coils_alias_path_npz,
-        A_data=A_data,
-        b_data=b_data
-    )
+    stats_list = [
+        stats_A,
+        stats_b
+        #stats_L,
+        #stats_D,
+        #stats_m_hat,
+    ]
 
-    if save_images:
-        print("[fxp_sense.py]   Saving A comparison figures ...")
-        save_A_compare_figures(A_fp, A_fxp, out_dir, prefix="A")
+    paths_list = [
+        os.path.join(A_dir, "A.npz"),
+        os.path.join(b_dir, "b.npz")
+        #os.path.join(L_dir, "L.npz"),
+        #os.path.join(D_dir, "D.npz"),
+       # os.path.join(m_hat_dir, "m_hat.npz"),
+    ]
 
-        print("[fxp_sense.py]   Saving b comparison figures ...")
-        save_b_compare_figures(b_fp, b_fxp, out_dir, prefix="b")
-    
+    global_fxp_rpt_path = os.path.join(out_dir, "global_report.rpt")
+
+    fxp_rpt_writer(global_fxp_rpt_path, stats_list, paths_list)
+    fxp_rpt_writer(global_fxp_rpt_path, stats_list, paths_list)
+
+
+
 
 if __name__ == "__main__":
     main()
