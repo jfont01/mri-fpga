@@ -25,7 +25,7 @@ def compute_error_metrics(ref: np.ndarray, test: np.ndarray) -> dict:
         "snr_db": snr_db,
     }
 
-def save_compare_report(
+def rpt_writer_cholesky_methods(
     out_rpt_path: str,
     A: np.ndarray,
     b: np.ndarray,

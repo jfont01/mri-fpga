@@ -3,7 +3,7 @@ from numpy.typing import NDArray
 
 
 
-def fp_img_recon(
+def fp_compute_I(
     m_hat: NDArray[np.complex128],
 ) -> NDArray[np.float64]:
     comps, Nx, offset = m_hat.shape
@@ -12,7 +12,7 @@ def fp_img_recon(
     Af = 2
     Ny = offset * Af
 
-    img_rec = np.zeros((Nx, Ny), dtype=np.complex128)
+    I = np.zeros((Nx, Ny), dtype=np.complex128)
 
     for nx in range(Nx):
         for ny_alias in range(offset):
@@ -22,7 +22,7 @@ def fp_img_recon(
             ny0 = ny_alias
             ny1 = ny_alias + offset
 
-            img_rec[nx, ny0] = m0
-            img_rec[nx, ny1] = m1
+            I[nx, ny0] = m0
+            I[nx, ny1] = m1
 
-    return np.abs(img_rec)
+    return np.abs(I)

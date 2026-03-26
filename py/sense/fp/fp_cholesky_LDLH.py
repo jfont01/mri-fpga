@@ -2,7 +2,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 
-def fp_compute_LD(
+def fp_compute_LD_ij(
     A: NDArray[np.complex128],
     eps: float = 1e-12,
 ) -> tuple[NDArray[np.complex128], NDArray[np.complex128]]:
@@ -54,7 +54,7 @@ def fp_compute_LD(
     return L, D
 
 
-def fp_forward_subst_ldlh(
+def fp_forward_subst_ldlh_i(
     L: NDArray[np.complex128],
     b: NDArray[np.complex128],
 ) -> NDArray[np.complex128]:
@@ -76,7 +76,7 @@ def fp_forward_subst_ldlh(
     return y
 
 
-def fp_diagonal_subst(
+def fp_diagonal_subst_ldlh_i(
     D: NDArray[np.complex128],
     y: NDArray[np.complex128],
     eps: float = 1e-12,
@@ -106,7 +106,7 @@ def fp_diagonal_subst(
     return z
 
 
-def fp_backward_subst_ldlh(
+def fp_backward_subst_ldlh_i(
     L: NDArray[np.complex128],
     z: NDArray[np.complex128],
 ) -> NDArray[np.complex128]:
@@ -126,25 +126,4 @@ def fp_backward_subst_ldlh(
     m_hat[0] = z[0] - np.conj(L[1, 0]) * m_hat[1]
 
     return m_hat
-
-
-def fp_cholesky_ldlh(
-    Aij: NDArray[np.complex128],
-    bij: NDArray[np.complex128],
-    eps: float = 1e-12,
-) -> NDArray[np.complex128]:
-    """
-    Resuelve Aij m = bij usando LDL^H manual 2x2.
-
-    Aij : (2,2)
-    bij : (2,)
-    Devuelve:
-        m_hat : (2,)
-    """
-    L, D = fp_compute_LD(Aij, eps=eps)
-    y = fp_forward_subst_ldlh(L, bij)
-    z = fp_diagonal_subst(D, y, eps=eps)
-    m_hat = fp_backward_subst_ldlh(L, z)
-    return m_hat
-
 

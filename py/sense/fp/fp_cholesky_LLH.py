@@ -76,7 +76,7 @@ def fp_backward_subst(
 
 
 
-def fp_cholesky_llh(
+def fp_compute_m_hat_i_llh(
     Aij: NDArray[np.complex128],
     bij: NDArray[np.complex128],
     eps: float = 1e-12,

@@ -31,32 +31,3 @@ def fp_compute_A_ij(
                   [A10, A11]], dtype=np.complex128)
     return A
 
-
-def fp_compute_A(
-    S: NDArray[np.complex128]
-)-> NDArray[np.complex128]:
-    
-    L, Nx, Ny = S.shape
-    Af = 2
-    offset = Ny // Af
-    A = np.zeros((2, 2, Nx, offset), dtype=np.complex128)
-
-    for nx in range(Nx):                # recorre nx de [0, Nx - 1]
-        for ny_alias in range(offset):  # recorre ny_alias de [0, Ny/2 - 1]
-            Aij = fp_compute_A_ij(S, nx, ny_alias)  # (2,2)
-            A[:, :, nx, ny_alias] = Aij
-    return A
-
-
-
-def main() -> None:
-
-    S = np.load("smap_N32.npy").astype(np.complex128)
-    print(S.shape)
-
-    A = fp_compute_A(S)
-
-    print(A.shape)
-
-if __name__ == "__main__":
-    main()

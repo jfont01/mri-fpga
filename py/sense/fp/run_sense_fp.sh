@@ -58,10 +58,10 @@ echo "SENS_MAPS_NPY_PATH     = $SENS_MAPS_NPY_PATH"
 echo "ALIASED_COILS_NPY_PATH = $ALIASED_COILS_NPY_PATH"
 echo ""
 
-echo "[run_sense_fp.sh]   Running fp_sense.py"
+echo "[run_sense_fp.sh]   Running fp_sense_runner.py"
 echo ""
 
-python3 "$SENSE_FP_DIR/fp_sense.py"                       \
+python3 "$SENSE_FP_DIR/fp_sense_runner.py"                       \
   --smaps-npy-path="$SENS_MAPS_NPY_PATH"                  \
   --aliased-coils-npy-path="$ALIASED_COILS_NPY_PATH"      \
   --output-path="$OUTPUT_DIR"                             

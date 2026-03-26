@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
 from numpy.typing import NDArray
-import matplotlib.pyplot as plt
 
 def fp_compute_b_i(
     S: NDArray[np.complex128],
@@ -31,34 +30,3 @@ def fp_compute_b_i(
     bi = np.array([b0, b1], dtype=np.complex128)
 
     return bi
-
-def fp_compute_b(
-        S: NDArray[np.complex128],
-        y: NDArray[np.complex128]
-) -> NDArray[np.complex128]:
-    
-    L, Nx, Ny = S.shape
-    Af = 2
-    offset = Ny // Af
-    b = np.zeros((2, Nx, offset), dtype=np.complex128)
-
-
-    for nx in range(Nx):                # recorre nx de [0, Nx - 1]
-        for ny_alias in range(offset):  # recorre ny_alias de [0, Ny/2 - 1]
-            bi = fp_compute_b_i(S, y, nx, ny_alias)  # (2,1)
-            b[:, nx, ny_alias] = bi
-    return b
-
-def main() -> None:
-    # 1) Cargar mapas de sensibilidad
-    S = np.load("smap_N32.npy").astype(np.complex128)
-    y = np.load("coil_aliased_Af2_axisy.npy").astype(np.complex128)
-    print("S shape: ", S.shape)
-    print("y shape: ", y.shape)
-
-    b = fp_compute_b(S, y)
-
-    print("b shape: ", b.shape)
-
-if __name__ == "__main__":
-    main()
