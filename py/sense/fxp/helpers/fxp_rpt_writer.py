@@ -4,9 +4,43 @@ from typing import Dict, List, Union, Any
 
 def fxp_rpt_writer(
     out_rpt_path: str,
-    stats: Union[Dict[str, Any], List[Dict[str, Any]]],
-    paths: Union[str, List[str]],
+    stats,
+    paths,
+    input_stimuli: dict | None = None,
 ) -> None:
+
+    def _write_input_stimuli_section(f, input_stimuli: dict | None) -> None:
+        if not input_stimuli:
+            return
+
+        f.write("INPUT STIMULI\n")
+        f.write("---------------------------------------------------------------------------------------------------------------------------\n")
+
+        if "S" in input_stimuli:
+            S = input_stimuli["S"]
+            f.write("[S]\n")
+            if "path" in S:
+                f.write(f"path           : {S['path']}\n")
+            if "shape" in S:
+                f.write(f"shape          : {S['shape']}\n")
+            if "NB" in S and "NBF" in S:
+                f.write(f"format         : S({S['NB']}, {S['NBF']})\n")
+            if "signed" in S:
+                f.write(f"signed         : {S['signed']}\n")
+            f.write("\n")
+
+        if "y" in input_stimuli:
+            y = input_stimuli["y"]
+            f.write("[y]\n")
+            if "path" in y:
+                f.write(f"path           : {y['path']}\n")
+            if "shape" in y:
+                f.write(f"shape          : {y['shape']}\n")
+            if "NB" in y and "NBF" in y:
+                f.write(f"format         : S({y['NB']}, {y['NBF']})\n")
+            if "signed" in y:
+                f.write(f"signed         : {y['signed']}\n")
+            f.write("\n\n\n\n")
 
     def _write_accumulators_section(f, stage_stats: Dict[str, Any]) -> None:
         accums = stage_stats.get("accumulators", None)
@@ -33,8 +67,6 @@ def fxp_rpt_writer(
             f.write(f"max_re         : {acc_data['max_re']:.12e}\n")
             f.write(f"min_im         : {acc_data['min_im']:.12e}\n")
             f.write(f"max_im         : {acc_data['max_im']:.12e}\n")
-            f.write(f"min_abs        : {acc_data['min_abs']:.12e}\n")
-            f.write(f"max_abs        : {acc_data['max_abs']:.12e}\n")
 
             f.write("\n")
 
@@ -129,6 +161,8 @@ def fxp_rpt_writer(
         with open(out_rpt_path, "w", encoding="utf-8") as f:
             f.write("GLOBAL FXP PIPELINE REPORT\n")
             f.write("###########################################################################################################################\n\n")
+
+            _write_input_stimuli_section(f, input_stimuli)
 
             total_add = 0
             total_sub = 0

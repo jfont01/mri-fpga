@@ -62,17 +62,17 @@ for idx in "${!NB_LIST[@]}"; do
 
   printf "[run_sense_fxp.sh] ${YELLOW}Running fxp_sense.py with NB=${NB} NBF=${NBF}${NC}\n"
 
-  python3 "$SENSE_FXP_DIR/fxp_sense.py"                   \
+  python3 "$SENSE_FXP_DIR/fxp_sense_runner.py"                   \
     --smaps-npz-path="$S_NPZ_PATH"                        \
     --aliased-coils-npz-path="$Y_NPZ_PATH"                \
     --output-dir="$OUTPUT_DIR"                            \
     --max-workers=$MAX_WORKERS                            \
     --chunksize=$CHUNKSIZE                                \
-    --save-images=$SAVE_COMPARISION_IMAGES 
+    --save-images="$SAVE_COMPARISION_IMAGES" 
 
 
   if [[ $? -ne 0 ]]; then
-    printf "[run_sense_fxp.sh] ${RED}ERROR running fxp_sense.py for NB=${NB}, NBF=${NBF}${NC}\n"
+    printf "[run_sense_fxp.sh] ${RED}ERROR running fxp_sense_runner.py for NB=${NB}, NBF=${NBF}${NC}\n"
     exit 1
   fi
 

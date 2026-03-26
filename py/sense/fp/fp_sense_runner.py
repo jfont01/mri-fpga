@@ -1,11 +1,10 @@
 
-#!/usr/bin/env python3
 import argparse
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from helpers.tensor_wrappers                import *
+from fp_tensor_wrappers                     import *
 from helpers.fp_rpt_writer                  import fp_stage_stats, fp_rpt_writer
 from helpers.rpt_writer_cholesky_methods    import *
 from fp_compute_I                           import fp_compute_I
@@ -30,6 +29,13 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "--save-images",
+        type=str,
+        required=True,
+        help="Ruta al .npy con imágenes de bobina aliasadas y (L, Nx, Ny_full o Ny_alias).",
+    )
+
+    parser.add_argument(
         "--output-path",
         type=str,
         required=True,
@@ -44,9 +50,10 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    smaps_path = args.smaps_npy_path
-    coils_alias_path = args.aliased_coils_npy_path
-    out_dir = args.output_path
+    smaps_path              = args.smaps_npy_path
+    coils_alias_path        = args.aliased_coils_npy_path
+    out_dir                 = args.output_path
+    save_images             = True if (args.save_images == "True") else False
 
     os.makedirs(out_dir, exist_ok=True)
 
@@ -62,14 +69,16 @@ def main() -> None:
     print("[fp_sense_runner.py]     Running fp_compute_A ...")
     A = fp_compute_A_tensor(S)
     print("[fp_sense_runner.py]     A shape:", A.shape)
-    print("[fp_sense_runner.py]     Saving A npy and png's ...")
+    print("[fp_sense_runner.py]     Saving A npy file ...")
     A_dir = os.path.join(out_dir, "A")
     os.makedirs(A_dir, exist_ok=True)
     np.save(os.path.join(A_dir, "A.npy"), A)
-    plt.imsave(os.path.join(A_dir, "A00.png"), np.real(A[0, 0]), cmap="gray")
-    plt.imsave(os.path.join(A_dir, "A01_mag.png"), np.abs(A[0, 1]), cmap="gray")
-    plt.imsave(os.path.join(A_dir, "A10_mag.png"), np.abs(A[1, 0]), cmap="gray")
-    plt.imsave(os.path.join(A_dir, "A11.png"), np.real(A[1, 1]), cmap="gray")
+    if save_images:
+        print("[fp_sense_runner.py]     Saving A png's ...")
+        plt.imsave(os.path.join(A_dir, "A00.png"), np.real(A[0, 0]), cmap="gray")
+        plt.imsave(os.path.join(A_dir, "A01_mag.png"), np.abs(A[0, 1]), cmap="gray")
+        plt.imsave(os.path.join(A_dir, "A10_mag.png"), np.abs(A[1, 0]), cmap="gray")
+        plt.imsave(os.path.join(A_dir, "A11.png"), np.real(A[1, 1]), cmap="gray")
 
 
     # -------------------------------------------------------------------
@@ -78,12 +87,14 @@ def main() -> None:
     print("[fp_sense_runner.py]     Running fp_compute_b ...")
     b = fp_compute_b_tensor(S, y)
     print("[fp_sense_runner.py]     b shape:", b.shape)
-    print("[fp_sense_runner.py]     Saving b npy and png's ...")
+    print("[fp_sense_runner.py]     Saving b npy file ...")
     b_dir = os.path.join(out_dir, "b")
     os.makedirs(b_dir, exist_ok=True)
     np.save(os.path.join(b_dir, "b.npy"), b)
-    plt.imsave(os.path.join(b_dir, "b0_mag.png"), np.abs(b[0]), cmap="gray")
-    plt.imsave(os.path.join(b_dir, "b1_mag.png"), np.abs(b[1]), cmap="gray")
+    if save_images:
+        print("[fp_sense_runner.py]     Saving b png's ...")
+        plt.imsave(os.path.join(b_dir, "b0_mag.png"), np.abs(b[0]), cmap="gray")
+        plt.imsave(os.path.join(b_dir, "b1_mag.png"), np.abs(b[1]), cmap="gray")
 
     # -------------------------------------------------------------------
     # LD
@@ -91,19 +102,23 @@ def main() -> None:
     print("[fp_sense_runner.py]     Running fp_compute_LD ...")
     L, D = fp_compute_LD_tensor(A)
     print("[fp_sense_runner.py]     L shape:", L.shape)
-    print("[fp_sense_runner.py]     Saving L npy and png's ...")
+    print("[fp_sense_runner.py]     Saving L npy file ...")
     L_dir = os.path.join(out_dir, "L")
     os.makedirs(L_dir, exist_ok=True)
     np.save(os.path.join(L_dir, "L.npy"), L)
-    plt.imsave(os.path.join(L_dir, "l10_mag.png"), np.abs(L[1, 0]), cmap="gray")
+    if save_images:
+        print("[fp_sense_runner.py]     Saving L png's ...")
+        plt.imsave(os.path.join(L_dir, "l10_mag.png"), np.abs(L[1, 0]), cmap="gray")
 
-    print("[fp_sense_runner.py]     Saving D npy and png's ...")
+    print("[fp_sense_runner.py]     Saving D npy file ...")
     print("[fp_sense_runner.py]     D shape:", D.shape)
     D_dir = os.path.join(out_dir, "D")
     os.makedirs(D_dir, exist_ok=True)
     np.save(os.path.join(D_dir, "D.npy"), D)
-    plt.imsave(os.path.join(D_dir, "d00.png"), np.real(D[0, 0]), cmap="gray")
-    plt.imsave(os.path.join(D_dir, "d11.png"), np.real(D[1, 1]), cmap="gray")
+    if save_images:
+        print("[fp_sense_runner.py]     Saving D png's ...")
+        plt.imsave(os.path.join(D_dir, "d00.png"), np.real(D[0, 0]), cmap="gray")
+        plt.imsave(os.path.join(D_dir, "d11.png"), np.real(D[1, 1]), cmap="gray")
 
 
     # -------------------------------------------------------------------
@@ -112,12 +127,14 @@ def main() -> None:
     print("[fp_sense_runner.py]     Running fp_forward_subst_ldlh (computing x) ...")
     x = fp_forward_subst_ldlh_tensor(L, b)
     print("[fp_sense_runner.py]     x shape:", x.shape)
-    print("[fp_sense_runner.py]     Saving x npy and png's ...")
+    print("[fp_sense_runner.py]     Saving x npy file ...")
     x_dir = os.path.join(out_dir, "x")
     os.makedirs(x_dir, exist_ok=True)
     np.save(os.path.join(x_dir, "x.npy"), x)
-    plt.imsave(os.path.join(x_dir, "x0_mag.png"), np.abs(x[0]), cmap="gray")
-    plt.imsave(os.path.join(x_dir, "x1_mag.png"), np.abs(x[1]), cmap="gray")
+    if save_images:
+        print("[fp_sense_runner.py]     Saving x png's ...")
+        plt.imsave(os.path.join(x_dir, "x0_mag.png"), np.abs(x[0]), cmap="gray")
+        plt.imsave(os.path.join(x_dir, "x1_mag.png"), np.abs(x[1]), cmap="gray")
 
 
     # -------------------------------------------------------------------
@@ -126,12 +143,14 @@ def main() -> None:
     print("[fp_sense_runner.py]     Running fp_diagonal_subst_ldlh (computing z) ...")
     z = fp_diagonal_subst_ldlh_tensor(D, x)
     print("[fp_sense_runner.py]     z shape:", z.shape)
-    print("[fp_sense_runner.py]     Saving z npy and png's ...")
+    print("[fp_sense_runner.py]     Saving z npy file ...")
     z_dir = os.path.join(out_dir, "z")
     os.makedirs(z_dir, exist_ok=True)
     np.save(os.path.join(z_dir, "z.npy"), z)
-    plt.imsave(os.path.join(z_dir, "z0_mag.png"), np.abs(z[0]), cmap="gray")
-    plt.imsave(os.path.join(z_dir, "z1_mag.png"), np.abs(z[1]), cmap="gray")
+    if save_images:
+        print("[fp_sense_runner.py]     Saving z png's ...")
+        plt.imsave(os.path.join(z_dir, "z0_mag.png"), np.abs(z[0]), cmap="gray")
+        plt.imsave(os.path.join(z_dir, "z1_mag.png"), np.abs(z[1]), cmap="gray")
 
     # -------------------------------------------------------------------
     # m_hat
@@ -139,12 +158,14 @@ def main() -> None:
     print("[fp_sense_runner.py]     Running fp_backward_subst_ldlh (computing m_hat) ...")
     m_hat_ldlh = fp_backward_subst_ldlh_tensor(L, z)
     print("[fp_sense_runner.py]     m_hat shape:", m_hat_ldlh.shape)
-    print("[fp_sense_runner.py]     Saving m_hat npy and png's ...")
+    print("[fp_sense_runner.py]     Saving m_hat npy file ...")
     m_hat_dir = os.path.join(out_dir, "m_hat")
     os.makedirs(m_hat_dir, exist_ok=True)
     np.save(os.path.join(m_hat_dir, "m_hat.npy"), m_hat_ldlh)
-    plt.imsave(os.path.join(m_hat_dir, "m_hat0_mag.png"), np.abs(m_hat_ldlh[0]), cmap="gray")
-    plt.imsave(os.path.join(m_hat_dir, "m_hat1_mag.png"), np.abs(m_hat_ldlh[1]), cmap="gray")
+    if save_images:
+        print("[fp_sense_runner.py]     Saving m_hat png's ...")
+        plt.imsave(os.path.join(m_hat_dir, "m_hat0_mag.png"), np.abs(m_hat_ldlh[0]), cmap="gray")
+        plt.imsave(os.path.join(m_hat_dir, "m_hat1_mag.png"), np.abs(m_hat_ldlh[1]), cmap="gray")
 
 
     # -------------------------------------------------------------------
@@ -153,10 +174,11 @@ def main() -> None:
     print("[fp_sense_runner.py]     Running fp_img_recon (computing I) ...")
     I_ldlh = fp_compute_I(m_hat_ldlh)
     print("[fp_sense_runner.py]     I shape:", I_ldlh.shape)
-    print("[fp_sense_runner.py]     Saving I npy and png ...")
+    print("[fp_sense_runner.py]     Saving I npy file ...")
     I_dir = os.path.join(out_dir, "I")
     os.makedirs(I_dir, exist_ok=True)
     np.save(os.path.join(I_dir, "I.npy"), I_ldlh)
+    print("[fp_sense_runner.py]     Saving I png ...")
     plt.imsave(os.path.join(I_dir, "I.png"), I_ldlh, cmap="gray")
 
 

@@ -1,3 +1,5 @@
+set -Eeuo pipefail
+
 # Colores
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -10,23 +12,17 @@ printf "[run_sense_fp.sh]${GREEN}    Running fp SENSE reconstruction${NC}\n"
 printf "\n"
 
 CONF="$GLOBAL_CONF_PATH"
-
-if [[ ! -f "$CONF" ]]; then
-  echo "ERROR: config file not found: $CONF"
-  exit 1
-fi
-
 source "$CONF"
 
 ###########################################################################
 #  Parámetros cargados desde config.conf
 ###########################################################################
 echo "[run_sense_fp.sh]    Parámetros a reconstruir:"
-echo "  N             = $N"
-echo "  AF            = $AF"
-echo "  L             = $L"
-echo "  AXIS          = $AXIS"
-echo "  PHANTOM       = $PHANTOM"
+echo "[run_sense_fp.sh]             N             = $N"
+echo "[run_sense_fp.sh]             AF            = $AF"
+echo "[run_sense_fp.sh]             L             = $L"
+echo "[run_sense_fp.sh]             AXIS          = $AXIS"
+echo "[run_sense_fp.sh]             PHANTOM       = $PHANTOM"
 echo ""
 
 ###########################################################################
@@ -54,17 +50,18 @@ echo "[run_sense_fp.sh]   Created output dir: $OUTPUT_DIR"
 echo ""
 
 echo "[run_sense_fp.sh]   Reconstruction stimulus .npy:"
-echo "SENS_MAPS_NPY_PATH     = $SENS_MAPS_NPY_PATH"
-echo "ALIASED_COILS_NPY_PATH = $ALIASED_COILS_NPY_PATH"
+echo "[run_sense_fp.sh]         SENS_MAPS_NPY_PATH     = $SENS_MAPS_NPY_PATH"
+echo "[run_sense_fp.sh]         ALIASED_COILS_NPY_PATH = $ALIASED_COILS_NPY_PATH"
 echo ""
 
 echo "[run_sense_fp.sh]   Running fp_sense_runner.py"
 echo ""
 
-python3 "$SENSE_FP_DIR/fp_sense_runner.py"                       \
-  --smaps-npy-path="$SENS_MAPS_NPY_PATH"                  \
-  --aliased-coils-npy-path="$ALIASED_COILS_NPY_PATH"      \
-  --output-path="$OUTPUT_DIR"                             
+python3 "$SENSE_FP_DIR/fp_sense_runner.py"                      \
+  --smaps-npy-path="$SENS_MAPS_NPY_PATH"                        \
+  --aliased-coils-npy-path="$ALIASED_COILS_NPY_PATH"            \
+  --output-path="$OUTPUT_DIR"                                   \
+  --save-images="$SAVE_COMPARISION_IMAGES" 
 
 echo ""
 printf "[run_sense_fp.sh]   ${GREEN}Reconstruction finished successfully${NC}\n"
