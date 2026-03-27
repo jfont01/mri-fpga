@@ -13,7 +13,6 @@ def load_phantom(path: str) -> NDArray[np.complex128]:
         raise ValueError(f"Phantom '{path}' debe ser 2D, shape=(N,N), "
                          f"pero tiene shape={m.shape}")
 
-    # Lo tratamos como complejo (imag=0 si era real)
     return m.astype(np.complex128)
 
 
@@ -32,21 +31,6 @@ def compute_coil_images(
     m: NDArray[np.complex128],
     S: NDArray[np.complex128],
 ) -> NDArray[np.complex128]:
-    """
-    Calcula las imágenes de bobina:
-        y_l(x,y) = s_l(x,y) * m(x,y)
-
-    m: (N, N)
-    S: (L, N, N)
-    return: y: (L, N, N)
-    """
-    L, N1, N2 = S.shape
-    Nm1, Nm2 = m.shape
-
-    if (N1 != Nm1) or (N2 != Nm2):
-        raise ValueError(
-            f"Dimensiones incompatibles: phantom {m.shape} vs sens_maps {S.shape}"
-        )
 
     # Broadcasting: (L,N,N) * (1,N,N) -> (L,N,N)
     y = S * m[None, :, :]

@@ -61,6 +61,8 @@ export SENSE_FXP_QUANTIZER_DIR="$SENSE_FXP_DIR/quantizer"
 export SENSE_QUANTIZER_RUN="$SENSE_FXP_QUANTIZER_DIR/run_quantizer.sh"
 export FXP_MODEL_TEST_DIR="$FXP_MODEL_ROOT/test"
 export SENSE_FXP_RUN="$SENSE_FXP_DIR/run_sense_fxp.sh"
+export SENSE_REPORTER_DIR="$SENSE_ROOT/reporter"
+export SENSE_REPORTER_RUN="$SENSE_REPORTER_DIR/run_reporter.sh"
 
 ###########################################################################
 # Verificación de variables
@@ -82,6 +84,8 @@ check_var GLOBAL_CONF_PATH
 check_var GLOBAL_RUN_PATH
 check_var SENSE_QUANTIZER_RUN
 check_var SENSE_FXP_RUN
+check_var SENSE_REPORTER_DIR
+check_var SENSE_REPORTER_RUN
 echo ""
 ###########################################################################
 # Verificación de directorios
@@ -97,6 +101,7 @@ check_dir "$SENSE_FP_DIR"
 check_dir "$FXP_MODEL_TEST_DIR"
 check_dir "$SENSE_FXP_DIR"
 check_dir "$SENSE_FXP_QUANTIZER_DIR"
+check_dir "$SENSE_REPORTER_DIR"
 
 echo ""
 ###########################################################################
@@ -108,6 +113,7 @@ check_file "$GLOBAL_CONF_PATH"
 check_file "$GLOBAL_RUN_PATH"
 check_file "$SENSE_QUANTIZER_RUN"
 check_file "$SENSE_FXP_RUN"
+check_file "$SENSE_REPORTER_RUN"
 echo ""
 
 printf "[set_env.sh]    Running dos2unix on scripts and config files...\n"
@@ -118,6 +124,7 @@ dos2unix $GLOBAL_CONF_PATH
 dos2unix $GLOBAL_RUN_PATH
 dos2unix $SENSE_QUANTIZER_RUN
 dos2unix $SENSE_FXP_RUN
+dos2unix $SENSE_REPORTER_RUN
 echo ""
 
 printf "[set_env.sh]    Sourcing .venv/bin/activate ...\n"

@@ -23,8 +23,6 @@ def tensor_basic_metrics(X: np.ndarray) -> dict:
 def hermitian_error_metrics_A(A: np.ndarray) -> dict:
     A = np.asarray(A, dtype=np.complex128)
 
-    if A.ndim != 4 or A.shape[0:2] != (2, 2):
-        raise ValueError(f"A debe tener shape (2,2,Nx,offset), recibió {A.shape}")
 
     _, _, Nx, offset = A.shape
 
@@ -60,9 +58,6 @@ def hermitian_error_metrics_A(A: np.ndarray) -> dict:
 def A_structure_metrics(A: np.ndarray, eps: float = 1e-12) -> dict:
     A = np.asarray(A, dtype=np.complex128)
 
-    if A.ndim != 4 or A.shape[0:2] != (2, 2):
-        raise ValueError(f"A debe tener shape (2,2,Nx,offset), recibió {A.shape}")
-
     _, _, Nx, offset = A.shape
     nblocks = Nx * offset
 
@@ -81,9 +76,6 @@ def A_structure_metrics(A: np.ndarray, eps: float = 1e-12) -> dict:
     count_d0_le_eps = 0
     count_d1_le_eps = 0
 
-    worst_det_idx = None
-    worst_d0_idx = None
-    worst_d1_idx = None
 
     for nx in range(Nx):
         for ny_alias in range(offset):
@@ -114,7 +106,6 @@ def A_structure_metrics(A: np.ndarray, eps: float = 1e-12) -> dict:
 
             if detA_real < min_det_A:
                 min_det_A = detA_real
-                worst_det_idx = (nx, ny_alias)
             if detA_real > max_det_A:
                 max_det_A = detA_real
 
@@ -122,10 +113,8 @@ def A_structure_metrics(A: np.ndarray, eps: float = 1e-12) -> dict:
 
             if d0 < min_d0:
                 min_d0 = d0
-                worst_d0_idx = (nx, ny_alias)
             if d1 < min_d1:
                 min_d1 = d1
-                worst_d1_idx = (nx, ny_alias)
 
             if detA_real <= 0.0:
                 count_det_le_zero += 1
@@ -153,9 +142,6 @@ def A_structure_metrics(A: np.ndarray, eps: float = 1e-12) -> dict:
 
 def D_structure_metrics(D: np.ndarray, eps: float = 1e-12) -> dict:
     D = np.asarray(D, dtype=np.complex128)
-
-    if D.ndim != 4 or D.shape[0:2] != (2, 2):
-        raise ValueError(f"D debe tener shape (2,2,Nx,offset), recibió {D.shape}")
 
     d00 = np.real(D[0, 0])
     d11 = np.real(D[1, 1])

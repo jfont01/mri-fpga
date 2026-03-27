@@ -50,8 +50,6 @@ def _worker_compute_A_nx(nx: int) -> Tuple[int, CFxpTensor, Dict[str, Any]]:
     L, _, Ny = _S_Q.shape
     Af = 2
 
-    if Ny % Af != 0:
-        raise ValueError("Ny debe ser par para Af = 2")
 
     offset = Ny // Af
 
@@ -96,8 +94,6 @@ def fxp_multiprocessing_compute_A(
     L, Nx, Ny = S_q.shape
     Af = 2
 
-    if Ny % Af != 0:
-        raise ValueError("Ny debe ser par para Af = 2")
 
     offset = Ny // Af
 

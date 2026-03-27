@@ -29,18 +29,6 @@ def fxp_compute_z_i(
     stats_z: Dict | None = None,
     eps: float = 1e-12,
 ) -> CFxpTensor:
-    """
-    Resuelve D z = x para un bloque local 2x2 diagonal.
-
-    z0 = x0 / d0
-    z1 = x1 / d1
-    """
-
-    if Dij_q.shape != (2, 2):
-        raise ValueError(f"Dij_q debe tener shape (2,2), recibió {Dij_q.shape}")
-
-    if xi_q.shape != (2,):
-        raise ValueError(f"xi_q debe tener shape (2,), recibió {xi_q.shape}")
 
     NB = xi_q.NB
     NBF = xi_q.NBF

@@ -28,23 +28,6 @@ def fxp_compute_D_i(
     stats_D: Dict | None = None,
     eps: float = 1e-12,
 ) -> CFxpTensor:
-    """
-    Construye D local de una factorización LDL^H 2x2.
-
-    Input
-    -----
-    Aij_q : CFxpTensor, shape (2,2)
-
-    Output
-    ------
-    Dij_q : CFxpTensor, shape (2,2)
-        Matriz diagonal:
-            [[d0, 0],
-             [0,  d1]]
-    """
-
-    if Aij_q.shape != (2, 2):
-        raise ValueError(f"Aij_q debe tener shape (2,2), recibió {Aij_q.shape}")
 
     NB = Aij_q.NB
     NBF = Aij_q.NBF

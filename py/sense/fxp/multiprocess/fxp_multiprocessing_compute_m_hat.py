@@ -95,19 +95,11 @@ def fxp_multiprocessing_compute_m_hat(
     chunksize: int = 4,
 ) -> Tuple[CFxpTensor, Dict[str, Any]]:
 
-    if L_q.ndim != 4 or L_q.shape[0:2] != (2, 2):
-        raise ValueError(f"L_q debe tener shape (2,2,Nx,offset), recibió {L_q.shape}")
-
-    if z_q.ndim != 3 or z_q.shape[0] != 2:
-        raise ValueError(f"z_q debe tener shape (2,Nx,offset), recibió {z_q.shape}")
-
     NB = z_q.NB
     NBF = z_q.NBF
     signed = z_q.signed
 
     _, _, Nx, offset = L_q.shape
-    if z_q.shape[1:] != (Nx, offset):
-        raise ValueError("L_q y z_q deben tener la misma grilla (Nx,offset)")
 
     m_hat_q = CFxpTensor.zeros(
         shape=(2, Nx, offset),

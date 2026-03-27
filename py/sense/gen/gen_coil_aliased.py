@@ -70,7 +70,6 @@ def main() -> None:
     y = reconstruct_images_ifft2(K)
     print("[gen_coil_aliased.py]        coil images shape: ", y.shape)
 
-    # Guardar .npy con las imágenes complejas
     out_npy = f"{out_name}.npy"
     np.save(out_npy, y)
     print("[gen_coil_aliased.py]        Saved .npy:", out_npy)

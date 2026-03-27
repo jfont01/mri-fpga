@@ -28,29 +28,10 @@ def fxp_compute_x_i(
     bi_q: CFxpTensor,
     stats_x: Dict | None = None,
 ) -> CFxpTensor:
-    """
-    Resuelve L x = b para un bloque local 2x2,
-    con L triangular inferior unitaria.
-
-    L = [[1,   0],
-         [l10, 1]]
-
-    x0 = b0
-    x1 = b1 - l10*x0
-    """
-
-    if Lij_q.shape != (2, 2):
-        raise ValueError(f"Lij_q debe tener shape (2,2), recibió {Lij_q.shape}")
-
-    if bi_q.shape != (2,):
-        raise ValueError(f"bi_q debe tener shape (2,), recibió {bi_q.shape}")
 
     NB = bi_q.NB
     NBF = bi_q.NBF
     signed = bi_q.signed
-
-    if Lij_q.NB != NB or Lij_q.NBF != NBF or Lij_q.signed != signed:
-        raise ValueError("Lij_q y bi_q deben tener el mismo formato fixed")
 
     b0 = bi_q[0]
     b1 = bi_q[1]

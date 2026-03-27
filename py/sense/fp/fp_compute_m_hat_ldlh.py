@@ -9,14 +9,7 @@ def fp_compute_m_hat_i_ldlh(
     bij: NDArray[np.complex128],
     eps: float = 1e-12,
 ) -> NDArray[np.complex128]:
-    """
-    Resuelve Aij m = bij usando LDL^H manual 2x2.
 
-    Aij : (2,2)
-    bij : (2,)
-    Devuelve:
-        m_hat : (2,)
-    """
     Lij, Dij = fp_compute_LD_ij(Aij, eps=eps)
     yi = fp_forward_subst_ldlh_i(Lij, bij)
     zi = fp_diagonal_subst_ldlh_i(Dij, yi, eps=eps)

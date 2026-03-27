@@ -54,9 +54,6 @@ def _worker_compute_L_nx(
     NBF = _A_Q.NBF
     signed = _A_Q.signed
 
-    if _D_Q.NB != NB or _D_Q.NBF != NBF or _D_Q.signed != signed:
-        raise ValueError("A_q y D_q deben tener el mismo formato fixed")
-
     _, _, _, offset = _A_Q.shape
 
     L_nx = CFxpTensor.zeros(
@@ -119,26 +116,11 @@ def fxp_multiprocessing_compute_L(
     eps: float = 1e-12,
 ) -> Tuple[CFxpTensor, Dict[str, Any]]:
 
-    if A_q.ndim != 4 or A_q.shape[0:2] != (2, 2):
-        raise ValueError(f"A_q debe tener shape (2,2,Nx,offset), recibió {A_q.shape}")
-
-    if D_q.ndim != 4 or D_q.shape[0:2] != (2, 2):
-        raise ValueError(f"D_q debe tener shape (2,2,Nx,offset), recibió {D_q.shape}")
-
     NB = A_q.NB
     NBF = A_q.NBF
     signed = A_q.signed
 
-    if D_q.NB != NB or D_q.NBF != NBF or D_q.signed != signed:
-        raise ValueError("A_q y D_q deben tener el mismo formato fixed")
-
     _, _, Nx, offset = A_q.shape
-
-    if D_q.shape[2:] != (Nx, offset):
-        raise ValueError(
-            f"A_q y D_q deben tener la misma grilla (Nx,offset): "
-            f"A_q.shape={A_q.shape}, D_q.shape={D_q.shape}"
-        )
 
     L_q = CFxpTensor.zeros(
         shape=(2, 2, Nx, offset),

@@ -95,20 +95,12 @@ def fxp_multiprocessing_compute_x(
     chunksize: int = 4,
 ) -> Tuple[CFxpTensor, Dict[str, Any]]:
 
-    if L_q.ndim != 4 or L_q.shape[0:2] != (2, 2):
-        raise ValueError(f"L_q debe tener shape (2,2,Nx,offset), recibió {L_q.shape}")
-
-    if b_q.ndim != 3 or b_q.shape[0] != 2:
-        raise ValueError(f"b_q debe tener shape (2,Nx,offset), recibió {b_q.shape}")
-
     NB = b_q.NB
     NBF = b_q.NBF
     signed = b_q.signed
 
     _, _, Nx, offset = L_q.shape
-    if b_q.shape[1:] != (Nx, offset):
-        raise ValueError("L_q y b_q deben tener la misma grilla (Nx,offset)")
-
+    
     x_q = CFxpTensor.zeros(
         shape=(2, Nx, offset),
         NB=NB,

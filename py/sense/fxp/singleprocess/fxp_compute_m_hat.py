@@ -28,24 +28,6 @@ def fxp_compute_m_hat_i(
     zi_q: CFxpTensor,
     stats_m_hat: Dict | None = None,
 ) -> CFxpTensor:
-    """
-    Resuelve L^H m = z para un bloque local 2x2.
-
-    L = [[1,   0],
-         [l10, 1]]
-
-    L^H = [[1, conj(l10)],
-           [0, 1]]
-
-    m1 = z1
-    m0 = z0 - conj(l10)*m1
-    """
-
-    if Lij_q.shape != (2, 2):
-        raise ValueError(f"Lij_q debe tener shape (2,2), recibió {Lij_q.shape}")
-
-    if zi_q.shape != (2,):
-        raise ValueError(f"zi_q debe tener shape (2,), recibió {zi_q.shape}")
 
     NB = zi_q.NB
     NBF = zi_q.NBF

@@ -29,38 +29,10 @@ def fxp_compute_L_i(
     stats_L: Dict | None = None,
     eps: float = 1e-12,
 ) -> CFxpTensor:
-    """
-    Construye L local de una factorización LDL^H 2x2.
-
-    Input
-    -----
-    Aij : CFxpTensor, shape (2,2)
-        Bloque local A.
-    Dij : CFxpTensor, shape (2,2)
-        Bloque local D, con d0 en [0,0].
-
-    Output
-    ------
-    Lij : CFxpTensor, shape (2,2)
-        Matriz triangular inferior unitaria:
-            [[1, 0],
-             [l10, 1]]
-    """
-
-    if Aij.shape != (2, 2):
-        raise ValueError(f"Aij debe tener shape (2,2), recibió {Aij.shape}")
-
-    if Dij.shape != (2, 2):
-        raise ValueError(f"Dij debe tener shape (2,2), recibió {Dij.shape}")
 
     NB = Aij.NB
     NBF = Aij.NBF
     signed = Aij.signed
-
-    if Dij.NB != NB or Dij.NBF != NBF or Dij.signed != signed:
-        raise ValueError(
-            "Aij y Dij deben tener el mismo formato fixed"
-        )
 
     a10 = Aij[1, 0]
     d0_c = Dij[0, 0]

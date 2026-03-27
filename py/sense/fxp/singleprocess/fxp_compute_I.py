@@ -26,9 +26,7 @@ def fxp_compute_I(
     stats_I: Dict | None = None,
 ) -> CFxpTensor:
 
-
     _, Nx, offset = m_hat_q.shape
-
 
     NB = m_hat_q.NB
     NBF = m_hat_q.NBF

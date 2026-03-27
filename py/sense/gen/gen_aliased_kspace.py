@@ -214,30 +214,19 @@ def main() -> None:
     print(f"[gen_aliased_kspace.py]      Original k-space shape: {K.shape}")
     L, Nx_full, Ny_full = K.shape
 
-    # Undersampling según eje seleccionado
     if axis == "y":
-        print(f"Aplicando undersampling en ny (ky) con Af = {Af} ...")
         K_alias = undersample_kspace_ny(K, Af)
     elif axis == "x":
-        print(f"Aplicando undersampling en nx (kx) con Af = {Af} ...")
         K_alias = undersample_kspace_nx(K, Af)
-    else:
-        raise ValueError(f"Eje de undersampling no soportado: {axis}")
 
     print(f"[gen_aliased_kspace.py]    New aliased k-space shape: {K_alias.shape}")
 
-    # Guardamos SIEMPRE el k-space reducido
     out_npy_alias = f"{out_name}.npy"
     np.save(out_npy_alias, K_alias)
     print("[gen_aliased_kspace.py]   Saved:", out_npy_alias)
 
-    # Si el usuario pide tamaño completo, construimos K_full rellenando con ceros
     if use_full:
         if axis == "y":
-            print(
-                "Construyendo k-space de tamaño completo (Ny) "
-                "con ceros en líneas faltantes..."
-            )
             K_for_imgs = build_full_ny_from_alias(K_alias, Ny_full=Ny_full, Af=Af)
             out_npy_full = f"{out_name}_Af{Af}_fullNy.npy"
         else:  # axis == "x"
@@ -251,16 +240,13 @@ def main() -> None:
         np.save(out_npy_full, K_for_imgs)
         print("[gen_aliased_kspace.py]    Saved zpadded:", out_npy_full)
     else:
-        # Si no se pide full, usamos el reducido para generar PNGs
         K_for_imgs = K_alias
 
-    # Guardar magnitud y fase de cada bobina para K_for_imgs
     L, Nx_img, Ny_img = K_for_imgs.shape
 
     for l in range(L):
         K_l = K_for_imgs[l]
 
-        # Magnitud: usamos log para ver mejor el rango dinámico
         mag = np.abs(K_l)
 
         if use_full:
@@ -272,7 +258,7 @@ def main() -> None:
         plt.imsave(fname_mag, mag, cmap=cmap)
         print("[gen_aliased_kspace.py]      Saved mag .png:", fname_mag)
 
-        # Fase en [-pi, pi] → [0, 1]
+        # Fase en [-pi, pi] : [0, 1]
         phase = np.angle(K_l)
 
         if use_full:

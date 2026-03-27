@@ -32,34 +32,6 @@ def save_quantized_tensor_npz(
 
     
 
-
-def cast_q_to_f_complex(
-    re_u: np.ndarray,
-    im_u: np.ndarray,
-    NB: int,
-    NBF: int,
-    signed: bool = True,
-) -> np.ndarray:
-    if re_u.shape != im_u.shape:
-        raise ValueError("re_raw e im_raw deben tener el mismo shape")
-
-    L, Nx, Ny = re_u.shape
-    S_q_f = np.zeros((L, Nx, Ny), dtype=np.complex128)
-
-    for l in range(L):
-        for nx in range(Nx):
-            for ny in range(Ny):
-                z_fxp = CFxp.from_uint_pair(
-                    re_u[l, nx, ny],
-                    im_u[l, nx, ny],
-                    NB=NB,
-                    NBF=NBF,
-                    signed=signed
-                )
-                S_q_f[l, nx, ny] = z_fxp.to_complex()
-
-    return S_q_f
-
 def write_quant_report(
     out_rpt_path: str,
     S_ref: np.ndarray,
@@ -191,3 +163,32 @@ def write_quant_report(
         f.write(f"abs_err_complex       : {err_c[idx_max]:.12e}\n")
         f.write(f"abs_err_re            : {err_re[idx_max]:.12e}\n")
         f.write(f"abs_err_im            : {err_im[idx_max]:.12e}\n")
+
+
+def cast_q_to_f_complex(
+    re_u: np.ndarray,
+    im_u: np.ndarray,
+    NB: int,
+    NBF: int,
+    signed: bool = True,
+) -> np.ndarray:
+    if re_u.shape != im_u.shape:
+        raise ValueError("re_raw e im_raw deben tener el mismo shape")
+
+    L, Nx, Ny = re_u.shape
+    S_q_f = np.zeros((L, Nx, Ny), dtype=np.complex128)
+
+    for l in range(L):
+        for nx in range(Nx):
+            for ny in range(Ny):
+                z_fxp = CFxp.from_uint_pair(
+                    re_u[l, nx, ny],
+                    im_u[l, nx, ny],
+                    NB=NB,
+                    NBF=NBF,
+                    signed=signed
+                )
+                S_q_f[l, nx, ny] = z_fxp.to_complex()
+
+    return S_q_f
+

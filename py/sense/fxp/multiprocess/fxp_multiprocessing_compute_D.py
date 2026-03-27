@@ -97,9 +97,6 @@ def fxp_multiprocessing_compute_D(
     eps: float = 1e-12,
 ) -> Tuple[CFxpTensor, Dict[str, Any]]:
 
-    if A_q.ndim != 4 or A_q.shape[0:2] != (2, 2):
-        raise ValueError(f"A_q debe tener shape (2,2,Nx,offset), recibió {A_q.shape}")
-
     NB = A_q.NB
     NBF = A_q.NBF
     signed = A_q.signed

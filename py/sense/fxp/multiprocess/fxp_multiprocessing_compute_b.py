@@ -55,23 +55,11 @@ def _worker_compute_b_nx(nx: int) -> Tuple[int, CFxpTensor, Dict[str, Any]]:
     NBF_Y = _Y_Q.NBF
     signed = _S_Q.signed
 
-    if _Y_Q.signed != signed:
-        raise ValueError("S_q e y_q tienen signed distinto")
-
     L, _, Ny = _S_Q.shape
     Ly, _, offset_y = _Y_Q.shape
     Af = 2
 
-    if Ny % Af != 0:
-        raise ValueError("Ny debe ser par para Af = 2")
-
     offset = Ny // Af
-
-    if Ly != L or offset_y != offset:
-        raise ValueError(
-            f"Shapes incompatibles en worker: "
-            f"S_q.shape={_S_Q.shape}, y_q.shape={_Y_Q.shape}"
-        )
 
     grow_bits = int(np.ceil(np.log2(L))) if L > 1 else 0
     NB_B = NB_S + NB_Y + grow_bits
@@ -113,20 +101,9 @@ def fxp_multiprocessing_compute_b(
     NBF_Y = y_q.NBF
     signed = S_q.signed
 
-    if y_q.signed != signed:
-        raise ValueError("S_q e y_q tienen signed distinto")
-
     Ls, Nx, Ny = S_q.shape
     Ly, NxY, offset = y_q.shape
     Af = 2
-
-    if Ny % Af != 0:
-        raise ValueError("Ny debe ser par para Af = 2")
-
-    if Ly != Ls or NxY != Nx or offset != Ny // Af:
-        raise ValueError(
-            f"Shapes incompatibles: S_q.shape={S_q.shape}, y_q.shape={y_q.shape}"
-        )
 
     grow_bits = int(np.ceil(np.log2(Ls))) if Ls > 1 else 0
     NB_B = NB_S + NB_Y + grow_bits

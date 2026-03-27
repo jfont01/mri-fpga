@@ -6,8 +6,7 @@ from numpy.typing import NDArray
 def fp_compute_I(
     m_hat: NDArray[np.complex128],
 ) -> NDArray[np.float64]:
-    comps, Nx, offset = m_hat.shape
-    assert comps == 2, "Esperamos Af=2 ⇒ vector de longitud 2"
+    _, Nx, offset = m_hat.shape
 
     Af = 2
     Ny = offset * Af

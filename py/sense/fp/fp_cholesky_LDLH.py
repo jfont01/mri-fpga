@@ -6,18 +6,7 @@ def fp_compute_LD_ij(
     A: NDArray[np.complex128],
     eps: float = 1e-12,
 ) -> tuple[NDArray[np.complex128], NDArray[np.complex128]]:
-    """
-    Factorización LDL^H para A Hermitiana HPD de tamaño 2x2.
-
-    A = L D L^H
-
-    L : (2,2), triangular inferior con diagonal unitaria
-    D : (2,2), diagonal real positiva
-    """
-
-    if A.shape != (2, 2):
-        raise ValueError(f"Se esperaba A con shape (2,2), recibido {A.shape}")
-
+    
     a00 = A[0, 0]
     a10 = A[1, 0]
     a11 = A[1, 1]
@@ -58,15 +47,6 @@ def fp_forward_subst_ldlh_i(
     L: NDArray[np.complex128],
     b: NDArray[np.complex128],
 ) -> NDArray[np.complex128]:
-    """
-    Resuelve L y = b
-    con L triangular inferior y diagonal unitaria.
-    """
-
-    if L.shape != (2, 2):
-        raise ValueError(f"Se esperaba L con shape (2,2), recibido {L.shape}")
-    if b.shape != (2,):
-        raise ValueError(f"Se esperaba b con shape (2,), recibido {b.shape}")
 
     y = np.zeros(2, dtype=np.complex128)
 
@@ -81,15 +61,6 @@ def fp_diagonal_subst_ldlh_i(
     y: NDArray[np.complex128],
     eps: float = 1e-12,
 ) -> NDArray[np.complex128]:
-    """
-    Resuelve D z = y
-    con D diagonal.
-    """
-
-    if D.shape != (2, 2):
-        raise ValueError(f"Se esperaba D con shape (2,2), recibido {D.shape}")
-    if y.shape != (2,):
-        raise ValueError(f"Se esperaba y con shape (2,), recibido {y.shape}")
 
     d0 = float(np.real(D[0, 0]))
     d1 = float(np.real(D[1, 1]))
@@ -110,15 +81,6 @@ def fp_backward_subst_ldlh_i(
     L: NDArray[np.complex128],
     z: NDArray[np.complex128],
 ) -> NDArray[np.complex128]:
-    """
-    Resuelve L^H m = z
-    con L triangular inferior y diagonal unitaria.
-    """
-
-    if L.shape != (2, 2):
-        raise ValueError(f"Se esperaba L con shape (2,2), recibido {L.shape}")
-    if z.shape != (2,):
-        raise ValueError(f"Se esperaba z con shape (2,), recibido {z.shape}")
 
     m_hat = np.zeros(2, dtype=np.complex128)
 

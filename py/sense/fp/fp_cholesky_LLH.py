@@ -7,9 +7,6 @@ def fp_compute_L(
     eps: float = 1e-12,
 ) -> NDArray[np.complex128]:
 
-    if A.shape != (2, 2):
-        raise ValueError(f"Se esperaba A con shape (2,2), recibido {A.shape}")
-
     a00 = A[0, 0]
     a10 = A[1, 0]
     a11 = A[1, 1]
@@ -44,11 +41,6 @@ def fp_forward_subst(
     L: NDArray[np.complex128],
     b: NDArray[np.complex128],
 ) -> NDArray[np.complex128]:
-    
-    if L.shape != (2, 2):
-        raise ValueError(f"Se esperaba L con shape (2,2), recibido {L.shape}")
-    if b.shape != (2,):
-        raise ValueError(f"Se esperaba b con shape (2,), recibido {b.shape}")
 
     z = np.zeros(2, dtype=np.complex128)
 
@@ -61,11 +53,6 @@ def fp_backward_subst(
     L: NDArray[np.complex128],
     z: NDArray[np.complex128],
 ) -> NDArray[np.complex128]:
-
-    if L.shape != (2, 2):
-        raise ValueError(f"Se esperaba L con shape (2,2), recibido {L.shape}")
-    if z.shape != (2,):
-        raise ValueError(f"Se esperaba z con shape (2,), recibido {z.shape}")
 
     m_hat = np.zeros(2, dtype=np.complex128)
 
@@ -81,14 +68,7 @@ def fp_compute_m_hat_i_llh(
     bij: NDArray[np.complex128],
     eps: float = 1e-12,
 ) -> NDArray[np.complex128]:
-    """
-    Resuelve Aij m = bij usando Cholesky manual 2x2.
 
-    Aij : (2,2)
-    bij : (2,)
-    Devuelve:
-        m : (2,)
-    """
     L = fp_compute_L(Aij, eps=eps)
     z = fp_forward_subst(L, bij)
     m_hat = fp_backward_subst(L, z)

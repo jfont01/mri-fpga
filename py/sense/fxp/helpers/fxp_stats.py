@@ -60,28 +60,13 @@ def A_structure_metrics(
     A_q: CFxpTensor | np.ndarray,
     eps: float = 1e-12,
 ) -> dict:
-    """
-    Métricas estructurales para A con shape (2,2,Nx,offset).
-
-    Reporta:
-    - mínimo de diagonal real
-    - min/max de det(A)
-    - cantidad de bloques con det(A) <= 0
-    - pivotes LDL^H:
-        d0 = real(A00)
-        d1 = real(A11) - |A10|^2 / d0
-    """
-
+    
     if isinstance(A_q, CFxpTensor):
         A = A_q.to_complex_ndarray()
     else:
         A = np.asarray(A_q, dtype=np.complex128)
 
-    if A.ndim != 4 or A.shape[0:2] != (2, 2):
-        raise ValueError(f"A debe tener shape (2,2,Nx,offset), recibió {A.shape}")
-
     _, _, Nx, offset = A.shape
-    nblocks = Nx * offset
 
     min_real_A00 = float("inf")
     min_real_A11 = float("inf")
@@ -99,9 +84,6 @@ def A_structure_metrics(
     count_d0_le_eps = 0
     count_d1_le_eps = 0
 
-    worst_det_idx = None
-    worst_d0_idx = None
-    worst_d1_idx = None
 
     for nx in range(Nx):
         for ny_alias in range(offset):
@@ -177,8 +159,6 @@ def A_structure_metrics(
     }
 
 def hermitian_error_metrics_A(A_q: CFxpTensor) -> dict:
-    if A_q.ndim != 4 or A_q.shape[0:2] != (2, 2):
-        raise ValueError(f"A debe tener shape (2,2,Nx,offset), recibió {A_q.shape}")
 
     A = A_q.to_complex_ndarray()
     _, _, Nx, offset = A.shape

@@ -52,9 +52,7 @@ def fp_compute_LD_tensor(
     A: NDArray[np.complex128],
     eps: float = 1e-12,
 ) -> tuple[NDArray[np.complex128], NDArray[np.complex128]]:
-    if A.ndim != 4 or A.shape[0:2] != (2, 2):
-        raise ValueError(f"A debe tener shape (2,2,Nx,offset), recibió {A.shape}")
-
+    
     _, _, Nx, offset = A.shape
 
     L = np.zeros((2, 2, Nx, offset), dtype=np.complex128)
@@ -73,10 +71,6 @@ def fp_forward_subst_ldlh_tensor(
     L: NDArray[np.complex128],
     b: NDArray[np.complex128],
 ) -> NDArray[np.complex128]:
-    if L.ndim != 4 or L.shape[0:2] != (2, 2):
-        raise ValueError(f"L debe tener shape (2,2,Nx,offset), recibió {L.shape}")
-    if b.ndim != 3 or b.shape[0] != 2:
-        raise ValueError(f"b debe tener shape (2,Nx,offset), recibió {b.shape}")
 
     _, _, Nx, offset = L.shape
     y = np.zeros((2, Nx, offset), dtype=np.complex128)
@@ -96,10 +90,6 @@ def fp_diagonal_subst_ldlh_tensor(
     y: NDArray[np.complex128],
     eps: float = 1e-12,
 ) -> NDArray[np.complex128]:
-    if D.ndim != 4 or D.shape[0:2] != (2, 2):
-        raise ValueError(f"D debe tener shape (2,2,Nx,offset), recibió {D.shape}")
-    if y.ndim != 3 or y.shape[0] != 2:
-        raise ValueError(f"y debe tener shape (2,Nx,offset), recibió {y.shape}")
 
     _, _, Nx, offset = D.shape
     z = np.zeros((2, Nx, offset), dtype=np.complex128)
@@ -119,10 +109,6 @@ def fp_backward_subst_ldlh_tensor(
     L: NDArray[np.complex128],
     z: NDArray[np.complex128],
 ) -> NDArray[np.complex128]:
-    if L.ndim != 4 or L.shape[0:2] != (2, 2):
-        raise ValueError(f"L debe tener shape (2,2,Nx,offset), recibió {L.shape}")
-    if z.ndim != 3 or z.shape[0] != 2:
-        raise ValueError(f"z debe tener shape (2,Nx,offset), recibió {z.shape}")
 
     _, _, Nx, offset = L.shape
     m_hat = np.zeros((2, Nx, offset), dtype=np.complex128)
@@ -139,10 +125,6 @@ def fp_backward_subst_ldlh_tensor(
 
 
 def fp_compute_m_hat_tensor(A, b, compute_type, cholesky_type=None):
-    if A.shape[0:2] != (2, 2):
-        raise ValueError(f"A debe tener shape (2,2,Nx,offset), recibió {A.shape}")
-    if b.shape[0] != 2:
-        raise ValueError(f"b debe tener shape (2,Nx,offset), recibió {b.shape}")
 
     _, _, Nx, offset = A.shape
 

@@ -46,6 +46,7 @@ else
   source $SENSE_GEN_RUN
 fi
 
+
 SENS_MAPS_NPY_PATH="$OUTPUT_STIMULUS_GEN_CASE_DIR/sens-maps/smap.npy"
 ALIASED_COILS_NPY_PATH="$OUTPUT_STIMULUS_GEN_CASE_DIR/coils-aliased/coil_aliased.npy"
 
@@ -104,8 +105,8 @@ else
   source $SENSE_FP_RUN
 fi
 
-if [[ ! -f "$OUTPUT_SENSE_FP_CASE_DIR/sense_rec_ldlh.npy" ]]; then
-  printf "[run.sh]    ${RED}ERROR:${NC} file not found: $OUTPUT_SENSE_FP_CASE_DIR/sense_rec_ldlh.npy"
+if [[ ! -f "$OUTPUT_SENSE_FP_CASE_DIR/I/I.npy" ]]; then
+  printf "[run.sh]    ${RED}ERROR:${NC} file not found: $OUTPUT_SENSE_FP_CASE_DIR/I/I.npy"
   exit 1
 fi
 echo ""
@@ -129,10 +130,17 @@ for idx in "${!NB_LIST[@]}"; do
 
   OUTPUT_SENSE_FXP_CASE_BITS_DIR="$OUTPUT_SENSE_FXP_CASE_DIR/NB${NB}_NBF${NBF}"
 
-  if [[ ! -f "$OUTPUT_SENSE_FXP_CASE_BITS_DIR/report.rpt" ]]; then
-    printf "[run.sh]    ${RED}ERROR:${NC} file not found: $OUTPUT_SENSE_FXP_CASE_BITS_DIR/report.rpt"
+  if [[ ! -f "$OUTPUT_SENSE_FXP_CASE_BITS_DIR/global_fxp_report.rpt" ]]; then
+    printf "[run.sh]    ${RED}ERROR:${NC} file not found: $OUTPUT_SENSE_FXP_CASE_BITS_DIR/global_fxp_report.rpt"
     exit 1
   fi
 
 done
+
+
+######################################## run_reporter.sh ########################################
+printf "[run.sh]    Running run_reporter.sh...\n"
+source $SENSE_REPORTER_RUN
+
+
 
