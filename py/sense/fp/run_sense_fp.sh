@@ -28,8 +28,8 @@ echo ""
 ###########################################################################
 #  Construcción de paths de phantom / smaps / coils aliasadas
 ###########################################################################
-OUTPUT_DIR="$SENSE_FP_DIR/output/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}"
-PHANTOM_DIR="$SENSE_GEN_DIR/output/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}"
+OUTPUT_DIR="$PY_SENSE_FP_DIR/output/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}"
+PHANTOM_DIR="$PY_GEN_ROOT/output/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}"
 
 SENS_MAPS_NPY_PATH="$PHANTOM_DIR/sens-maps/smap.npy"
 ALIASED_COILS_NPY_PATH="$PHANTOM_DIR/coils-aliased/coil_aliased.npy"
@@ -57,7 +57,7 @@ echo ""
 echo "[run_sense_fp.sh]   Running fp_sense_runner.py"
 echo ""
 
-python3 "$SENSE_FP_DIR/fp_sense_runner.py"                      \
+python3 "$PY_SENSE_FP_DIR/fp_sense_runner.py"                      \
   --smaps-npy-path="$SENS_MAPS_NPY_PATH"                        \
   --aliased-coils-npy-path="$ALIASED_COILS_NPY_PATH"            \
   --output-path="$OUTPUT_DIR"                                   \

@@ -4,21 +4,21 @@ import sys
 from typing import Tuple, Dict
 
 # ------------------------- ENVIRONMENT SET -------------------------
-FXP_MODEL_ROOT = os.environ.get("FXP_MODEL_ROOT")
-if FXP_MODEL_ROOT is None:
-    raise RuntimeError("[ERROR] FXP_MODEL_ROOT not defined")
+PY_FXP_MODEL_ROOT = os.environ.get("PY_FXP_MODEL_ROOT")
+if PY_FXP_MODEL_ROOT is None:
+    raise RuntimeError("[ERROR] PY_FXP_MODEL_ROOT not defined")
 
-sys.path.insert(0, FXP_MODEL_ROOT)
+sys.path.insert(0, PY_FXP_MODEL_ROOT)
 
 from fxp import Fxp
 from cfxp import CFxp
 from cfxptensor import CFxpTensor
 
-SENSE_FXP_DIR = os.environ.get("SENSE_FXP_DIR")
-if SENSE_FXP_DIR is None:
-    raise RuntimeError("[ERROR] SENSE_FXP_DIR not defined")
+PY_SENSE_FXP_DIR = os.environ.get("PY_SENSE_FXP_DIR")
+if PY_SENSE_FXP_DIR is None:
+    raise RuntimeError("[ERROR] PY_SENSE_FXP_DIR not defined")
 
-sys.path.insert(0, os.path.join(SENSE_FXP_DIR, "helpers"))
+sys.path.insert(0, os.path.join(PY_SENSE_FXP_DIR, "helpers"))
 from fxp_stats import update_acc_stats
 # ------------------------------------------------------------------
 

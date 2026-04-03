@@ -7,11 +7,11 @@ from helpers.comparision import *
 from helpers.img_savers import *
 from helpers.rpt_writer import *
 # ------------------------- ENVIRONMENT SET -------------------------
-FXP_MODEL_ROOT = os.environ.get("FXP_MODEL_ROOT")
-if FXP_MODEL_ROOT is None:
-    raise RuntimeError("[ERROR] FXP_MODEL_ROOT not defined")
+PY_FXP_MODEL_ROOT = os.environ.get("PY_FXP_MODEL_ROOT")
+if PY_FXP_MODEL_ROOT is None:
+    raise RuntimeError("[ERROR] PY_FXP_MODEL_ROOT not defined")
 
-sys.path.insert(0, FXP_MODEL_ROOT)
+sys.path.insert(0, PY_FXP_MODEL_ROOT)
 
 from cfxptensor import CFxpTensor
 # ------------------------------------------------------------------
@@ -188,7 +188,7 @@ def main() -> None:
         save_tensor_compare_figures(x_fp, x_fxp, os.path.join(out_dir, "compare_figures", "x"), "x")
         save_tensor_compare_figures(z_fp, z_fxp, os.path.join(out_dir, "compare_figures", "z"), "z")
         save_tensor_compare_figures(m_hat_fp, m_hat_fxp, os.path.join(out_dir, "compare_figures", "m_hat"), "m_hat")
-        save_tensor_compare_figures(I_fp, I_fxp, os.path.join(out_dir, "compare_figures", "I"), "I")
+        save_tensor_compare_figures(I_fp, I_fxp_abs, os.path.join(out_dir, "compare_figures", "I"), "I")
 
 if __name__ == "__main__":
     main()

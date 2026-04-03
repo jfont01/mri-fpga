@@ -67,7 +67,9 @@ def main() -> None:
     # A
     # -------------------------------------------------------------------
     print("[fp_sense_runner.py]     Running fp_compute_A ...")
+
     A = fp_compute_A_tensor(S)
+
     print("[fp_sense_runner.py]     A shape:", A.shape)
     print("[fp_sense_runner.py]     Saving A npy file ...")
     A_dir = os.path.join(out_dir, "A")
@@ -85,7 +87,9 @@ def main() -> None:
     # b
     # -------------------------------------------------------------------
     print("[fp_sense_runner.py]     Running fp_compute_b ...")
+
     b = fp_compute_b_tensor(S, y)
+
     print("[fp_sense_runner.py]     b shape:", b.shape)
     print("[fp_sense_runner.py]     Saving b npy file ...")
     b_dir = os.path.join(out_dir, "b")
@@ -100,7 +104,9 @@ def main() -> None:
     # LD
     # -------------------------------------------------------------------
     print("[fp_sense_runner.py]     Running fp_compute_LD ...")
+
     L, D = fp_compute_LD_tensor(A)
+
     print("[fp_sense_runner.py]     L shape:", L.shape)
     print("[fp_sense_runner.py]     Saving L npy file ...")
     L_dir = os.path.join(out_dir, "L")
@@ -125,7 +131,9 @@ def main() -> None:
     # x
     # -------------------------------------------------------------------
     print("[fp_sense_runner.py]     Running fp_forward_subst_ldlh (computing x) ...")
+
     x = fp_forward_subst_ldlh_tensor(L, b)
+
     print("[fp_sense_runner.py]     x shape:", x.shape)
     print("[fp_sense_runner.py]     Saving x npy file ...")
     x_dir = os.path.join(out_dir, "x")
@@ -141,7 +149,9 @@ def main() -> None:
     # z
     # -------------------------------------------------------------------
     print("[fp_sense_runner.py]     Running fp_diagonal_subst_ldlh (computing z) ...")
+
     z = fp_diagonal_subst_ldlh_tensor(D, x)
+
     print("[fp_sense_runner.py]     z shape:", z.shape)
     print("[fp_sense_runner.py]     Saving z npy file ...")
     z_dir = os.path.join(out_dir, "z")
@@ -156,7 +166,9 @@ def main() -> None:
     # m_hat
     # -------------------------------------------------------------------
     print("[fp_sense_runner.py]     Running fp_backward_subst_ldlh (computing m_hat) ...")
+
     m_hat_ldlh = fp_backward_subst_ldlh_tensor(L, z)
+
     print("[fp_sense_runner.py]     m_hat shape:", m_hat_ldlh.shape)
     print("[fp_sense_runner.py]     Saving m_hat npy file ...")
     m_hat_dir = os.path.join(out_dir, "m_hat")
@@ -172,7 +184,9 @@ def main() -> None:
     # I
     # -------------------------------------------------------------------
     print("[fp_sense_runner.py]     Running fp_img_recon (computing I) ...")
+
     I_ldlh = fp_compute_I(m_hat_ldlh)
+    
     print("[fp_sense_runner.py]     I shape:", I_ldlh.shape)
     print("[fp_sense_runner.py]     Saving I npy file ...")
     I_dir = os.path.join(out_dir, "I")

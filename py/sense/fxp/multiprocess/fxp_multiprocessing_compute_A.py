@@ -5,25 +5,23 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Tuple, Dict, Any
 
 # ------------------------- ENVIRONMENT SET -------------------------
-FXP_MODEL_ROOT = os.environ.get("FXP_MODEL_ROOT")
-if FXP_MODEL_ROOT is None:
-    raise RuntimeError("[ERROR] FXP_MODEL_ROOT not defined")
+PY_FXP_MODEL_ROOT = os.environ.get("PY_FXP_MODEL_ROOT")
+if PY_FXP_MODEL_ROOT is None:
+    raise RuntimeError("[ERROR] PY_FXP_MODEL_ROOT not defined")
 
-sys.path.insert(0, FXP_MODEL_ROOT)
+sys.path.insert(0, PY_FXP_MODEL_ROOT)
 
 from fxp import Fxp
 from cfxptensor import CFxpTensor
 
-SENSE_FXP_DIR = os.environ.get("SENSE_FXP_DIR")
-if SENSE_FXP_DIR is None:
-    raise RuntimeError("[ERROR] SENSE_FXP_DIR not defined")
+PY_SENSE_FXP_DIR = os.environ.get("PY_SENSE_FXP_DIR")
+if PY_SENSE_FXP_DIR is None:
+    raise RuntimeError("[ERROR] PY_SENSE_FXP_DIR not defined")
 
-sys.path.insert(0, os.path.join(SENSE_FXP_DIR, "singleprocess"))
+sys.path.insert(0, os.path.join(PY_SENSE_FXP_DIR, "singleprocess"))
 from fxp_compute_A import fxp_compute_A_ij
 
-
-
-sys.path.insert(0, os.path.join(SENSE_FXP_DIR, "helpers"))
+sys.path.insert(0, os.path.join(PY_SENSE_FXP_DIR, "helpers"))
 from fxp_stats import _get_all_stats, _sum_stats
 # ------------------------------------------------------------------
 
@@ -32,20 +30,32 @@ from fxp_stats import _get_all_stats, _sum_stats
 # Variable global en workers
 # ------------------------------------------------------------------
 _S_Q = None
+_NB_A = None
+_NBF_A = None
 
-
-def _init_worker_A(S_q: CFxpTensor) -> None:
+def _init_worker_A(
+    S_q: CFxpTensor,
+    NB_A: int,
+    NBF_A: int
+) -> None:
+    
     global _S_Q
+    global _NB_A, _NBF_A
     _S_Q = S_q
+    _NB_A, _NBF_A = NB_A, NBF_A
 
 
-def _worker_compute_A_nx(nx: int) -> Tuple[int, CFxpTensor, Dict[str, Any]]:
+def _worker_compute_A_nx(
+        nx: int
+) -> Tuple[int, CFxpTensor, Dict[str, Any]]:
+    
     global _S_Q
+    global _NB_A, _NBF_A
+
+    NB_A, NBF_A = _NB_A, _NBF_A
 
     Fxp.reset_fxp_stats()
 
-    NB_S = _S_Q.NB
-    NBF_S = _S_Q.NBF
     signed = _S_Q.signed
     L, _, Ny = _S_Q.shape
     Af = 2
@@ -53,9 +63,6 @@ def _worker_compute_A_nx(nx: int) -> Tuple[int, CFxpTensor, Dict[str, Any]]:
 
     offset = Ny // Af
 
-    grow_bits = int(np.ceil(np.log2(L))) if L > 1 else 0
-    NB_A = 2 * NB_S + grow_bits
-    NBF_A = 2 * NBF_S
 
     A_nx = CFxpTensor.zeros(
         shape=(2, 2, offset),
@@ -68,7 +75,7 @@ def _worker_compute_A_nx(nx: int) -> Tuple[int, CFxpTensor, Dict[str, Any]]:
     stats_nx: Dict[str, Any] = {}
 
     for ny_alias in range(offset):
-        Aij = fxp_compute_A_ij(_S_Q, nx, ny_alias, stats_nx)
+        Aij = fxp_compute_A_ij(_S_Q, NB_A, NBF_A, nx, ny_alias, stats_nx)
 
         A_nx[0, 0, ny_alias] = Aij[0, 0]
         A_nx[0, 1, ny_alias] = Aij[0, 1]
@@ -84,22 +91,17 @@ def _worker_compute_A_nx(nx: int) -> Tuple[int, CFxpTensor, Dict[str, Any]]:
 
 def fxp_multiprocessing_compute_A(
     S_q: CFxpTensor,
+    NB_A: int,
+    NBF_A: int,
     max_workers: int | None = None,
     chunksize: int = 4,
 ) -> Tuple[CFxpTensor, Dict[str, Any]]:
 
-    NB_S = S_q.NB
-    NBF_S = S_q.NBF
     signed = S_q.signed
     L, Nx, Ny = S_q.shape
     Af = 2
 
-
     offset = Ny // Af
-
-    grow_bits = int(np.ceil(np.log2(L))) if L > 1 else 0
-    NB_A = 2 * NB_S + grow_bits
-    NBF_A = 2 * NBF_S
 
     A = CFxpTensor.zeros(
         shape=(2, 2, Nx, offset),
@@ -116,7 +118,7 @@ def fxp_multiprocessing_compute_A(
     with ProcessPoolExecutor(
         max_workers=max_workers,
         initializer=_init_worker_A,
-        initargs=(S_q,),
+        initargs=(S_q, NB_A, NBF_A),
     ) as executor:
 
         for nx, A_nx, stats_nx in executor.map(

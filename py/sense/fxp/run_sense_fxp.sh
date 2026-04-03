@@ -1,3 +1,4 @@
+set -Eeuo pipefail
 # Colores
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -20,64 +21,49 @@ fi
 
 source "$CONF"
 
-###########################################################################
-# Validaciones de listas
-###########################################################################
-if [[ ${#NB_LIST[@]} -ne ${#NBF_LIST[@]} ]]; then
-  printf "[run_sense_fxp.sh] ${RED}ERROR: NB_LIST and NBF_LIST must have the same length${NC}\n"
-  exit 1
-fi
-
-###########################################################################
-#  Parámetros cargados desde config.conf
-###########################################################################
-echo "[run_sense_fxp.sh] Files to quantize:"
-echo "[run_sense_fxp.sh]     Sensitivity Maps  : $SENS_MAPS_NPY_PATH"
-echo "[run_sense_fxp.sh]     Aliased coils     : $ALIASED_COILS_NPY_PATH"
-echo ""
-echo "[run_sense_fxp.sh] Conf file read       : $CONF"
-echo "[run_sense_fxp.sh] max_workers          : $MAX_WORKERS"
-echo "[run_sense_fxp.sh] chunksize            : $CHUNKSIZE"
-echo ""
 
 ##########################################################################
 # Loop de regresión
 ##########################################################################
-SENSE_FXP_RECON_DIR="$SENSE_FXP_DIR/output"
-for idx in "${!NB_LIST[@]}"; do
-  NB="${NB_LIST[$idx]}"
-  NBF="${NBF_LIST[$idx]}"
+SENSE_FXP_RECON_DIR="$PY_SENSE_FXP_DIR/output"
+for i in "${!NB_K_LIST[@]}"; do
+  NB_K="${NB_K_LIST[$i]}"
+  NBF_K="${NBF_K_LIST[$i]}"
+  for j in "${!NB_A_LIST[@]}"; do
+    NB_A="${NB_A_LIST[$j]}"
+    NBF_A="${NBF_A_LIST[$j]}"
+      for k in "${!NB_B_LIST[@]}"; do
+        NB_B="${NB_B_LIST[$k]}"
+        NBF_B="${NBF_B_LIST[$k]}"
+        for l in "${!NB_S_LIST[@]}"; do
+          NB_S="${NB_S_LIST[$l]}"
+          NBF_S="${NBF_S_LIST[$l]}"
 
-  RECON_NAME="N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}"
-  CASE_NAME="NB${NB}_NBF${NBF}"
+          S_NPZ_PATH="$PY_QUANTIZER_ROOT/output/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}/S/NB${NB_S}_NBF${NBF_S}/S.npz"
+          Y_NPZ_PATH="$PY_FFT2D_FXP_DIR/output/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}/NB${NB_K}_NBF${NBF_K}/coils_aliased.npz"
 
-  OUTPUT_DIR="$SENSE_FXP_RECON_DIR/$RECON_NAME/$CASE_NAME"
-  mkdir -p "$OUTPUT_DIR"
+          OUTPUT_DIR="$SENSE_FXP_RECON_DIR/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}/NB_Y${NB_K}_NBF_Y${NBF_K}NB_S${NB_S}_NBF_S${NBF_S}_NB_A${NB_A}_NBF_A${NBF_A}NB_B${NB_B}_NBF_B${NBF_B}"
+          mkdir -p "$OUTPUT_DIR"
 
-  NPZ_DIR="$SENSE_FXP_QUANTIZER_DIR/output/$RECON_NAME/$CASE_NAME"
-  
-  S_NPZ_PATH="$NPZ_DIR/S_q_NB${NB}_NBF${NBF}.npz"
-  Y_NPZ_PATH="$NPZ_DIR/y_q_NB${NB}_NBF${NBF}.npz"
-  
+          printf "[run_sense_fxp.sh] ${YELLOW}Running fxp_sense.py with NB_Y=${NB_K} NBF_Y=${NBF_K} NB_S=${NB_S} NBF_S=${NBF_S} NB_A=${NB_A} NBF_A=${NBF_A} NB_B=${NB_B} NBF_B=${NBF_B}${NC}\n"
 
-  printf "[run_sense_fxp.sh] ${YELLOW}Running fxp_sense.py with NB=${NB} NBF=${NBF}${NC}\n"
+          python3 "$PY_SENSE_FXP_DIR/fxp_sense_runner.py"       \
+          --smaps-npz-path="$S_NPZ_PATH"                        \
+          --aliased-coils-npz-path="$Y_NPZ_PATH"                \
+          --output-dir="$OUTPUT_DIR"                            \
+          --NB-A="$NB_A"                                        \
+          --NBF-A="$NBF_A"                                      \
+          --NB-B="$NB_B"                                        \
+          --NBF-B="$NBF_B"                                      \
+          --max-workers=$MAX_WORKERS                            \
+          --chunksize=$CHUNKSIZE                                \
+          --save-images="$SAVE_COMPARISION_IMAGES"              
 
-  python3 "$SENSE_FXP_DIR/fxp_sense_runner.py"                   \
-    --smaps-npz-path="$S_NPZ_PATH"                        \
-    --aliased-coils-npz-path="$Y_NPZ_PATH"                \
-    --output-dir="$OUTPUT_DIR"                            \
-    --max-workers=$MAX_WORKERS                            \
-    --chunksize=$CHUNKSIZE                                \
-    --save-images="$SAVE_COMPARISION_IMAGES" 
-
-
-  if [[ $? -ne 0 ]]; then
-    printf "[run_sense_fxp.sh] ${RED}ERROR running fxp_sense_runner.py for NB=${NB}, NBF=${NBF}${NC}\n"
-    exit 1
-  fi
-
-  printf "[run_sense_fxp.sh] ${YELLOW}Done for NB=${NB}, NBF=${NBF}${NC}\n"
-  printf "\n"
+          printf "[run_sense_fxp.sh] ${YELLOW}Done for NB_Y=${NB_K} NBF_Y=${NBF_K} NB_S=${NB_S} NBF_S=${NBF_S} NB_A=${NB_A} NBF_A=${NBF_A} NB_B=${NB_B} NBF_B=${NBF_B}${NC}\n"
+          printf "\n"
+      done
+    done
+  done
 done
 
 

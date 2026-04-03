@@ -16,11 +16,7 @@ def save_complex_compare_figure(
     mag_cmap: str = "gray",
     phase_cmap: str = "gray",
 ) -> None:
-    if X_fp.shape != X_fxp.shape:
-        raise ValueError(f"Shape mismatch: X_fp={X_fp.shape}, X_fxp={X_fxp.shape}")
 
-    if X_fp.ndim != 2:
-        raise ValueError(f"Se esperaba matriz 2D compleja, recibido shape={X_fp.shape}")
     X_fp = _as_complex_ndarray(X_fp)
     X_fxp = _as_complex_ndarray(X_fxp)
     X_diff = X_fp - X_fxp
@@ -78,8 +74,7 @@ def save_tensor_compare_figures(
     out_dir: str,
     prefix: str
 ) -> None:
-    if X_fp.shape != X_fxp.shape:
-        raise ValueError(f"Shape mismatch: X_fp={X_fp.shape}, X_fxp={X_fxp.shape}")
+
     X_fp = _as_complex_ndarray(X_fp)
     X_fxp = _as_complex_ndarray(X_fxp)
     os.makedirs(out_dir, exist_ok=True)
@@ -107,5 +102,3 @@ def save_tensor_compare_figures(
                     os.path.join(out_dir, f"{prefix}_{i}{j}_compare.png"),
                     f"{prefix}[{i},{j}] : fp vs fxp vs diff"
                 )
-    else:
-        raise ValueError(f"No se soporta guardar figuras para shape={X_fp.shape}")

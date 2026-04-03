@@ -1,11 +1,11 @@
 import numpy as np, os, sys
 from numpy.typing import NDArray
 # ------------------------- ENVIRONMENT SET -------------------------
-SENSE_FP_DIR = os.environ.get("SENSE_FP_DIR")
-if SENSE_FP_DIR is None:
-    raise RuntimeError("[ERROR] SENSE_FXP_DIR not defined")
+PY_SENSE_FP_DIR = os.environ.get("PY_SENSE_FP_DIR")
+if PY_SENSE_FP_DIR is None:
+    raise RuntimeError("[ERROR] PY_SENSE_FXP_DIR not defined")
 
-sys.path.insert(0, SENSE_FP_DIR)
+sys.path.insert(0, PY_SENSE_FP_DIR)
 
 from fp_compute_A           import fp_compute_A_ij
 from fp_compute_b           import fp_compute_b_i

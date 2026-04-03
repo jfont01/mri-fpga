@@ -16,20 +16,20 @@ from singleprocess.fxp_compute_I                             import fxp_compute_
 from helpers.fxp_rpt_writer                                  import fxp_rpt_writer
 from helpers.fxp_save_tensor_png                             import fxp_save_tensor_png
 # ------------------------- ENVIRONMENT SET -------------------------
-FXP_MODEL_ROOT = os.environ.get("FXP_MODEL_ROOT")
-if FXP_MODEL_ROOT is None:
-    raise RuntimeError("[ERROR] FXP_MODEL_ROOT not defined")
+PY_FXP_MODEL_ROOT = os.environ.get("PY_FXP_MODEL_ROOT")
+if PY_FXP_MODEL_ROOT is None:
+    raise RuntimeError("[ERROR] PY_FXP_MODEL_ROOT not defined")
 
-sys.path.insert(0, FXP_MODEL_ROOT)
+sys.path.insert(0, PY_FXP_MODEL_ROOT)
 
 from cfxptensor import CFxpTensor
 
-SENSE_FXP_DIR = os.environ.get("SENSE_FXP_DIR")
-if SENSE_FXP_DIR is None:
-    raise RuntimeError("[ERROR] SENSE_FXP_DIR not defined")
+PY_SENSE_FXP_DIR = os.environ.get("PY_SENSE_FXP_DIR")
+if PY_SENSE_FXP_DIR is None:
+    raise RuntimeError("[ERROR] PY_SENSE_FXP_DIR not defined")
 
 
-sys.path.insert(0, os.path.join(SENSE_FXP_DIR, "helpers"))
+sys.path.insert(0, os.path.join(PY_SENSE_FXP_DIR, "helpers"))
 from fxp_stats import *
 # ------------------------------------------------------------------
 
@@ -49,6 +49,31 @@ def parse_args() -> argparse.Namespace:
         type=str,
         required=True
     )
+
+    parser.add_argument(
+        "--NB-A",
+        type=int,
+        required=True
+    )
+
+    parser.add_argument(
+        "--NBF-A",
+        type=int,
+        required=True
+    )
+
+    parser.add_argument(
+        "--NB-B",
+        type=int,
+        required=True
+    )
+
+    parser.add_argument(
+        "--NBF-B",
+        type=int,
+        required=True
+    )
+
 
     parser.add_argument(
         "--output-dir",
@@ -84,6 +109,10 @@ def main() -> None:
     smaps_path_npz       = args.smaps_npz_path
     coils_alias_path_npz = args.aliased_coils_npz_path
     out_dir              = args.output_dir
+    NB_A                 = args.NB_A
+    NBF_A                = args.NBF_A
+    NB_B                 = args.NB_B
+    NBF_B                = args.NBF_B
     max_workers          = args.max_workers
     chunksize            = args.chunksize
     save_images          = True if (args.save_images == "True") else False
@@ -117,7 +146,9 @@ def main() -> None:
     # A
     # ---------------------------------------------------------
     print("[fxp_sense_runner.py]   Running fxp_multiprocessing_compute_A ...")
-    A_fxp, stats_A = fxp_multiprocessing_compute_A(S_fxp, max_workers, chunksize)
+
+    A_fxp, stats_A = fxp_multiprocessing_compute_A(S_fxp, NB_A, NBF_A, max_workers, chunksize)
+
     print("[fxp_sense_runner.py]   A shape:", A_fxp.shape)
     print("[fxp_sense_runner.py]   Saving A npz file ...")
     A_dir = os.path.join(out_dir, "A")
@@ -137,7 +168,9 @@ def main() -> None:
     # b
     # ---------------------------------------------------------
     print("[fxp_sense_runner.py]   Running fxp_multiprocessing_compute_b ...")
-    b_fxp, stats_b = fxp_multiprocessing_compute_b(S_fxp, y_fxp, max_workers, chunksize)
+
+    b_fxp, stats_b = fxp_multiprocessing_compute_b(S_fxp, y_fxp, NB_B, NBF_B, max_workers, chunksize)
+
     print("[fxp_sense_runner.py]   b shape:", b_fxp.shape)
     print("[fxp_sense_runner.py]   Saving b npz file ...")
     b_dir = os.path.join(out_dir, "b")
@@ -157,7 +190,9 @@ def main() -> None:
     # D
     # ---------------------------------------------------------
     print("[fxp_sense_runner.py]   Running fxp_multiprocessing_compute_D ...")
+
     D_fxp, stats_D = fxp_multiprocessing_compute_D(A_fxp, max_workers, chunksize)
+
     print("[fxp_sense_runner.py]   D shape:", D_fxp.shape)
     print("[fxp_sense_runner.py]   Saving D npz file ...")
     D_dir = os.path.join(out_dir, "D")
@@ -175,7 +210,9 @@ def main() -> None:
     # L
     # ---------------------------------------------------------
     print("[fxp_sense_runner.py]   Running fxp_multiprocessing_compute_L ...")
+
     L_fxp, stats_L = fxp_multiprocessing_compute_L(A_fxp, D_fxp, max_workers, chunksize)
+
     print("[fxp_sense_runner.py]   L shape:", L_fxp.shape)
     print("[fxp_sense_runner.py]   Saving L npz file ...")
     L_dir = os.path.join(out_dir, "L")
@@ -195,7 +232,9 @@ def main() -> None:
     # x
     # ---------------------------------------------------------
     print("[fxp_sense_runner.py]   Running fxp_multiprocessing_compute_x ...")
+
     x_fxp, stats_x = fxp_multiprocessing_compute_x(L_fxp, b_fxp, max_workers, chunksize)
+
     print("[fxp_sense_runner.py]   x shape:", x_fxp.shape)
     print("[fxp_sense_runner.py]   Saving x npz file ...")
     x_dir = os.path.join(out_dir, "x")
@@ -215,7 +254,9 @@ def main() -> None:
     # z
     # ---------------------------------------------------------
     print("[fxp_sense_runner.py]   Running fxp_multiprocessing_compute_z ...")
+
     z_fxp, stats_z = fxp_multiprocessing_compute_z(D_fxp, x_fxp, max_workers, chunksize)
+
     print("[fxp_sense_runner.py]   z shape:", z_fxp.shape)
     print("[fxp_sense_runner.py]   Saving z npz file ...")
     z_dir = os.path.join(out_dir, "z")
@@ -234,7 +275,9 @@ def main() -> None:
     # m_hat
     # ---------------------------------------------------------
     print("[fxp_sense_runner.py]   Running fxp_multiprocessing_compute_m_hat ...")
+
     m_hat_fxp, stats_m_hat = fxp_multiprocessing_compute_m_hat(L_fxp, z_fxp, max_workers, chunksize)
+
     print("[fxp_sense_runner.py]   m_hat shape:", m_hat_fxp.shape)
     print("[fxp_sense_runner.py]   Saving m_hat npz file ...")
     m_hat_dir = os.path.join(out_dir, "m_hat")
@@ -254,7 +297,9 @@ def main() -> None:
     # ---------------------------------------------------------
     print("[fxp_sense_runner.py]   Running fxp_compute_I ...")
     stats_I = {}
+
     I_fxp = fxp_compute_I(m_hat_fxp, stats_I=stats_I)
+    
     print("[fxp_sense_runner.py]   I shape:", I_fxp.shape)
 
     print("[fxp_sense_runner.py]   Saving I npz file ...")
