@@ -20,3 +20,4 @@ log/
 *.npz
 *.rpt
 *.log
+*.dat
