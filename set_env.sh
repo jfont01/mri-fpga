@@ -47,6 +47,8 @@ check_var() {
 
 ###################################### Global Config Path ######################################
 export GLOBAL_CONF_PATH="$FPGA_MRI_ROOT/global_config.conf"             #global_config.conf
+# Roots
+export VM_ROOT="$FPGA_MRI_ROOT/vm" 
 
 ######################################### Python Paths #########################################
 # Roots
@@ -97,6 +99,9 @@ export PY_FXP_MODEL_TEST_DIR="$PY_FXP_MODEL_ROOT/test"
 check_var GLOBAL_CONF_PATH
 
 check_var FPGA_MRI_ROOT
+
+check_var VM_ROOT
+
 check_var PY_ROOT
 check_var PY_RUNNER
 check_var PY_FXP_MODEL_ROOT
@@ -131,6 +136,7 @@ echo ""
 ###########################################################################
 check_dir "$FPGA_MRI_ROOT"
 check_dir "$PY_ROOT"
+check_dir "$VM_ROOT"
 check_dir "$PY_RUNNER"
 check_dir "$PY_FXP_MODEL_ROOT"
 check_dir "$PY_NPY_DATA_ROOT"

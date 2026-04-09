@@ -15,6 +15,7 @@ from multiprocess.fxp_multiprocessing_compute_m_hat          import fxp_multipro
 from singleprocess.fxp_compute_I                             import fxp_compute_I
 from helpers.fxp_rpt_writer                                  import fxp_rpt_writer
 from helpers.fxp_save_tensor_png                             import fxp_save_tensor_png
+from helpers.fxp_dat_saver                                   import save_full_tensor_dat
 # ------------------------- ENVIRONMENT SET -------------------------
 PY_FXP_MODEL_ROOT = os.environ.get("PY_FXP_MODEL_ROOT")
 if PY_FXP_MODEL_ROOT is None:
@@ -333,6 +334,19 @@ def main() -> None:
     fxp_rpt_writer(os.path.join(I_dir, "I.rpt"), stats_I, os.path.join(I_dir, "I.npz"))
 
 
+    # -------------------------------------------------------------------
+    # Vector Matching .dat file saver
+    # -------------------------------------------------------------------
+    save_full_tensor_dat(os.path.join(A_dir, "A.npz"), os.path.join(A_dir, "A.dat"))
+    save_full_tensor_dat(os.path.join(b_dir, "b.npz"), os.path.join(b_dir, "b.dat"))
+    save_full_tensor_dat(os.path.join(L_dir, "L.npz"), os.path.join(L_dir, "L.dat"))
+    save_full_tensor_dat(os.path.join(D_dir, "D.npz"), os.path.join(D_dir, "D.dat"))
+    save_full_tensor_dat(os.path.join(z_dir, "z.npz"), os.path.join(z_dir, "z.dat"))
+    save_full_tensor_dat(os.path.join(x_dir, "x.npz"), os.path.join(x_dir, "x.dat"))
+    save_full_tensor_dat(os.path.join(m_hat_dir, "m_hat.npz"), os.path.join(m_hat_dir, "m_hat.dat"))
+    save_full_tensor_dat(os.path.join(I_dir, "I.npz"), os.path.join(I_dir, "I.dat"))
+
+    save_full_tensor_dat(os.path.join(A_dir, "A.npz"), os.path.join(os.getenv("VM_ROOT"), "A", "py_A.dat"))
     # ---------------------------------------------------------
     # Gobal report writer
     # ---------------------------------------------------------

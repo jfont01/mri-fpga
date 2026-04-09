@@ -143,16 +143,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--phantom-type",
         type=str,
-        choices=["two-disks", "rings", "two-gaussian-dots", "shepp-logan", "knee-512"],
-        default="two-disks",
-        help=(
-            "Tipo de phantom a generar: "
-            "'two-disks' (dos discos), "
-            "'rings' (anillos concéntricos), "
-            "'two-gaussian-dots' (dos manchas gaussianas) o "
-            "'shepp-logan' (phantom Shepp-Logan de scikit-image). "
-            "Default: two-disks"
-        ),
+
     )
 
     parser.add_argument(

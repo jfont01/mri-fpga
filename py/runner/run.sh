@@ -153,7 +153,7 @@ else
 fi
 echo ""
 
-######################################## COPY RESULTS TO runner/output #########################################
+######################################## copy results to '...runner/output/<case>' #########################################
 printf "[run.sh]    Copying generated outputs to: %s\n" "$RUNNER_OUTPUT_CASE_DIR"
 mkdir -p "$RUNNER_OUTPUT_CASE_DIR"
 

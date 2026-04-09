@@ -1,63 +1,36 @@
 #include <iostream>
-#include <vector>
-#include <complex>
 #include <string>
-#include "cnpy/cnpy.h"
+#include <filesystem>
 
-template<typename T>
-void print_shape(const std::vector<T>& shape) {
-    std::cout << "shape = (";
-    for (size_t i = 0; i < shape.size(); i++) {
-        std::cout << shape[i];
-        if (i + 1 < shape.size()) std::cout << ", ";
-    }
-    std::cout << ")\n";
-}
+#include "load_stim.h"
+#include "main.h"
+#include "Aij.h"
+#include "helpers.h"
+#include "A.h"
+#include "config_loader.h"
 
-int main(int argc, char** argv) {
-    if (argc != 2) {
-        std::cerr << "Uso: " << argv[0] << " archivo.npy\n";
-        return 1;
-    }
+using std::string;
+using std::vector;
 
-    const std::string path = argv[1];
 
-    cnpy::NpyArray arr = cnpy::npy_load(path);
+int main() {
 
-    std::cout << "word_size = " << arr.word_size << "\n";
-    std::cout << "fortran_order = " << arr.fortran_order << "\n";
-    print_shape(arr.shape);
+    string S_npy_path = get_S_npy_path();
+    string y_npy_path = get_y_npy_path();
+    string A_dat_path = get_A_dat_path();
 
-    // Caso típico: complejo128 de NumPy
-    if (arr.word_size == sizeof(std::complex<double>)) {
-        std::complex<double>* data = arr.data<std::complex<double>>();
+    ComplexTensor y_f = load_complex_npy(y_npy_path);
+    auto y_q = quantize_complex_tensor<NB_Y, NBI_Y>(y_f);
 
-        size_t total = 1;
-        for (size_t d : arr.shape) total *= d;
+    ComplexTensor S_f = load_complex_npy(S_npy_path);
+    auto S_q = quantize_complex_tensor<NB_S, NBI_S>(S_f);
 
-        std::cout << "dtype asumido: complex128\n";
-        std::cout << "total elems = " << total << "\n";
+    vector<size_t> A_shape;
+    auto A_q = compute_A<NB_S, NBI_S, NB_A, NBI_A>(S_q, S_f.shape, A_shape);
 
-        size_t nprint = std::min<size_t>(total, 8);
-        for (size_t i = 0; i < nprint; i++) {
-            std::cout << "data[" << i << "] = " << data[i] << "\n";
-        }
-    } else if (arr.word_size == sizeof(double)) {
-        double* data = arr.data<double>();
-
-        size_t total = 1;
-        for (size_t d : arr.shape) total *= d;
-
-        std::cout << "dtype asumido: float64\n";
-        std::cout << "total elems = " << total << "\n";
-
-        size_t nprint = std::min<size_t>(total, 8);
-        for (size_t i = 0; i < nprint; i++) {
-            std::cout << "data[" << i << "] = " << data[i] << "\n";
-        }
-    } else {
-        std::cout << "word_size no manejado en este ejemplo.\n";
-    }
+    save_A_hex_dat(A_q, A_shape, A_dat_path);
 
     return 0;
+
+
 }
