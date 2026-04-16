@@ -4,6 +4,9 @@ __pycache__/
 doc/
 raw_data/
 log/
+.Xil/
+amd/
+miscelaneas/
 *.pdf
 *.drawio
 *.docx
@@ -21,3 +24,5 @@ log/
 *.rpt
 *.log
 *.dat
+*.jou
+*.dcp

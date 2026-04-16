@@ -27,7 +27,6 @@ def save_full_tensor_dat(npz_path: str, out_dat_path: str) -> None:
 
     with open(out_dat_path, "w", encoding="utf-8") as f:
 
-
         if len(shape) == 2:
             for i in range(shape[0]):
                 for j in range(shape[1]):
@@ -36,18 +35,20 @@ def save_full_tensor_dat(npz_path: str, out_dat_path: str) -> None:
                     f.write(f"{i} {j} {re_hex} {im_hex}\n")
 
         elif len(shape) == 3:
-            for c in range(shape[0]):
-                for i in range(shape[1]):
-                    for j in range(shape[2]):
+            for i in range(shape[1]):
+                for j in range(shape[2]):
+                    for c in range(shape[0]):
                         re_hex = uint_to_hex_str(re_raw[c, i, j], NB)
                         im_hex = uint_to_hex_str(im_raw[c, i, j], NB)
                         f.write(f"{c} {i} {j} {re_hex} {im_hex}\n")
 
         elif len(shape) == 4:
-            for a in range(shape[0]):
-                for b in range(shape[1]):
-                    for i in range(shape[2]):
-                        for j in range(shape[3]):
+            # mismo orden que rtl_A.dat:
+            # para cada (i,j), escribir (0,0), (0,1), (1,0), (1,1)
+            for i in range(shape[2]):
+                for j in range(shape[3]):
+                    for a in range(shape[0]):
+                        for b in range(shape[1]):
                             re_hex = uint_to_hex_str(re_raw[a, b, i, j], NB)
                             im_hex = uint_to_hex_str(im_raw[a, b, i, j], NB)
                             f.write(f"{a} {b} {i} {j} {re_hex} {im_hex}\n")

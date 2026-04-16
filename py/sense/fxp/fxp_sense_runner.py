@@ -143,6 +143,9 @@ def main() -> None:
         },
     }
     
+
+
+
     # ---------------------------------------------------------
     # A
     # ---------------------------------------------------------
@@ -321,32 +324,65 @@ def main() -> None:
     # -------------------------------------------------------------------
     # Individual report writer
     # -------------------------------------------------------------------
+    S_npz_path      = smaps_path_npz
+    y_npz_path      = coils_alias_path_npz
+    A_npz_path      = os.path.join(A_dir, "A.npz")
+    b_npz_path      = os.path.join(b_dir, "b.npz")
+    L_npz_path      = os.path.join(L_dir, "L.npz")
+    D_npz_path      = os.path.join(D_dir, "D.npz")
+    z_npz_path      = os.path.join(z_dir, "z.npz")
+    x_npz_path      = os.path.join(x_dir, "x.npz")
+    m_hat_npz_path  = os.path.join(m_hat_dir, "m_hat.npz")
+    I_npz_path      = os.path.join(I_dir, "I.npz")
     stats_A["hermitian_checks"] = hermitian_error_metrics_A(A_fxp)
     stats_A["structure_checks"] = A_structure_metrics(A_fxp, eps=1e-12)
     print("[fxp_sense_runner.py]   Writing individual reports ...")
-    fxp_rpt_writer(os.path.join(A_dir, "A.rpt"), stats_A, os.path.join(A_dir, "A.npz"))
-    fxp_rpt_writer(os.path.join(b_dir, "b.rpt"), stats_b, os.path.join(b_dir, "b.npz"))
-    fxp_rpt_writer(os.path.join(L_dir, "L.rpt"), stats_L, os.path.join(L_dir, "L.npz"))
-    fxp_rpt_writer(os.path.join(D_dir, "D.rpt"), stats_D, os.path.join(D_dir, "D.npz"))
-    fxp_rpt_writer(os.path.join(z_dir, "z.rpt"), stats_z, os.path.join(z_dir, "z.npz"))
-    fxp_rpt_writer(os.path.join(x_dir, "x.rpt"), stats_x, os.path.join(x_dir, "x.npz"))
-    fxp_rpt_writer(os.path.join(m_hat_dir, "m_hat.rpt"), stats_m_hat, os.path.join(m_hat_dir, "m_hat.npz"))
-    fxp_rpt_writer(os.path.join(I_dir, "I.rpt"), stats_I, os.path.join(I_dir, "I.npz"))
+    fxp_rpt_writer(os.path.join(A_dir, "A.rpt"), stats_A, A_npz_path)
+    fxp_rpt_writer(os.path.join(b_dir, "b.rpt"), stats_b, b_npz_path)
+    fxp_rpt_writer(os.path.join(L_dir, "L.rpt"), stats_L, L_npz_path)
+    fxp_rpt_writer(os.path.join(D_dir, "D.rpt"), stats_D, D_npz_path)
+    fxp_rpt_writer(os.path.join(z_dir, "z.rpt"), stats_z, z_npz_path)
+    fxp_rpt_writer(os.path.join(x_dir, "x.rpt"), stats_x, x_npz_path)
+    fxp_rpt_writer(os.path.join(m_hat_dir, "m_hat.rpt"), stats_m_hat, m_hat_npz_path)
+    fxp_rpt_writer(os.path.join(I_dir, "I.rpt"), stats_I, I_npz_path)
 
 
     # -------------------------------------------------------------------
     # Vector Matching .dat file saver
     # -------------------------------------------------------------------
-    save_full_tensor_dat(os.path.join(A_dir, "A.npz"), os.path.join(A_dir, "A.dat"))
-    save_full_tensor_dat(os.path.join(b_dir, "b.npz"), os.path.join(b_dir, "b.dat"))
-    save_full_tensor_dat(os.path.join(L_dir, "L.npz"), os.path.join(L_dir, "L.dat"))
-    save_full_tensor_dat(os.path.join(D_dir, "D.npz"), os.path.join(D_dir, "D.dat"))
-    save_full_tensor_dat(os.path.join(z_dir, "z.npz"), os.path.join(z_dir, "z.dat"))
-    save_full_tensor_dat(os.path.join(x_dir, "x.npz"), os.path.join(x_dir, "x.dat"))
-    save_full_tensor_dat(os.path.join(m_hat_dir, "m_hat.npz"), os.path.join(m_hat_dir, "m_hat.dat"))
-    save_full_tensor_dat(os.path.join(I_dir, "I.npz"), os.path.join(I_dir, "I.dat"))
+    S_dat_path      = os.path.join(os.getenv("VM_ROOT"), "S"    )
+    y_dat_path      = os.path.join(os.getenv("VM_ROOT"), "y"    )
+    A_dat_path      = os.path.join(os.getenv("VM_ROOT"), "A"    )
+    b_dat_path      = os.path.join(os.getenv("VM_ROOT"), "b"    )
+    L_dat_path      = os.path.join(os.getenv("VM_ROOT"), "L"    )
+    D_dat_path      = os.path.join(os.getenv("VM_ROOT"), "D"    )
+    z_dat_path      = os.path.join(os.getenv("VM_ROOT"), "z"    )
+    x_dat_path      = os.path.join(os.getenv("VM_ROOT"), "x"    )
+    m_hat_dat_path  = os.path.join(os.getenv("VM_ROOT"), "m_hat")
+    I_dat_path      = os.path.join(os.getenv("VM_ROOT"), "I"    )
 
-    save_full_tensor_dat(os.path.join(A_dir, "A.npz"), os.path.join(os.getenv("VM_ROOT"), "A", "py_A.dat"))
+    os.makedirs(S_dat_path      ,exist_ok=True)
+    os.makedirs(y_dat_path      ,exist_ok=True)
+    os.makedirs(A_dat_path      ,exist_ok=True)
+    os.makedirs(b_dat_path      ,exist_ok=True)
+    os.makedirs(L_dat_path      ,exist_ok=True)
+    os.makedirs(D_dat_path      ,exist_ok=True)
+    os.makedirs(z_dat_path      ,exist_ok=True)
+    os.makedirs(x_dat_path      ,exist_ok=True)
+    os.makedirs(m_hat_dat_path  ,exist_ok=True)
+    os.makedirs(I_dat_path      ,exist_ok=True)
+
+    save_full_tensor_dat(S_npz_path     , os.path.join(S_dat_path,"py_S.dat")           )
+    save_full_tensor_dat(y_npz_path     , os.path.join(y_dat_path,"py_y.dat")           )
+    save_full_tensor_dat(A_npz_path     , os.path.join(A_dat_path,"py_A.dat")           )
+    save_full_tensor_dat(b_npz_path     , os.path.join(b_dat_path,"py_b.dat")           )
+    save_full_tensor_dat(L_npz_path     , os.path.join(L_dat_path,"py_L.dat")           )
+    save_full_tensor_dat(D_npz_path     , os.path.join(D_dat_path,"py_D.dat")           )
+    save_full_tensor_dat(z_npz_path     , os.path.join(z_dat_path,"py_z.dat")           )
+    save_full_tensor_dat(x_npz_path     , os.path.join(x_dat_path,"py_x.dat")           )
+    save_full_tensor_dat(m_hat_npz_path , os.path.join(m_hat_dat_path,"py_m_hat.dat")   )
+    save_full_tensor_dat(I_npz_path     , os.path.join(I_dat_path,"py_I.dat")           )
+
     # ---------------------------------------------------------
     # Gobal report writer
     # ---------------------------------------------------------

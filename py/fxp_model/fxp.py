@@ -260,7 +260,7 @@ class Fxp:
         # mapeo de modos
         qmode_map = {
             "trunc": QuantizationMode.TRN,
-            "round": QuantizationMode.TIES_EVEN,
+            "round": QuantizationMode.TIES_POS,
         }
         omode_map = {
             "saturate": OverflowMode.SAT,

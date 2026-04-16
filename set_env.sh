@@ -48,8 +48,11 @@ check_var() {
 ###################################### Global Config Path ######################################
 export GLOBAL_CONF_PATH="$FPGA_MRI_ROOT/global_config.conf"             #global_config.conf
 # Roots
-export VM_ROOT="$FPGA_MRI_ROOT/vm" 
+export VM_ROOT="$FPGA_MRI_ROOT/vm"
 
+######################################### Vivado Paths #########################################
+export VIVADO_ROOT="$FPGA_MRI_ROOT/amd/vivado_sense"
+export VIVADO_SIM_DIR="$VIVADO_ROOT/vivado_sense.sim/sim_1/behav/xsim"
 ######################################### Python Paths #########################################
 # Roots
 export PY_ROOT="$FPGA_MRI_ROOT/py"                                      #py/
@@ -102,6 +105,9 @@ check_var FPGA_MRI_ROOT
 
 check_var VM_ROOT
 
+check_var VIVADO_ROOT
+check_var VIVADO_SIM_DIR
+
 check_var PY_ROOT
 check_var PY_RUNNER
 check_var PY_FXP_MODEL_ROOT
@@ -137,6 +143,8 @@ echo ""
 check_dir "$FPGA_MRI_ROOT"
 check_dir "$PY_ROOT"
 check_dir "$VM_ROOT"
+check_dir "$VIVADO_ROOT"
+check_dir "$VIVADO_SIM_DIR"
 check_dir "$PY_RUNNER"
 check_dir "$PY_FXP_MODEL_ROOT"
 check_dir "$PY_NPY_DATA_ROOT"
