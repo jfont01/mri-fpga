@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SYNTH_PATH="$FPGA_MRI_ROOT/rtl/synthesis/synth_Aij"
-TCL_PATH="$SYNTH_PATH/synth_compute_Aij.tcl"
+CASE="Aij"
+
+SYNTH_PATH="$FPGA_MRI_ROOT/rtl/synthesis/synth_$CASE"
+TCL_PATH="$SYNTH_PATH/synth_compute_$CASE.tcl"
 
 LOG_DIR="$SYNTH_PATH/logs"
 mkdir -p "$LOG_DIR"

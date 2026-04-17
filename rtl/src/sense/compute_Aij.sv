@@ -30,7 +30,7 @@ module compute_Aij #(
     localparam int NBF_ACC = NBF_A;
     localparam int NB_L    = $clog2(L);
 
-    logic [NB_L-1:0] l_idx_r;
+    logic [NB_L-1:0] l_ptr_r;
     logic running_r;
 
     logic signed [NB_P - 1 : 0  ]       p00_full;
@@ -39,7 +39,7 @@ module compute_Aij #(
     logic signed [NB_A - 1 : 0  ]       acc00_next;
 
     //! A00
-        assign p00_full = s0_re[l_idx_r] * s0_re[l_idx_r] + s0_im[l_idx_r] * s0_im[l_idx_r];
+        assign p00_full = s0_re[l_ptr_r] * s0_re[l_ptr_r] + s0_im[l_ptr_r] * s0_im[l_ptr_r];
 
         cast #(
             .NB_IN  (NB_P),
@@ -69,7 +69,7 @@ module compute_Aij #(
         logic signed [NB_A - 1 : 0  ]       p11;
         logic signed [NB_ACC - 1 : 0]       acc11_full;
         logic signed [NB_A - 1 : 0  ]       acc11_next;
-        assign p11_full = s1_re[l_idx_r] * s1_re[l_idx_r] + s1_im[l_idx_r] * s1_im[l_idx_r];
+        assign p11_full = s1_re[l_ptr_r] * s1_re[l_ptr_r] + s1_im[l_ptr_r] * s1_im[l_ptr_r];
         cast #(
             .NB_IN  (NB_P),
             .NBF_IN (NBF_P),
@@ -108,10 +108,10 @@ module compute_Aij #(
             .NB_OUT     (NB_A),
             .NBF_OUT    (NBF_A)
         ) u_cmul_p01 (
-            .i_re_0     (s0_re[l_idx_r]),
-            .i_im_0     (-s0_im[l_idx_r]),
-            .i_re_1     (s1_re[l_idx_r]),
-            .i_im_1     (s1_im[l_idx_r]),
+            .i_re_0     (s0_re[l_ptr_r]),
+            .i_im_0     (-s0_im[l_ptr_r]),
+            .i_re_1     (s1_re[l_ptr_r]),
+            .i_im_1     (s1_im[l_ptr_r]),
             .o_re       (p01_re),
             .o_im       (p01_im)
         );
@@ -146,7 +146,7 @@ module compute_Aij #(
 
     always_ff @(posedge i_clock) begin
         if (i_rst) begin
-            l_idx_r     <= '0;
+            l_ptr_r     <= '0;
             A00_re   <= '0;
             A11_re   <= '0;
             A01_re   <= '0;
@@ -157,7 +157,7 @@ module compute_Aij #(
             o_valid <= 1'b0;
 
             if (i_start) begin
-                l_idx_r     <= '0;
+                l_ptr_r     <= '0;
                 A00_re   <= '0;
                 A11_re   <= '0;
                 A01_re   <= '0;
@@ -169,11 +169,11 @@ module compute_Aij #(
                 A01_re <= acc01_re_next;
                 A01_im <= acc01_im_next;
 
-                if (l_idx_r == L-1) begin
+                if (l_ptr_r == L-1) begin
                     running_r <= 1'b0;
                     o_valid   <= 1'b1;
                 end else begin
-                    l_idx_r <= l_idx_r + 1'b1;
+                    l_ptr_r <= l_ptr_r + 1'b1;
                 end
             end
         end

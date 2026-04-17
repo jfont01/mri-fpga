@@ -167,7 +167,7 @@ module tb_compute_Aij;
 
     task automatic write_case(input integer nx_i, input integer ny_alias_i);
         begin
-            // shape = (2,2,Nx,offset)
+            // shape = (2,2,Nx,Ny/2)
             $fdisplay(fout, "0 0 %0d %0d %0h %0h", nx_i, ny_alias_i, A00_re, {NB_A{1'b0}});
             $fdisplay(fout, "0 1 %0d %0d %0h %0h", nx_i, ny_alias_i, A01_re, A01_im);
             $fdisplay(fout, "1 0 %0d %0d %0h %0h", nx_i, ny_alias_i, A10_re, A10_im);
