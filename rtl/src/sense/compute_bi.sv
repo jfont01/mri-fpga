@@ -1,145 +1,128 @@
-module compute_bi #(
+module compute_Aij #(
     parameter NB_S  = 16,
     parameter NBF_S = 15,
-    parameter NB_K  = 32,
-    parameter NBF_K = 29,
-    parameter NB_B  = 32,
-    parameter NBF_B = 30,
+    parameter NB_Y  = 28,
+    parameter NBF_Y = 26,
+    parameter NB_B  = 28,
+    parameter NBF_B = 26,
     parameter L     = 4
-)
-(
-    input  logic signed [NB_S - 1 : 0] s0_re [L - 1 : 0]    ,
-    input  logic signed [NB_S - 1 : 0] s0_im [L - 1 : 0]    ,
+)(
+    input  logic i_clock,
+    input  logic i_rst,
+    input  logic i_start,
 
-    input  logic signed [NB_S - 1 : 0] s1_re [L - 1 : 0]    ,
-    input  logic signed [NB_S - 1 : 0] s1_im [L - 1 : 0]    ,
+    input  logic signed [NB_S-1:0] s0_re [L-1:0],
+    input  logic signed [NB_S-1:0] s0_im [L-1:0],
+    input  logic signed [NB_S-1:0] s1_re [L-1:0],
+    input  logic signed [NB_S-1:0] s1_im [L-1:0],
+    input  logic signed [NB_Y-1:0] y_re [L-1:0],
+    input  logic signed [NB_Y-1:0] y_im [L-1:0],
 
-    input logic signed [NB_K - 1 : 0] y0_re [L - 1 : 0]     ,
+    output logic signed [NB_B-1:0] b0_re,
+    output logic signed [NB_B-1:0] b0_im,
+    output logic signed [NB_B-1:0] b1_re,
+    output logic signed [NB_B-1:0] b1_im,
 
-
-    output logic signed [NB_B - 1 : 0] b0_re                ,
-    output logic signed [NB_B - 1 : 0] b0_im                , 
-    output logic signed [NB_B - 1 : 0] b1_re                ,
-    output logic signed [NB_B - 1 : 0] b1_im                ,
+    output logic o_valid
 );
-    localparam NB_FULL = NB_S + NB_K;
-    localparam NBF_FULL = NBF_S + NBF_K;
 
-    localparam NB_ACC = NB_B + 1 ;
-    localparam NBF_ACC = NBF_B;
-    // -------------------------------------------------------------------------
-    // productos p0 y p1
-    // -------------------------------------------------------------------------
-    logic signed [NB_B - 1 : 0]     p0_re          [L - 1 : 0];
-    logic signed [NB_B - 1 : 0]     p0_im          [L - 1 : 0];
-    logic signed [NB_FULL - 1 : 0]  p0_full_re     [L - 1 : 0];
-    logic signed [NB_FULL - 1 : 0]  p0_full_im     [L - 1 : 0];
+    localparam int NB_ACC  = NB_B + 1;
+    localparam int NBF_ACC = NBF_B;
 
-    
-    logic signed [NB_B - 1 : 0]     p1_re          [L - 1 : 0];
-    logic signed [NB_B - 1 : 0]     p1_im          [L - 1 : 0];
-    logic signed [NB_FULL - 1 : 0]  p1_full_re     [L - 1 : 0];
-    logic signed [NB_FULL - 1 : 0]  p1_full_im     [L - 1 : 0];
+    logic [NB_L-1:0] l_ptr_r;
+    logic running_r;
+
+    logic signed [NB_B - 1 : 0  ]       p0_re;
+    logic signed [NB_B - 1 : 0  ]       p0_im;
+    logic signed [NB_B - 1 : 0  ]       p1_re;
+    logic signed [NB_B - 1 : 0  ]       p1_im;
+
+    logic signed [NB_ACC - 1 : 0]       acc0_full;
+    logic signed [NB_B - 1 : 0  ]       acc0_next;
+    logic signed [NB_ACC - 1 : 0]       acc1_full;
+    logic signed [NB_B - 1 : 0  ]       acc1_next;
 
 
 
-    // -------------------------------------------------------------------------
-    // acumuladores por etapa
-    // -------------------------------------------------------------------------
-    logic signed [NB_B - 1 : 0]     acc0_re        [L : 0];
-    logic signed [NB_B - 1 : 0]     acc0_im        [L : 0];
-    logic signed [NB_ACC - 1 : 0]   acc0_full_re   [L : 0];
-    logic signed [NB_ACC - 1 : 0]   acc0_full_im   [L : 0];
-    logic signed [NB_B - 1 : 0]     acc1_re        [L : 0];
-    logic signed [NB_B - 1 : 0]     acc1_im        [L : 0];
-    logic signed [NB_ACC - 1 : 0]   acc1_full_re   [L : 0];
-    logic signed [NB_ACC - 1 : 0]   acc1_full_im   [L : 0];
-                
+    //! p0
+        cmul #(
+            .NB0_IN     (NB_S),
+            .NBF0_IN    (NBF_S),
+            .NB1_IN     (NB_Y),
+            .NBF1_IN    (NBF_Y),
+            .NB_OUT     (NB_B),
+            .NBF_OUT    (NBF_B)
+        ) u_cmul_p0 (
+            .i_re_0     (s0_re[l_ptr_r]),
+            .i_im_0     (-s0_im[l_ptr_r]),
+            .i_re_1     (y_re[l_ptr_r]),
+            .i_im_1     (y_im[l_ptr_r]),
+            .o_re       (p0_re),
+            .o_im       (p0_im)
+        );
 
-    // -------------------------------------------------------------------------
-    // etapa 0 de acumulación
-    // -------------------------------------------------------------------------                    
-    assign acc0_re[0] = '0;
-    assign acc0_im[0] = '0;
-    assign acc1_re[0] = '0;
-    assign acc1_im[0] = '0;
+        assign acc01_re_full = A01_re + p01_re;
+        assign acc01_im_full = A01_im + p01_im;
 
-    genvar k;
-    generate
-        for (k = 0; k < L; k = k + 1) begin : gen_compute_bi
-            //! Partial products
-                //! p0 = (s0.conj() * y0).cast(NB_B, NBF_B)
-                    cmul #(
-                        .NB0_IN  (NB_S),
-                        .NBF0_IN (NBF_S),
-                        .NB1_IN  (NB_K),
-                        .NBF1_IN (NBF_K),
-                        .NB_OUT (NB_B),
-                        .NBF_OUT(NBF_B)
-                    ) u_cmul_p0 (
-                        .i_re_0 (s0_re[k]  ),
-                        .i_im_0 (-s0_re[k] ),
-                        .i_re_1 (y0_re[k]  ),
-                        .i_im_1 (y0_im[k]  ),
-                        .o_re   (p0_re[k]  ),
-                        .o_im   (p0_im[k]  )
-                    )
+        cast #(
+            .NB_IN  (NB_ACC),
+            .NBF_IN (NBF_ACC),
+            .NB_OUT (NB_A),
+            .NBF_OUT(NBF_A)
+        ) u_cast_acc01_re (
+            .i_word(acc01_re_full),
+            .o_word(acc01_re_next)
+        );
 
-                //! p1 = (s1.conj() * y0).cast(NB_B, NBF_B)
-                    cmul #(
-                        .NB0_IN  (NB_S),
-                        .NBF0_IN (NBF_S),
-                        .NB1_IN  (NB_K),
-                        .NBF1_IN (NBF_K),
-                        .NB_OUT (NB_B),
-                        .NBF_OUT(NBF_B)
-                    ) u_cmul_p1 (
-                        .i_re_0 (s1_re[k]   ),
-                        .i_im_0 (-s1_re[k]  ),
-                        .i_re_1 (y0_re[k]   ),
-                        .i_im_1 (y0_im[k]   ),
-                        .o_re   (p1_re[k]   ),
-                        .o_im   (p1_im[k]   )
-                    )
+        cast #(
+            .NB_IN  (NB_ACC),
+            .NBF_IN (NBF_ACC),
+            .NB_OUT (NB_A),
+            .NBF_OUT(NBF_A)
+        ) u_cast_acc01_im (
+            .i_word(acc01_im_full),
+            .o_word(acc01_im_next)
+        );
 
-            //! Accumulators
-                //! b0 = (b0 + p0).cast(NB_B, NBF_B)
-                    assign acc0_full_re[k+1] = p0_re[k] + acc0_re[k];
-                    cast #(
-                        .NB_IN   (NB_ACC),
-                        .NBF_IN  (NBF_ACC),
-                        .NB_OUT  (NB_B),
-                        .NBF_OUT (NBF_B),
-                        .ROUND_MODE(1'b1)
-                    ) u_cast_acc0 (
-                        .i_word (acc0_full_re[k+1]),
-                        .o_word (acc0_re[k+1])
-                    );
+    //! A10
+        assign A10_re = A01_re;
+        assign A10_im = -A01_im;
 
-                //! b1 = (b1 + p1).cast(NB_B, NBF_B)
-                    assign acc1_full_re[k+1] = p1_re[k] + acc1_re[k];
-                    cast #(
-                        .NB_IN   (NB_ACC),
-                        .NBF_IN  (NBF_ACC),
-                        .NB_OUT  (NB_B),
-                        .NBF_OUT (NBF_B),
-                        .ROUND_MODE(1'b1)
-                    ) u_cast_acc1 (
-                        .i_word (acc1_full_re[k+1]),
-                        .o_word (acc1_re[k+1])
-                    );
+
+    always_ff @(posedge i_clock) begin
+        if (i_rst) begin
+            l_ptr_r     <= '0;
+            A00_re   <= '0;
+            A11_re   <= '0;
+            A01_re   <= '0;
+            A01_im   <= '0;
+            running_r <= 1'b0;
+            o_valid   <= 1'b0;
+        end else begin
+            o_valid <= 1'b0;
+
+            if (i_start) begin
+                l_ptr_r     <= '0;
+                A00_re   <= '0;
+                A11_re   <= '0;
+                A01_re   <= '0;
+                A01_im   <= '0;
+                running_r <= 1'b1;
+            end else if (running_r) begin
+                A00_re <= acc00_next;
+                A11_re <= acc11_next;
+                A01_re <= acc01_re_next;
+                A01_im <= acc01_im_next;
+
+                if (l_ptr_r == L-1) begin
+                    running_r <= 1'b0;
+                    o_valid   <= 1'b1;
+                end else begin
+                    l_ptr_r <= l_ptr_r + 1'b1;
+                end
+            end
         end
-    endgenerate
-
-    // -------------------------------------------------------------------------
-    // salidas
-    // -------------------------------------------------------------------------
-
-    assign b0_re = acc0_re[L];     
-    assign b0_im = acc0_im[L];    
-
-    assign b1_re = acc1_re[L];     
-    assign b1_im = acc1_im[L]; 
+    end
 
 
 endmodule
