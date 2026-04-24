@@ -104,13 +104,27 @@ copy "$PY_X_DAT"        "$TRACK_DIR/vm/x"
 copy "$PY_Z_DAT"        "$TRACK_DIR/vm/z"
 
 
+SV_INCLUDE_DIR="$TRACK_DIR/include"
+SV_INCLUDE_FILE="$SV_INCLUDE_DIR/track_params.svh"
 
-#python3 vm_runner.py --case A --NB $NB_A --rtl-src "$VIVADO_SIM_DIR/rtl_A.dat" --rtl-dst "$TRACK_DIR/vm/A/rtl_A.dat" --py-path "$TRACK_DIR/vm/A/py_A.dat"
-#python3 vm_runner.py --case b --NB $NB_B --rtl-src "$VIVADO_SIM_DIR/rtl_b.dat" --rtl-dst "$TRACK_DIR/vm/b/rtl_b.dat" --py-path "$TRACK_DIR/vm/b/py_b.dat"
-#python3 vm_runner.py --case D --NB $NB_A --rtl-src "$VIVADO_SIM_DIR/rtl_D.dat" --rtl-dst "$TRACK_DIR/vm/D/rtl_D.dat" --py-path "$TRACK_DIR/vm/D/py_D.dat"
-#python3 vm_runner.py --case I --NB $NB_B --rtl-src "$VIVADO_SIM_DIR/rtl_I.dat" --rtl-dst "$TRACK_DIR/vm/I/rtl_I.dat" --py-path "$TRACK_DIR/vm/I/py_I.dat"
-#python3 vm_runner.py --case L --NB $NB_A --rtl-src "$VIVADO_SIM_DIR/rtl_L.dat" --rtl-dst "$TRACK_DIR/vm/L/rtl_L.dat" --py-path "$TRACK_DIR/vm/L/py_L.dat"
-#python3 vm_runner.py --case m_hat --NB $NB_B --rtl-src "$VIVADO_SIM_DIR/rtl_m_hat.dat" --rtl-dst "$TRACK_DIR/vm/m_hat/rtl_m_hat.dat" --py-path "$TRACK_DIR/vm/m_hat/py_m_hat.dat"
-#python3 vm_runner.py --case x --NB $NB_B --rtl-src "$VIVADO_SIM_DIR/rtl_x.dat" --rtl-dst "$TRACK_DIR/vm/x/rtl_x.dat" --py-path "$TRACK_DIR/vm/x/py_x.dat"
-#python3 vm_runner.py --case z --NB $NB_B --rtl-src "$VIVADO_SIM_DIR/rtl_z.dat" --rtl-dst "$TRACK_DIR/vm/z/rtl_z.dat" --py-path "$TRACK_DIR/vm/z/py_z.dat"
+mkdir -p "$SV_INCLUDE_DIR"
 
+cat > "$SV_INCLUDE_FILE" <<EOF
+localparam int NB_Y  = ${NB_K};
+localparam int NBF_Y = ${NBF_K};
+
+localparam int NB_S  = ${NB_S};
+localparam int NBF_S = ${NBF_S};
+
+localparam int NB_A  = ${NB_A};
+localparam int NBF_A = ${NBF_A};
+
+localparam int NB_B  = ${NB_B};
+localparam int NBF_B = ${NBF_B};
+
+localparam int L     = ${L};
+localparam int AF    = ${AF};
+localparam int N     = ${N};
+EOF
+
+echo "[run.sh]    Generated SV include: $SV_INCLUDE_FILE"
