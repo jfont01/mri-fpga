@@ -8,7 +8,7 @@ log/
 amd/
 miscelaneas/
 output/
-/track.*/
+track.*/
 *.pdf
 *.docx
 *.doc
