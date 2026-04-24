@@ -50,7 +50,7 @@ copy() {
   local dst="$2"
 
   if [[ -f "$src" ]]; then
-    printf "[run.sh]    Copying file: %s -> %s\n" "$src" "$dst"
+    printf "[run.sh]    Copying file: %s to %s\n" "$src" "$dst"
     mkdir -p "$(dirname "$dst")"
     cp -f "$src" "$dst"
   else
@@ -98,7 +98,7 @@ copy "$PY_X_DAT"        "$TRACK_DIR/vm/x"
 copy "$PY_Z_DAT"        "$TRACK_DIR/vm/z"
 
 
-SV_PKG_DIR="$TRACK_DIR/include"
+SV_PKG_DIR="$TRACK_DIR/package"
 SV_PKG_FILE="$SV_PKG_DIR/track_params_pkg.sv"
 
 mkdir -p "$SV_PKG_DIR"
