@@ -99,7 +99,7 @@ copy "$PY_Z_DAT"        "$TRACK_DIR/vm/z"
 
 
 SV_PKG_DIR="$TRACK_DIR/package"
-SV_PKG_FILE="$SV_PKG_DIR/track_params_pkg.sv"
+SV_PKG_FILE="$SV_PKG_DIR/track_params_pkg.svh"
 
 mkdir -p "$SV_PKG_DIR"
 
@@ -125,4 +125,20 @@ package track_params_pkg;
 endpackage
 EOF
 
-echo "[run.sh]    Generated SV package: $SV_PKG_FILE"
+echo "[run.sh]    Generated SVH package: $SV_PKG_FILE"
+
+FLIST="$TRACK_DIR/flist/tb_flist.f"
+mkdir -p "$(dirname "$FLIST")"
+
+cat > "$FLIST" <<EOF
+$TRACK_DIR/include/track_params_pkg.svh
+$RTL_ROOT/src/ops/cast.sv
+$RTL_ROOT/src/ops/cmul.sv
+$RTL_ROOT/src/sense/compute_Aij.sv
+$RTL_ROOT/src/sense/compute_bi.sv
+$RTL_ROOT/tb/tb_compute_Aij.sv
+$RTL_ROOT/tb/tb_compute_bi.sv
+EOF
+
+SYNTHESIS_DIR="$TRACK_DIR/synthesis"
+mkdir -p "$SYNTHESIS_DIR"
