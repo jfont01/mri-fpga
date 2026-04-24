@@ -58,12 +58,6 @@ copy() {
   fi
 }
 
-copy "$FXP_IFFT2D_RPT"      "$TRACK_DIR/fxp_ifft2d.rpt"
-copy "$FXP_QUANTIZER_S_RPT" "$TRACK_DIR/fxp_quantize_S.rpt"
-copy "$FXP_QUANTIZER_K_RPT" "$TRACK_DIR/fxp_quantize_k.rpt"
-copy "$GLOBAL_RPT"          "$TRACK_DIR/snr_global.rpt"
-copy "$GLOBAL_FXP_RPT"      "$TRACK_DIR/fxp_global.rpt"
-copy "$GLOBAL_FP_RPT"       "$TRACK_DIR/fp_global.rpt"
 
 PY_A_DAT="$PY_RUNNER/output/$STIM_DIR_NAME/sense_fxp/$CASE_DIR_NAME/A/py_A.dat"
 PY_B_DAT="$PY_RUNNER/output/$STIM_DIR_NAME/sense_fxp/$CASE_DIR_NAME/b/py_b.dat"
@@ -104,27 +98,31 @@ copy "$PY_X_DAT"        "$TRACK_DIR/vm/x"
 copy "$PY_Z_DAT"        "$TRACK_DIR/vm/z"
 
 
-SV_INCLUDE_DIR="$TRACK_DIR/include"
-SV_INCLUDE_FILE="$SV_INCLUDE_DIR/track_params.svh"
+SV_PKG_DIR="$TRACK_DIR/include"
+SV_PKG_FILE="$SV_PKG_DIR/track_params_pkg.sv"
 
-mkdir -p "$SV_INCLUDE_DIR"
+mkdir -p "$SV_PKG_DIR"
 
-cat > "$SV_INCLUDE_FILE" <<EOF
-localparam int NB_Y  = ${NB_K};
-localparam int NBF_Y = ${NBF_K};
+cat > "$SV_PKG_FILE" <<EOF
+package track_params_pkg;
 
-localparam int NB_S  = ${NB_S};
-localparam int NBF_S = ${NBF_S};
+    parameter int NB_S  = ${NB_S};
+    parameter int NBF_S = ${NBF_S};
 
-localparam int NB_A  = ${NB_A};
-localparam int NBF_A = ${NBF_A};
+    parameter int NB_Y  = ${NB_K};
+    parameter int NBF_Y = ${NBF_K};
 
-localparam int NB_B  = ${NB_B};
-localparam int NBF_B = ${NBF_B};
+    parameter int NB_A  = ${NB_A};
+    parameter int NBF_A = ${NBF_A};
 
-localparam int L     = ${L};
-localparam int AF    = ${AF};
-localparam int N     = ${N};
+    parameter int NB_B  = ${NB_B};
+    parameter int NBF_B = ${NBF_B};
+
+    parameter int L     = ${L};
+    parameter int AF    = ${AF};
+    parameter int N     = ${N};
+
+endpackage
 EOF
 
-echo "[run.sh]    Generated SV include: $SV_INCLUDE_FILE"
+echo "[run.sh]    Generated SV package: $SV_PKG_FILE"
