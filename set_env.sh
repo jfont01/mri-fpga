@@ -69,9 +69,9 @@ export RTL_SCRIPTS_SYNTH_DIR="$RTL_SCRIPTS_DIR/synth"                   #rtl/scr
 export RTL_SCRIPTS_TB_DIR="$RTL_SCRIPTS_DIR/synth"                      #rtl/scripts/tb
 
 # Scripts
-export RTL_SCRIPTS_SYNTH_RUNNER="$RTL_SCRIPTS_DIR/run_synth.sh"         #rtl/scripts/run_synth.sh
-export RTL_SCRIPTS_VM_RUNNER="$RTL_SCRIPTS_DIR/run_vm.py"               #rtl/scripts/run_vm.py
-export RTL_SCRIPTS_XSIM_RUNNER="$RTL_SCRIPTS_DIR/run_xsim.sh"           #rtl/scripts/run_xsim.sh
+export RTL_SCRIPTS_SYNTH_RUNNER="$RTL_SCRIPTS_DIR/synth/run_synth.sh"   #rtl/scripts/run_synth.sh
+export RTL_SCRIPTS_VM_RUNNER="$RTL_SCRIPTS_DIR/vm/run_vm.sh"            #rtl/scripts/run_vm.sh
+export RTL_SCRIPTS_XSIM_RUNNER="$RTL_SCRIPTS_DIR/tb/run_xsim.sh"        #rtl/scripts/run_xsim.sh
 
 ######################################### Python Paths #########################################
 # Roots

@@ -1,17 +1,33 @@
-set proj_root "C:/Users/jfont/Desktop/FPGA_MRI"
+if {![info exists ::env(TRACK_DIR_WIN)]} {
+    puts "ERROR: TRACK_DIR_WIN is not defined"
+    exit 1
+}
 
-set sim_root "$proj_root/rtl/simulation/behavioral/tb_compute_Aij"
+if {![info exists ::env(RTL_ROOT_WIN)]} {
+    puts "ERROR: RTL_ROOT_WIN is not defined"
+    exit 1
+}
+
+set track_dir $::env(TRACK_DIR_WIN)
+set rtl_root  $::env(RTL_ROOT_WIN)
+
+set sim_root "$track_dir/simulation/A"
 set out_dir  "$sim_root/out"
 set log_dir  "$sim_root/logs"
 
-# Ajustá esta ruta si tu py_S.dat está en otra carpeta
-set stim_file "$proj_root/vm/A/py_S.dat"
+set stim_file "$track_dir/vm/S/py_S.dat"
+set pkg_file  "$track_dir/package/track_params_pkg.sv"
 
 file mkdir $out_dir
 file mkdir $log_dir
 
 if {![file exists $stim_file]} {
-    puts "ERROR: no existe el archivo de estímulo: $stim_file"
+    puts "ERROR: no existe el archivo de estimulo: $stim_file"
+    exit 1
+}
+
+if {![file exists $pkg_file]} {
+    puts "ERROR: no existe el package: $pkg_file"
     exit 1
 }
 
@@ -33,10 +49,11 @@ foreach f [list \
 }
 
 set rtl_files [list \
-    "$proj_root/rtl/src/ops/cast.sv" \
-    "$proj_root/rtl/src/ops/cmul.sv" \
-    "$proj_root/rtl/src/sense/compute_Aij.sv" \
-    "$proj_root/rtl/tb/tb_compute_Aij.sv" \
+    $pkg_file \
+    "$rtl_root/src/ops/cast.sv" \
+    "$rtl_root/src/ops/cmul.sv" \
+    "$rtl_root/src/sense/compute_Aij.sv" \
+    "$rtl_root/tb/tb_compute_Aij.sv" \
 ]
 
 puts "==> xvlog"
@@ -54,10 +71,9 @@ exec xsim tb_compute_Aij_snapshot \
     -runall \
     -log [file join $log_dir "xsim_tb_compute_Aij.log"]
 
-# Copia opcional al folder de vector matching
 if {[file exists "rtl_A.dat"]} {
-    file copy -force "rtl_A.dat" "$proj_root/vm/A/rtl_A.dat"
-    puts "OK: rtl_A.dat copiado a $proj_root/vm/A/rtl_A.dat"
+    file copy -force "rtl_A.dat" "$track_dir/vm/A/rtl_A.dat"
+    puts "OK: rtl_A.dat copiado a $track_dir/vm/A/rtl_A.dat"
 } else {
     puts "WARNING: no se generó rtl_A.dat"
 }

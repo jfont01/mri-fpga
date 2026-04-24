@@ -3,6 +3,7 @@ import sys
 import os
 
 from fft2d import fxp_ifft2d
+from fxp_dat_saver import save_full_tensor_dat
 
 # ------------------------- ENVIRONMENT SET -------------------------
 PY_FXP_MODEL_ROOT = os.environ.get("PY_FXP_MODEL_ROOT")
@@ -130,6 +131,9 @@ def main() -> None:
         os.path.join(out_dir, "coils_aliased.npz"),
         input_stimuli=input_stimuli,
     )
+
+    save_full_tensor_dat(os.path.join(out_dir, "coils_aliased.npz")     , os.path.join(out_dir, "py_y.dat")   )
+
 
 
 

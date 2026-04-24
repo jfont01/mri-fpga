@@ -5,6 +5,7 @@ import numpy as np, os
 
 from quantize_complex_tensor_3d import quantize_complex_tensor_3d
 from helpers import save_quantized_tensor_npz, cast_q_to_f_complex, write_quant_report
+from fxp_dat_saver import save_full_tensor_dat
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -131,6 +132,8 @@ def main() -> None:
     k_q = cast_q_to_f_complex(k_q_re, k_q_im, NB_K, NBF_K, signed)
     write_quant_report(out_path_k_rpt, k_f, k_q, NB_K, NBF_K, aliased_coils_k_space_npy_path, out_path_k_npz, mode, signed)
     print("[quantizer.py] Saved aliased coils cuantization report to: ", out_path_k_rpt)
+
+    save_full_tensor_dat(out_path_S_npz     , os.path.join(output_smaps_path, "py_S.dat")   )
 
 if __name__ == "__main__":
     main()
