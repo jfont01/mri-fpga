@@ -42,7 +42,7 @@ for i in "${!NB_K_LIST[@]}"; do
           S_NPZ_PATH="$PY_QUANTIZER_ROOT/output/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}/S/NB${NB_S}_NBF${NBF_S}/S.npz"
           Y_NPZ_PATH="$PY_FFT2D_FXP_DIR/output/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}/NB${NB_K}_NBF${NBF_K}/coils_aliased.npz"
 
-          OUTPUT_DIR="$SENSE_FXP_RECON_DIR/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}/NB_Y${NB_K}_NBF_Y${NBF_K}NB_S${NB_S}_NBF_S${NBF_S}_NB_A${NB_A}_NBF_A${NBF_A}NB_B${NB_B}_NBF_B${NBF_B}"
+          OUTPUT_DIR="$SENSE_FXP_RECON_DIR/N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}/NB_Y${NB_K}_NBF_Y${NBF_K}-NB_S${NB_S}_NBF_S${NBF_S}-NB_A${NB_A}_NBF_A${NBF_A}-NB_B${NB_B}_NBF_B${NBF_B}"
           mkdir -p "$OUTPUT_DIR"
 
           printf "[run_sense_fxp.sh] ${YELLOW}Running fxp_sense.py with NB_Y=${NB_K} NBF_Y=${NBF_K} NB_S=${NB_S} NBF_S=${NBF_S} NB_A=${NB_A} NBF_A=${NBF_A} NB_B=${NB_B} NBF_B=${NBF_B}${NC}\n"

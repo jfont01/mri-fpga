@@ -1,4 +1,4 @@
-module compute_Aij #(
+module compute_bi #(
     parameter NB_S  = 16,
     parameter NBF_S = 15,
     parameter NB_Y  = 28,
@@ -28,6 +28,7 @@ module compute_Aij #(
 
     localparam int NB_ACC  = NB_B + 1;
     localparam int NBF_ACC = NBF_B;
+    localparam int NB_L = $clog2(L);
 
     logic [NB_L-1:0] l_ptr_r;
     logic running_r;
@@ -98,7 +99,7 @@ module compute_Aij #(
             .NBF1_IN    (NBF_Y),
             .NB_OUT     (NB_B),
             .NBF_OUT    (NBF_B)
-        ) u_cmul_p0 (
+        ) u_cmul_p1 (
             .i_re_0     (s1_re[l_ptr_r]),
             .i_im_0     (-s1_im[l_ptr_r]),
             .i_re_1     (y_re[l_ptr_r]),

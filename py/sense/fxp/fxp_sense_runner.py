@@ -350,38 +350,16 @@ def main() -> None:
     # -------------------------------------------------------------------
     # Vector Matching .dat file saver
     # -------------------------------------------------------------------
-    S_dat_path      = os.path.join(os.getenv("VM_ROOT"), "S"    )
-    y_dat_path      = os.path.join(os.getenv("VM_ROOT"), "y"    )
-    A_dat_path      = os.path.join(os.getenv("VM_ROOT"), "A"    )
-    b_dat_path      = os.path.join(os.getenv("VM_ROOT"), "b"    )
-    L_dat_path      = os.path.join(os.getenv("VM_ROOT"), "L"    )
-    D_dat_path      = os.path.join(os.getenv("VM_ROOT"), "D"    )
-    z_dat_path      = os.path.join(os.getenv("VM_ROOT"), "z"    )
-    x_dat_path      = os.path.join(os.getenv("VM_ROOT"), "x"    )
-    m_hat_dat_path  = os.path.join(os.getenv("VM_ROOT"), "m_hat")
-    I_dat_path      = os.path.join(os.getenv("VM_ROOT"), "I"    )
 
-    os.makedirs(S_dat_path      ,exist_ok=True)
-    os.makedirs(y_dat_path      ,exist_ok=True)
-    os.makedirs(A_dat_path      ,exist_ok=True)
-    os.makedirs(b_dat_path      ,exist_ok=True)
-    os.makedirs(L_dat_path      ,exist_ok=True)
-    os.makedirs(D_dat_path      ,exist_ok=True)
-    os.makedirs(z_dat_path      ,exist_ok=True)
-    os.makedirs(x_dat_path      ,exist_ok=True)
-    os.makedirs(m_hat_dat_path  ,exist_ok=True)
-    os.makedirs(I_dat_path      ,exist_ok=True)
 
-    save_full_tensor_dat(S_npz_path     , os.path.join(S_dat_path,"py_S.dat")           )
-    save_full_tensor_dat(y_npz_path     , os.path.join(y_dat_path,"py_y.dat")           )
-    save_full_tensor_dat(A_npz_path     , os.path.join(A_dat_path,"py_A.dat")           )
-    save_full_tensor_dat(b_npz_path     , os.path.join(b_dat_path,"py_b.dat")           )
-    save_full_tensor_dat(L_npz_path     , os.path.join(L_dat_path,"py_L.dat")           )
-    save_full_tensor_dat(D_npz_path     , os.path.join(D_dat_path,"py_D.dat")           )
-    save_full_tensor_dat(z_npz_path     , os.path.join(z_dat_path,"py_z.dat")           )
-    save_full_tensor_dat(x_npz_path     , os.path.join(x_dat_path,"py_x.dat")           )
-    save_full_tensor_dat(m_hat_npz_path , os.path.join(m_hat_dat_path,"py_m_hat.dat")   )
-    save_full_tensor_dat(I_npz_path     , os.path.join(I_dat_path,"py_I.dat")           )
+    save_full_tensor_dat(A_npz_path     , os.path.join(A_dir, "py_A.dat")   )
+    save_full_tensor_dat(b_npz_path     , os.path.join(b_dir, "py_b.dat")   )
+    save_full_tensor_dat(L_npz_path     , os.path.join(L_dir, "py_L.dat")   )
+    save_full_tensor_dat(D_npz_path     , os.path.join(D_dir, "py_D.dat")   )
+    save_full_tensor_dat(z_npz_path     , os.path.join(z_dir, "py_z.dat")   )
+    save_full_tensor_dat(x_npz_path     , os.path.join(x_dir, "py_x.dat")   )
+    save_full_tensor_dat(m_hat_npz_path , os.path.join(m_hat_dir, "py_m_hat.dat")   )
+    save_full_tensor_dat(I_npz_path     , os.path.join(I_dir, "py_I.dat")   )
 
     # ---------------------------------------------------------
     # Gobal report writer

@@ -48,11 +48,31 @@ check_var() {
 ###################################### Global Config Path ######################################
 export GLOBAL_CONF_PATH="$FPGA_MRI_ROOT/global_config.conf"             #global_config.conf
 # Roots
-export VM_ROOT="$FPGA_MRI_ROOT/vm"
+export VM_ROOT="$FPGA_MRI_ROOT/vm"  
+
+export TRACK_ROOT="$FPGA_MRI_ROOT/tracks"
+export TRACK_CONF="$TRACK_ROOT/track.conf"
 
 ######################################### Vivado Paths #########################################
 export VIVADO_ROOT="$FPGA_MRI_ROOT/amd/vivado_sense"
 export VIVADO_SIM_DIR="$VIVADO_ROOT/vivado_sense.sim/sim_1/behav/xsim"
+
+######################################### RTL Paths #########################################
+# Root
+export RTL_ROOT="$FPGA_MRI_ROOT/rtl"                                    #rtl
+# Dirs
+export RTL_CONSTRAINTS_DIR="$RTL_ROOT/constraints"                      #rtl/constraints
+export RTL_SCRIPTS_DIR="$RTL_ROOT/scripts"                              #rtl/scripts
+export RTL_SRC_DIR="$RTL_ROOT/src"                                      #rtl/src
+export RTL_TESTBENCH_DIR="$RTL_ROOT/testbench"                          #rtl/testbench
+export RTL_SCRIPTS_SYNTH_DIR="$RTL_SCRIPTS_DIR/synth"                   #rtl/scripts/synth
+export RTL_SCRIPTS_TB_DIR="$RTL_SCRIPTS_DIR/synth"                      #rtl/scripts/tb
+
+# Scripts
+export RTL_SCRIPTS_SYNTH_RUNNER="$RTL_SCRIPTS_DIR/run_synth.sh"         #rtl/scripts/run_synth.sh
+export RTL_SCRIPTS_VM_RUNNER="$RTL_SCRIPTS_DIR/run_vm.py"               #rtl/scripts/run_vm.py
+export RTL_SCRIPTS_XSIM_RUNNER="$RTL_SCRIPTS_DIR/run_xsim.sh"           #rtl/scripts/run_xsim.sh
+
 ######################################### Python Paths #########################################
 # Roots
 export PY_ROOT="$FPGA_MRI_ROOT/py"                                      #py/
@@ -93,7 +113,7 @@ export PY_GLOBAL_RUN="$PY_RUNNER/run.sh"                                #py/run.
 
 export PY_FXP_MODEL_TEST_DIR="$PY_FXP_MODEL_ROOT/test"
 
-######################################### Cpp Paths #########################################
+
 
 
 ###########################################################################
@@ -101,12 +121,21 @@ export PY_FXP_MODEL_TEST_DIR="$PY_FXP_MODEL_ROOT/test"
 ###########################################################################
 check_var GLOBAL_CONF_PATH
 
-check_var FPGA_MRI_ROOT
+check_var TRACK_ROOT
+check_var TRACK_CONF
 
-check_var VM_ROOT
+check_var FPGA_MRI_ROOT
 
 check_var VIVADO_ROOT
 check_var VIVADO_SIM_DIR
+
+check_var RTL_ROOT
+check_var RTL_CONSTRAINTS_DIR
+check_var RTL_SCRIPTS_DIR
+check_var RTL_SRC_DIR
+check_var RTL_TESTBENCH_DIR
+check_var RTL_SCRIPTS_SYNTH_DIR
+check_var RTL_SCRIPTS_TB_DIR
 
 check_var PY_ROOT
 check_var PY_RUNNER
@@ -141,8 +170,18 @@ echo ""
 # Verificación de directorios
 ###########################################################################
 check_dir "$FPGA_MRI_ROOT"
+check_dir "$TRACK_ROOT"
+
 check_dir "$PY_ROOT"
-check_dir "$VM_ROOT"
+
+check_dir "$RTL_ROOT"
+check_dir "$RTL_CONSTRAINTS_DIR"
+check_dir "$RTL_SCRIPTS_DIR"
+check_dir "$RTL_SRC_DIR"
+check_dir "$RTL_TESTBENCH_DIR"
+check_dir "$RTL_SCRIPTS_SYNTH_DIR"
+check_dir "$RTL_SCRIPTS_TB_DIR"
+
 check_dir "$VIVADO_ROOT"
 check_dir "$VIVADO_SIM_DIR"
 check_dir "$PY_RUNNER"
@@ -170,6 +209,10 @@ check_file "$PY_SENSE_REPORTER_RUN"
 check_file "$PY_SENSE_FP_RUN"
 check_file "$PY_SENSE_FXP_RUN"
 check_file "$PY_GLOBAL_RUN"
+check_file "$TRACK_CONF"
+check_file "$RTL_SCRIPTS_SYNTH_RUNNER"
+check_file "$RTL_SCRIPTS_VM_RUNNER"
+check_file "$RTL_SCRIPTS_XSIM_RUNNER"
 echo ""
 
 printf "[set_env.sh]    Running dos2unix on scripts and config files...\n"
@@ -181,6 +224,10 @@ dos2unix $PY_SENSE_REPORTER_RUN
 dos2unix $PY_SENSE_FP_RUN
 dos2unix $PY_SENSE_FXP_RUN
 dos2unix $PY_GLOBAL_RUN
+dos2unix $TRACK_CONF
+dos2unix $RTL_SCRIPTS_SYNTH_RUNNER
+dos2unix $RTL_SCRIPTS_VM_RUNNER
+dos2unix $RTL_SCRIPTS_XSIM_RUNNER
 echo ""
 
 printf "[set_env.sh]    Sourcing .venv/bin/activate ...\n"

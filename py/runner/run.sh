@@ -177,6 +177,17 @@ copy "$OUTPUT_SENSE_FP_CASE_DIR"     "$RUNNER_OUTPUT_CASE_DIR/sense_fp"
 copy "$OUTPUT_SENSE_FXP_CASE_DIR"    "$RUNNER_OUTPUT_CASE_DIR/sense_fxp"
 copy "$OUTPUT_REPORTER_CASE_DIR"     "$RUNNER_OUTPUT_CASE_DIR/reporter"
 
+rm -rf "$OUTPUT_STIMULUS_GEN_CASE_DIR"
+rm -rf "$OUTPUT_QUANTIZER_CASE_DIR"
+rm -rf "$OUTPUT_FFT2D_FXP_CASE_DIR"
+rm -rf "$OUTPUT_SENSE_FP_CASE_DIR"
+rm -rf "$OUTPUT_SENSE_FXP_CASE_DIR"
+rm -rf "$OUTPUT_REPORTER_CASE_DIR"
+
+mkdir -p "$RUNNER_OUTPUT_CASE_DIR/snr_vs_lsb"
+python3 "$PY_SENSE_ROOT/csv_snr.py" --in-dir="$RUNNER_OUTPUT_CASE_DIR/reporter" --out-csv="$RUNNER_OUTPUT_CASE_DIR/snr_vs_lsb/NB_Y_snr_vs_lsb.csv"
+python3 "$PY_SENSE_ROOT/plot_snr_vs_lsb.py" --in-csv="$RUNNER_OUTPUT_CASE_DIR/snr_vs_lsb/NB_Y_snr_vs_lsb.csv" --out-png="$RUNNER_OUTPUT_CASE_DIR/snr_vs_lsb/NB_Y_snr_vs_lsb.png"
+
 cp -f "$LOG_FILE" "$RUNNER_OUTPUT_CASE_DIR/run.log"
 
 ######################################## EXECUTION TIME #########################################
