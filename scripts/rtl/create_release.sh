@@ -2,7 +2,7 @@ source "$TRACK_CONF"
 
 STIM_DIR_NAME="N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}"
 CASE_DIR_NAME="NB_Y${NB_K}_NBF_Y${NBF_K}-NB_S${NB_S}_NBF_S${NBF_S}-NB_A${NB_A}_NBF_A${NBF_A}-NB_B${NB_B}_NBF_B${NBF_B}"
-TRACK_BASE="track.${STIM_DIR_NAME}.${CASE_DIR_NAME}"
+TRACK_BASE="$TRACK_ROOT/track.${STIM_DIR_NAME}.${CASE_DIR_NAME}"
 
 last_rev=0
 
@@ -50,11 +50,10 @@ copy() {
   local dst="$2"
 
   if [[ -f "$src" ]]; then
-    printf "[run.sh]    Copying file: %s to %s\n" "$src" "$dst"
     mkdir -p "$(dirname "$dst")"
     cp -f "$src" "$dst"
   else
-    printf "[run.sh]    File not found, skipping copy: %s\n" "$src"
+    printf "[create_release.sh]    File not found, skipping copy: %s\n" "$src"
   fi
 }
 
@@ -81,7 +80,7 @@ require_file "$PY_Z_DAT"
 require_file "$PY_S_DAT"
 require_file "$PY_Y_DAT"
 
-for d in A b D I L S x y z m_hat; do
+for d in A b D I L x z m_hat; do
     mkdir -p "$TRACK_DIR/vm/$d"
 done
 mkdir -p "$TRACK_DIR/stimuli"
@@ -138,7 +137,7 @@ FLIST="$TRACK_DIR/flist/tb_flist.f"
 mkdir -p "$(dirname "$FLIST")"
 
 cat > "$FLIST" <<EOF
-$TRACK_DIR/include/track_params_pkg.svh
+$TRACK_DIR/package/track_params_pkg.svh
 $RTL_ROOT/src/ops/cast.sv
 $RTL_ROOT/src/ops/cmul.sv
 $RTL_ROOT/src/sense/compute_Aij.sv
@@ -147,8 +146,6 @@ $RTL_ROOT/tb/tb_compute_Aij.sv
 $RTL_ROOT/tb/tb_compute_bi.sv
 EOF
 
-SCRIPTS_DIR="$TRACK_DIR/scripts"
-mkdir -p "$SCRIPTS_DIR"
 
 SYNTHESIS_DIR="$TRACK_DIR/synthesis"
 mkdir -p "$SYNTHESIS_DIR"
@@ -156,33 +153,24 @@ mkdir -p "$SYNTHESIS_DIR"
 SIMULATION_DIR="$TRACK_DIR/simulation"
 mkdir -p "$SIMULATION_DIR"
 
-require_env() {
-    local var_name="$1"
-    if [[ -z "${!var_name:-}" ]]; then
-        echo "[ERROR] Environment variable $var_name is not defined" >&2
-        exit 1
-    fi
-}
 
-make_link() {
-    local target="$1"
-    local link_path="$2"
+CONSTRAINTS_DIR="$TRACK_DIR/constraints"
+mkdir -p "$CONSTRAINTS_DIR"
 
-    mkdir -p "$(dirname "$link_path")"
+CLOCK_AIJ_NS=$(awk "BEGIN {printf \"%.3f\", 1000.0 / $CLOCK_AIJ_MHZ}")
+CLOCK_BI_NS=$(awk "BEGIN {printf \"%.3f\", 1000.0 / $CLOCK_BI_MHZ}")
 
-    if [[ ! -e "$target" ]]; then
-        echo "[ERROR] Link target does not exist: $target" >&2
-        exit 1
-    fi
+Aij_XDC="$CONSTRAINTS_DIR/clock_Aij.xdc"
+BI_XDC="$CONSTRAINTS_DIR/clock_bi.xdc"
 
-    ln -sfn "$target" "$link_path"
-    echo "[run.sh]    Symlink created: $link_path -> $target"
-}
+cat > "$Aij_XDC" <<EOF
+create_clock -name i_clock -period ${CLOCK_AIJ_NS} [get_ports i_clock]
+EOF
 
-require_env RTL_SCRIPTS_SYNTH_RUNNER
-require_env RTL_SCRIPTS_VM_RUNNER
-require_env RTL_SCRIPTS_XSIM_RUNNER
+cat > "$BI_XDC" <<EOF
+create_clock -name i_clock -period ${CLOCK_BI_NS} [get_ports i_clock]
+EOF
 
-make_link "$RTL_SCRIPTS_SYNTH_RUNNER" "$TRACK_DIR/scripts/run_synth.sh"
-make_link "$RTL_SCRIPTS_XSIM_RUNNER"  "$TRACK_DIR/scripts/run_xsim.sh"
-make_link "$RTL_SCRIPTS_VM_RUNNER"    "$TRACK_DIR/scripts/run_vm.sh"
+echo "[create_release.sh]    Generated XDC: $Aij_XDC"
+echo "[create_release.sh]    Generated XDC: $BI_XDC"
+
