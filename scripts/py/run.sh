@@ -8,6 +8,7 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
+
 START_TS_EPOCH=$(date +%s)
 DELETE_CASE=0
 
@@ -88,69 +89,33 @@ if [[ "$DELETE_CASE" -eq 1 ]]; then
 fi
 
 ########################################### run_gen.sh ###########################################
-if [[ -d "$OUTPUT_STIMULUS_GEN_CASE_DIR" ]]; then
-  printf "[run.sh]    Directory exists: $OUTPUT_STIMULUS_GEN_CASE_DIR${NC}\n"
-  printf "[run.sh]    Skipping run_gen.sh...\n"
-else
-  printf "[run.sh]    Directory does not exist: $OUTPUT_STIMULUS_GEN_CASE_DIR${NC}\n"
-  printf "[run.sh]    Running run_gen.sh...\n"
-  source "$PY_GEN_RUN"
-fi
+printf "[run.sh]    Running run_gen.sh...\n"
+source "$PY_GEN_SCRIPT"
 echo ""
 
 ######################################## run_quantizer.sh ########################################
-if [[ -d "$OUTPUT_QUANTIZER_CASE_DIR" ]]; then
-  printf "[run.sh]    Directory exists: $OUTPUT_QUANTIZER_CASE_DIR${NC}\n"
-  printf "[run.sh]    Skipping run_quantizer.sh...\n"
-else
-  printf "[run.sh]    Directory does not exist: $OUTPUT_QUANTIZER_CASE_DIR${NC}\n"
-  printf "[run.sh]    Running run_quantizer.sh...\n"
-  source "$PY_QUANTIZER_RUN"
-fi
+printf "[run.sh]    Running run_quantizer.sh...\n"
+source "$PY_QUANTIZER_SCRIPT"
 echo ""
 
 ######################################## run_fft2d_fxp.sh ########################################
-if [[ -d "$OUTPUT_FFT2D_FXP_CASE_DIR" ]]; then
-  printf "[run.sh]    Directory exists: $OUTPUT_FFT2D_FXP_CASE_DIR${NC}\n"
-  printf "[run.sh]    Skipping run_fft2d_fxp.sh...\n"
-else
-  printf "[run.sh]    Directory does not exist: $OUTPUT_FFT2D_FXP_CASE_DIR${NC}\n"
-  printf "[run.sh]    Running run_fft2d_fxp.sh...\n"
-  source "$PY_FFT2D_FXP_RUN"
-fi
+printf "[run.sh]    Running run_ifft2d_fxp.sh...\n"
+source "$PY_IFFT2D_FXP_SCRIPT"
 echo ""
 
 ######################################## run_sense_fp.sh ########################################
-if [[ -d "$OUTPUT_SENSE_FP_CASE_DIR" ]]; then
-  printf "[run.sh]    Directory exists: $OUTPUT_SENSE_FP_CASE_DIR${NC}\n"
-  printf "[run.sh]    Skipping run_sense_fp.sh...\n"
-else
-  printf "[run.sh]    Directory does not exist: $OUTPUT_SENSE_FP_CASE_DIR${NC}\n"
-  printf "[run.sh]    Running run_sense_fp.sh...\n"
-  source "$PY_SENSE_FP_RUN"
-fi
+printf "[run.sh]    Running run_sense_fp.sh...\n"
+source "$PY_SENSE_FP_SCRIPT"
 echo ""
 
 ######################################## run_sense_fxp.sh ########################################
-if [[ -d "$OUTPUT_SENSE_FXP_CASE_DIR" ]]; then
-  printf "[run.sh]    Directory exists: $OUTPUT_SENSE_FXP_CASE_DIR${NC}\n"
-  printf "[run.sh]    Skipping run_sense_fxp.sh...\n"
-else
-  printf "[run.sh]    Directory does not exist: $OUTPUT_SENSE_FXP_CASE_DIR${NC}\n"
-  printf "[run.sh]    Running run_sense_fxp.sh...\n"
-  source "$PY_SENSE_FXP_RUN"
-fi
+printf "[run.sh]    Running run_sense_fxp.sh...\n"
+source "$PY_SENSE_FXP_SCRIPT"
 echo ""
 
 ######################################## run_reporter.sh #########################################
-if [[ -d "$OUTPUT_REPORTER_CASE_DIR" ]]; then
-  printf "[run.sh]    Directory exists: $OUTPUT_REPORTER_CASE_DIR${NC}\n"
-  printf "[run.sh]    Skipping run_reporter.sh...\n"
-else
-  printf "[run.sh]    Directory does not exist: $OUTPUT_REPORTER_CASE_DIR${NC}\n"
-  printf "[run.sh]    Running run_reporter.sh...\n"
-  source "$PY_SENSE_REPORTER_RUN"
-fi
+printf "[run.sh]    Running run_reporter.sh...\n"
+source "$PY_SENSE_REPORTER_SCRIPT"
 echo ""
 
 ######################################## copy results to '...runner/output/<case>' #########################################

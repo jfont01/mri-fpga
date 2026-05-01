@@ -47,31 +47,22 @@ check_var() {
 
 ###################################### Global Config Path ######################################
 export GLOBAL_CONF_PATH="$FPGA_MRI_ROOT/global_config.conf"             #global_config.conf
-# Roots
-export VM_ROOT="$FPGA_MRI_ROOT/vm"  
 
+###################################### Tracks Paths ######################################
 export TRACK_ROOT="$FPGA_MRI_ROOT/tracks"
 export TRACK_CONF="$TRACK_ROOT/track.conf"
 
 ######################################### Vivado Paths #########################################
-export VIVADO_ROOT="$FPGA_MRI_ROOT/amd/vivado_sense"
-export VIVADO_SIM_DIR="$VIVADO_ROOT/vivado_sense.sim/sim_1/behav/xsim"
+# export VIVADO_ROOT="$FPGA_MRI_ROOT/amd/vivado_sense"
+# export VIVADO_SIM_DIR="$VIVADO_ROOT/vivado_sense.sim/sim_1/behav/xsim"
 
 ######################################### RTL Paths #########################################
 # Root
 export RTL_ROOT="$FPGA_MRI_ROOT/rtl"                                    #rtl
 # Dirs
 export RTL_CONSTRAINTS_DIR="$RTL_ROOT/constraints"                      #rtl/constraints
-export RTL_SCRIPTS_DIR="$RTL_ROOT/scripts"                              #rtl/scripts
 export RTL_SRC_DIR="$RTL_ROOT/src"                                      #rtl/src
 export RTL_TESTBENCH_DIR="$RTL_ROOT/testbench"                          #rtl/testbench
-export RTL_SCRIPTS_SYNTH_DIR="$RTL_SCRIPTS_DIR/synth"                   #rtl/scripts/synth
-export RTL_SCRIPTS_TB_DIR="$RTL_SCRIPTS_DIR/synth"                      #rtl/scripts/tb
-
-# Scripts
-export RTL_SCRIPTS_SYNTH_RUNNER="$RTL_SCRIPTS_DIR/run_synth.sh"         #rtl/scripts/run_synth.sh
-export RTL_SCRIPTS_VM_RUNNER="$RTL_SCRIPTS_DIR/run_vm.py"               #rtl/scripts/run_vm.py
-export RTL_SCRIPTS_XSIM_RUNNER="$RTL_SCRIPTS_DIR/run_xsim.sh"           #rtl/scripts/run_xsim.sh
 
 ######################################### Python Paths #########################################
 # Roots
@@ -84,88 +75,43 @@ export PY_SENSE_ROOT="$PY_ROOT/sense"                                   #py/sens
 export PY_GEN_ROOT="$PY_ROOT/gen"                                       #py/gen
 export PY_QUANTIZER_ROOT="$PY_ROOT/quantizer"                           #py/quantizer
 
-# Quantizer Runner
-export PY_QUANTIZER_RUN="$PY_QUANTIZER_ROOT/run_quantizer.sh"           #py/quantizer/run_quantizer.sh
-
-# Gen Runner
-export PY_GEN_RUN="$PY_GEN_ROOT/run_gen.sh"                             #py/gen/run_gen.sh
-
 # Sense Directories
 export PY_SENSE_FP_DIR="$PY_SENSE_ROOT/fp"                              #py/sense/fp
 export PY_SENSE_FXP_DIR="$PY_SENSE_ROOT/fxp"                            #py/sense/fxp
 export PY_SENSE_REPORTER_DIR="$PY_SENSE_ROOT/reporter"                  #py/sense/reporter
 
 # FFT2D Directories
-export PY_FFT2D_FP_DIR="$PY_FFT2D_ROOT/fp"                              #py/fft2d/fp
+# export PY_FFT2D_FP_DIR="$PY_FFT2D_ROOT/fp"                              #py/fft2d/fp
 export PY_FFT2D_FXP_DIR="$PY_FFT2D_ROOT/fxp"                            #py/fft2d/fxp
-export PY_FFT2D_REPORTER_DIR="$PY_FFT2D_ROOT/reporter"                  #py/fft2d/reporter
+# export PY_FFT2D_REPORTER_DIR="$PY_FFT2D_ROOT/reporter"                  #py/fft2d/reporter
 
-# Sense Runners
-export PY_SENSE_REPORTER_RUN="$PY_SENSE_REPORTER_DIR/run_reporter.sh"   #py/sense/reporter/run_reporter.sh
-export PY_SENSE_FP_RUN="$PY_SENSE_FP_DIR/run_sense_fp.sh"               #py/sense/fp/run_sense_fp.sh
-export PY_SENSE_FXP_RUN="$PY_SENSE_FXP_DIR/run_sense_fxp.sh"            #py/sense/fxp/run_sense_fxp.sh
-
-# FFT2D Runners
-export PY_FFT2D_FXP_RUN="$PY_FFT2D_FXP_DIR/run_ifft2d_fxp.sh"           #py/fft2d/fxp/run_ifft2d_fxp.sh
-
-# Global runner path
-export PY_GLOBAL_RUN="$PY_RUNNER/run.sh"                                #py/run.sh
 
 export PY_FXP_MODEL_TEST_DIR="$PY_FXP_MODEL_ROOT/test"
 
+######################################### Scripts paths #########################################
+export SCRIPTS_ROOT="$FPGA_MRI_ROOT/scripts"
 
+# Py scripts
+export PY_SCRIPTS_PATH="$SCRIPTS_ROOT/py"
+export PY_GEN_SCRIPT="$PY_SCRIPTS_PATH/run_gen.sh"
+export PY_QUANTIZER_SCRIPT="$PY_SCRIPTS_PATH/run_quantizer.sh"
+export PY_SENSE_FXP_SCRIPT="$PY_SCRIPTS_PATH/run_sense_fxp.sh"
+export PY_SENSE_FP_SCRIPT="$PY_SCRIPTS_PATH/run_sense_fp.sh"
+export PY_SENSE_REPORTER_SCRIPT="$PY_SCRIPTS_PATH/run_sense_reporter.sh"
+export PY_IFFT2D_FXP_SCRIPT="$PY_SCRIPTS_PATH/run_ifft2d_fxp.sh"
+export PY_RUNNER_SCRIPT="$PY_SCRIPTS_PATH/run.sh"
 
+# RTL scripts
+export RTL_SCRIPTS_PATH="$SCRIPTS_ROOT/rtl"
+export RTL_SCRIPTS_SYNTH_PATH="$RTL_SCRIPTS_PATH/synth"
+export RTL_SCRIPTS_TB_PATH="$RTL_SCRIPTS_PATH/tb"
+export RTL_SCRIPTS_VM_PATH="$RTL_SCRIPTS_PATH/vm"
+export RTL_SYNTH_SCRIPT="$RTL_SCRIPTS_SYNTH_PATH/run_synth.sh"
+export RTL_SYNTH_TCL="$RTL_SCRIPTS_SYNTH_PATH/synth_case.tcl"
+export RTL_XSIM_SCRIPT="$RTL_SCRIPTS_TB_PATH/run_xsim.sh"
+export RTL_VM_SCRIPT="$RTL_SCRIPTS_VM_PATH/run_vm.sh"
+export RTL_CREATE_RELEASE_SCRIPT="$RTL_SCRIPTS_PATH/create_release.sh"
 
-###########################################################################
-# Verificación de variables
-###########################################################################
-check_var GLOBAL_CONF_PATH
-
-check_var TRACK_ROOT
-check_var TRACK_CONF
-
-check_var FPGA_MRI_ROOT
-
-check_var VIVADO_ROOT
-check_var VIVADO_SIM_DIR
-
-check_var RTL_ROOT
-check_var RTL_CONSTRAINTS_DIR
-check_var RTL_SCRIPTS_DIR
-check_var RTL_SRC_DIR
-check_var RTL_TESTBENCH_DIR
-check_var RTL_SCRIPTS_SYNTH_DIR
-check_var RTL_SCRIPTS_TB_DIR
-
-check_var PY_ROOT
-check_var PY_RUNNER
-check_var PY_FXP_MODEL_ROOT
-check_var PY_NPY_DATA_ROOT
-check_var PY_FFT2D_ROOT
-check_var PY_SENSE_ROOT
-check_var PY_GEN_ROOT
-check_var PY_QUANTIZER_ROOT
-
-check_var PY_QUANTIZER_RUN
-
-check_var PY_GEN_RUN
-
-check_var PY_SENSE_FP_DIR
-check_var PY_SENSE_FXP_DIR
-check_var PY_SENSE_REPORTER_DIR
-
-check_var PY_FFT2D_FP_DIR
-check_var PY_FFT2D_FXP_DIR
-check_var PY_FFT2D_REPORTER_DIR
-
-check_var PY_SENSE_REPORTER_RUN
-check_var PY_SENSE_FP_RUN
-check_var PY_SENSE_FXP_RUN
-
-check_var PY_GLOBAL_RUN
-
-check_var PY_FXP_MODEL_TEST_DIR
-echo ""
 ###########################################################################
 # Verificación de directorios
 ###########################################################################
@@ -176,14 +122,11 @@ check_dir "$PY_ROOT"
 
 check_dir "$RTL_ROOT"
 check_dir "$RTL_CONSTRAINTS_DIR"
-check_dir "$RTL_SCRIPTS_DIR"
 check_dir "$RTL_SRC_DIR"
 check_dir "$RTL_TESTBENCH_DIR"
-check_dir "$RTL_SCRIPTS_SYNTH_DIR"
-check_dir "$RTL_SCRIPTS_TB_DIR"
 
-check_dir "$VIVADO_ROOT"
-check_dir "$VIVADO_SIM_DIR"
+# check_dir "$VIVADO_ROOT"
+# check_dir "$VIVADO_SIM_DIR"
 check_dir "$PY_RUNNER"
 check_dir "$PY_FXP_MODEL_ROOT"
 check_dir "$PY_NPY_DATA_ROOT"
@@ -194,44 +137,59 @@ check_dir "$PY_QUANTIZER_ROOT"
 check_dir "$PY_SENSE_FP_DIR"
 check_dir "$PY_SENSE_FXP_DIR"
 check_dir "$PY_SENSE_REPORTER_DIR"
-check_dir "$PY_FFT2D_FP_DIR"
+# check_dir "$PY_FFT2D_FP_DIR"
 check_dir "$PY_FFT2D_FXP_DIR"
-check_dir "$PY_FFT2D_REPORTER_DIR"
+# check_dir "$PY_FFT2D_REPORTER_DIR"
 check_dir "$PY_FXP_MODEL_TEST_DIR"
 echo ""
 ###########################################################################
 # Verificación de archivos
 ###########################################################################
 check_file "$GLOBAL_CONF_PATH"
-check_file "$PY_QUANTIZER_RUN"
-check_file "$PY_GEN_RUN"
-check_file "$PY_SENSE_REPORTER_RUN"
-check_file "$PY_SENSE_FP_RUN"
-check_file "$PY_SENSE_FXP_RUN"
-check_file "$PY_GLOBAL_RUN"
 check_file "$TRACK_CONF"
-check_file "$RTL_SCRIPTS_SYNTH_RUNNER"
-check_file "$RTL_SCRIPTS_VM_RUNNER"
-check_file "$RTL_SCRIPTS_XSIM_RUNNER"
+check_file "$PY_GEN_SCRIPT"
+check_file "$PY_QUANTIZER_SCRIPT"
+check_file "$PY_SENSE_FXP_SCRIPT"
+check_file "$PY_SENSE_FP_SCRIPT"
+check_file "$PY_SENSE_REPORTER_SCRIPT"
+check_file "$PY_IFFT2D_FXP_SCRIPT"
+check_file "$PY_RUNNER_SCRIPT"
+check_file "$RTL_SYNTH_SCRIPT"
+check_file "$RTL_XSIM_SCRIPT"
+check_file "$RTL_VM_SCRIPT"
+check_file "$RTL_CREATE_RELEASE_SCRIPT"
+check_file "$RTL_SYNTH_TCL"
+
+###########################################################################
+# Creación de aliases
+###########################################################################
+run_py_model() {
+    bash "$PY_RUNNER_SCRIPT"
+}
+
+delete_py_model() {
+    bash "$PY_RUNNER_SCRIPT" --delete-case
+}
+
+create_release(){
+  bash "$RTL_CREATE_RELEASE_SCRIPT"
+}
+
+run_synthesis() {
+  bash "$RTL_SYNTH_SCRIPT" "$@"
+}
+
+
+
+# check_file "$RTL_SCRIPTS_SYNTH_RUNNER"
+# check_file "$RTL_SCRIPTS_VM_RUNNER"
+# check_file "$RTL_SCRIPTS_XSIM_RUNNER"
 echo ""
 
-printf "[set_env.sh]    Running dos2unix on scripts and config files...\n"
 
-dos2unix $GLOBAL_CONF_PATH
-dos2unix $PY_QUANTIZER_RUN
-dos2unix $PY_GEN_RUN
-dos2unix $PY_SENSE_REPORTER_RUN
-dos2unix $PY_SENSE_FP_RUN
-dos2unix $PY_SENSE_FXP_RUN
-dos2unix $PY_GLOBAL_RUN
-dos2unix $TRACK_CONF
-dos2unix $RTL_SCRIPTS_SYNTH_RUNNER
-dos2unix $RTL_SCRIPTS_VM_RUNNER
-dos2unix $RTL_SCRIPTS_XSIM_RUNNER
-echo ""
 
 printf "[set_env.sh]    Sourcing .venv/bin/activate ...\n"
-source .venv/bin/activate
+source py/.venv/bin/activate
 
 echo ""
 printf "[set_env.sh]    ${GREEN}Environment loaded successfully.${NC}\n"

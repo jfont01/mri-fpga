@@ -2,7 +2,7 @@ source "$TRACK_CONF"
 
 STIM_DIR_NAME="N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}"
 CASE_DIR_NAME="NB_Y${NB_K}_NBF_Y${NBF_K}-NB_S${NB_S}_NBF_S${NBF_S}-NB_A${NB_A}_NBF_A${NBF_A}-NB_B${NB_B}_NBF_B${NBF_B}"
-TRACK_BASE="track.${STIM_DIR_NAME}.${CASE_DIR_NAME}"
+TRACK_BASE="$TRACK_ROOT/track.${STIM_DIR_NAME}.${CASE_DIR_NAME}"
 
 last_rev=0
 
@@ -50,20 +50,13 @@ copy() {
   local dst="$2"
 
   if [[ -f "$src" ]]; then
-    printf "[run.sh]    Copying file: %s -> %s\n" "$src" "$dst"
     mkdir -p "$(dirname "$dst")"
     cp -f "$src" "$dst"
   else
-    printf "[run.sh]    File not found, skipping copy: %s\n" "$src"
+    printf "[create_release.sh]    File not found, skipping copy: %s\n" "$src"
   fi
 }
 
-copy "$FXP_IFFT2D_RPT"      "$TRACK_DIR/fxp_ifft2d.rpt"
-copy "$FXP_QUANTIZER_S_RPT" "$TRACK_DIR/fxp_quantize_S.rpt"
-copy "$FXP_QUANTIZER_K_RPT" "$TRACK_DIR/fxp_quantize_k.rpt"
-copy "$GLOBAL_RPT"          "$TRACK_DIR/snr_global.rpt"
-copy "$GLOBAL_FXP_RPT"      "$TRACK_DIR/fxp_global.rpt"
-copy "$GLOBAL_FP_RPT"       "$TRACK_DIR/fp_global.rpt"
 
 PY_A_DAT="$PY_RUNNER/output/$STIM_DIR_NAME/sense_fxp/$CASE_DIR_NAME/A/py_A.dat"
 PY_B_DAT="$PY_RUNNER/output/$STIM_DIR_NAME/sense_fxp/$CASE_DIR_NAME/b/py_b.dat"
@@ -73,6 +66,8 @@ PY_L_DAT="$PY_RUNNER/output/$STIM_DIR_NAME/sense_fxp/$CASE_DIR_NAME/L/py_L.dat"
 PY_M_HAT_DAT="$PY_RUNNER/output/$STIM_DIR_NAME/sense_fxp/$CASE_DIR_NAME/m_hat/py_m_hat.dat"
 PY_X_DAT="$PY_RUNNER/output/$STIM_DIR_NAME/sense_fxp/$CASE_DIR_NAME/x/py_x.dat"
 PY_Z_DAT="$PY_RUNNER/output/$STIM_DIR_NAME/sense_fxp/$CASE_DIR_NAME/z/py_z.dat"
+PY_S_DAT="$PY_RUNNER/output/$STIM_DIR_NAME/quantizer/S/NB${NB_S}_NBF${NBF_S}/py_S.dat"
+PY_Y_DAT="$PY_RUNNER/output/$STIM_DIR_NAME/fft2d_fxp/NB${NB_K}_NBF${NBF_K}/py_y.dat"
 
 require_file "$PY_A_DAT"
 require_file "$PY_B_DAT"
@@ -82,10 +77,13 @@ require_file "$PY_L_DAT"
 require_file "$PY_M_HAT_DAT"
 require_file "$PY_X_DAT"
 require_file "$PY_Z_DAT"
+require_file "$PY_S_DAT"
+require_file "$PY_Y_DAT"
 
-for d in A b D I L S x y z m_hat; do
+for d in A b D I L x z m_hat; do
     mkdir -p "$TRACK_DIR/vm/$d"
 done
+mkdir -p "$TRACK_DIR/stimuli"
 
 copy "$FXP_IFFT2D_RPT"      "$TRACK_DIR/fxp_ifft2d.rpt"
 copy "$FXP_QUANTIZER_S_RPT" "$TRACK_DIR/fxp_quantize_S.rpt"
@@ -102,15 +100,77 @@ copy "$PY_L_DAT"        "$TRACK_DIR/vm/L"
 copy "$PY_M_HAT_DAT"    "$TRACK_DIR/vm/m_hat"
 copy "$PY_X_DAT"        "$TRACK_DIR/vm/x"
 copy "$PY_Z_DAT"        "$TRACK_DIR/vm/z"
+copy "$PY_S_DAT"        "$TRACK_DIR/stimuli"
+copy "$PY_Y_DAT"        "$TRACK_DIR/stimuli"
 
 
+SV_PKG_DIR="$TRACK_DIR/package"
+SV_PKG_FILE="$SV_PKG_DIR/track_params_pkg.svh"
 
-#python3 vm_runner.py --case A --NB $NB_A --rtl-src "$VIVADO_SIM_DIR/rtl_A.dat" --rtl-dst "$TRACK_DIR/vm/A/rtl_A.dat" --py-path "$TRACK_DIR/vm/A/py_A.dat"
-#python3 vm_runner.py --case b --NB $NB_B --rtl-src "$VIVADO_SIM_DIR/rtl_b.dat" --rtl-dst "$TRACK_DIR/vm/b/rtl_b.dat" --py-path "$TRACK_DIR/vm/b/py_b.dat"
-#python3 vm_runner.py --case D --NB $NB_A --rtl-src "$VIVADO_SIM_DIR/rtl_D.dat" --rtl-dst "$TRACK_DIR/vm/D/rtl_D.dat" --py-path "$TRACK_DIR/vm/D/py_D.dat"
-#python3 vm_runner.py --case I --NB $NB_B --rtl-src "$VIVADO_SIM_DIR/rtl_I.dat" --rtl-dst "$TRACK_DIR/vm/I/rtl_I.dat" --py-path "$TRACK_DIR/vm/I/py_I.dat"
-#python3 vm_runner.py --case L --NB $NB_A --rtl-src "$VIVADO_SIM_DIR/rtl_L.dat" --rtl-dst "$TRACK_DIR/vm/L/rtl_L.dat" --py-path "$TRACK_DIR/vm/L/py_L.dat"
-#python3 vm_runner.py --case m_hat --NB $NB_B --rtl-src "$VIVADO_SIM_DIR/rtl_m_hat.dat" --rtl-dst "$TRACK_DIR/vm/m_hat/rtl_m_hat.dat" --py-path "$TRACK_DIR/vm/m_hat/py_m_hat.dat"
-#python3 vm_runner.py --case x --NB $NB_B --rtl-src "$VIVADO_SIM_DIR/rtl_x.dat" --rtl-dst "$TRACK_DIR/vm/x/rtl_x.dat" --py-path "$TRACK_DIR/vm/x/py_x.dat"
-#python3 vm_runner.py --case z --NB $NB_B --rtl-src "$VIVADO_SIM_DIR/rtl_z.dat" --rtl-dst "$TRACK_DIR/vm/z/rtl_z.dat" --py-path "$TRACK_DIR/vm/z/py_z.dat"
+mkdir -p "$SV_PKG_DIR"
+
+cat > "$SV_PKG_FILE" <<EOF
+package track_params_pkg;
+
+    parameter int NB_S  = ${NB_S};
+    parameter int NBF_S = ${NBF_S};
+
+    parameter int NB_Y  = ${NB_K};
+    parameter int NBF_Y = ${NBF_K};
+
+    parameter int NB_A  = ${NB_A};
+    parameter int NBF_A = ${NBF_A};
+
+    parameter int NB_B  = ${NB_B};
+    parameter int NBF_B = ${NBF_B};
+
+    parameter int L     = ${L};
+    parameter int AF    = ${AF};
+    parameter int N     = ${N};
+
+endpackage
+EOF
+
+echo "[run.sh]    Generated SVH package: $SV_PKG_FILE"
+
+FLIST="$TRACK_DIR/flist/tb_flist.f"
+mkdir -p "$(dirname "$FLIST")"
+
+cat > "$FLIST" <<EOF
+$TRACK_DIR/package/track_params_pkg.svh
+$RTL_ROOT/src/ops/cast.sv
+$RTL_ROOT/src/ops/cmul.sv
+$RTL_ROOT/src/sense/compute_Aij.sv
+$RTL_ROOT/src/sense/compute_bi.sv
+$RTL_ROOT/tb/tb_compute_Aij.sv
+$RTL_ROOT/tb/tb_compute_bi.sv
+EOF
+
+
+SYNTHESIS_DIR="$TRACK_DIR/synthesis"
+mkdir -p "$SYNTHESIS_DIR"
+
+SIMULATION_DIR="$TRACK_DIR/simulation"
+mkdir -p "$SIMULATION_DIR"
+
+
+CONSTRAINTS_DIR="$TRACK_DIR/constraints"
+mkdir -p "$CONSTRAINTS_DIR"
+
+CLOCK_AIJ_NS=$(awk "BEGIN {printf \"%.3f\", 1000.0 / $CLOCK_AIJ_MHZ}")
+CLOCK_BI_NS=$(awk "BEGIN {printf \"%.3f\", 1000.0 / $CLOCK_BI_MHZ}")
+
+Aij_XDC="$CONSTRAINTS_DIR/clock_Aij.xdc"
+BI_XDC="$CONSTRAINTS_DIR/clock_bi.xdc"
+
+cat > "$Aij_XDC" <<EOF
+create_clock -name i_clock -period ${CLOCK_AIJ_NS} [get_ports i_clock]
+EOF
+
+cat > "$BI_XDC" <<EOF
+create_clock -name i_clock -period ${CLOCK_BI_NS} [get_ports i_clock]
+EOF
+
+echo "[create_release.sh]    Generated XDC: $Aij_XDC"
+echo "[create_release.sh]    Generated XDC: $BI_XDC"
 
