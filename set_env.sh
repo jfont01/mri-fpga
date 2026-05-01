@@ -107,8 +107,10 @@ export RTL_SCRIPTS_SYNTH_PATH="$RTL_SCRIPTS_PATH/synth"
 export RTL_SCRIPTS_TB_PATH="$RTL_SCRIPTS_PATH/tb"
 export RTL_SCRIPTS_VM_PATH="$RTL_SCRIPTS_PATH/vm"
 export RTL_SYNTH_SCRIPT="$RTL_SCRIPTS_SYNTH_PATH/run_synth.sh"
+export RTL_SYNTH_TCL="$RTL_SCRIPTS_SYNTH_PATH/synth_case.tcl"
 export RTL_XSIM_SCRIPT="$RTL_SCRIPTS_TB_PATH/run_xsim.sh"
 export RTL_VM_SCRIPT="$RTL_SCRIPTS_VM_PATH/run_vm.sh"
+export RTL_CREATE_RELEASE_SCRIPT="$RTL_SCRIPTS_PATH/create_release.sh"
 
 ###########################################################################
 # Verificación de directorios
@@ -155,6 +157,27 @@ check_file "$PY_RUNNER_SCRIPT"
 check_file "$RTL_SYNTH_SCRIPT"
 check_file "$RTL_XSIM_SCRIPT"
 check_file "$RTL_VM_SCRIPT"
+check_file "$RTL_CREATE_RELEASE_SCRIPT"
+check_file "$RTL_SYNTH_TCL"
+
+###########################################################################
+# Creación de aliases
+###########################################################################
+run_py_model() {
+    bash "$PY_RUNNER_SCRIPT"
+}
+
+delete_py_model() {
+    bash "$PY_RUNNER_SCRIPT" --delete-case
+}
+
+create_release(){
+  bash "$RTL_CREATE_RELEASE_SCRIPT"
+}
+
+run_synthesis() {
+  bash "$RTL_SYNTH_SCRIPT" "$@"
+}
 
 
 
