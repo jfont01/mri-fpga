@@ -9,6 +9,7 @@ printf "\n"
 printf "[run_gen.sh] ${GREEN}Running stimulus generator${NC}\n"
 printf "\n"
 
+
 CONF_PATH="$GLOBAL_CONF_PATH"
 CONF="$CONF_PATH"
 

@@ -11,6 +11,7 @@ printf "\n"
 printf "[run_iff2d_fxp.sh] ${GREEN}Running iff2d${NC}\n"
 printf "\n"
 
+
 CONF="$GLOBAL_CONF_PATH"
 
 if [[ ! -f "$CONF" ]]; then
