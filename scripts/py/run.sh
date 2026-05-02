@@ -150,8 +150,18 @@ rm -rf "$OUTPUT_SENSE_FXP_CASE_DIR"
 rm -rf "$OUTPUT_REPORTER_CASE_DIR"
 
 mkdir -p "$RUNNER_OUTPUT_CASE_DIR/snr_vs_lsb"
-python3 "$PY_SENSE_ROOT/csv_snr.py" --in-dir="$RUNNER_OUTPUT_CASE_DIR/reporter" --out-csv="$RUNNER_OUTPUT_CASE_DIR/snr_vs_lsb/NB_Y_snr_vs_lsb.csv"
-python3 "$PY_SENSE_ROOT/plot_snr_vs_lsb.py" --in-csv="$RUNNER_OUTPUT_CASE_DIR/snr_vs_lsb/NB_Y_snr_vs_lsb.csv" --out-png="$RUNNER_OUTPUT_CASE_DIR/snr_vs_lsb/NB_Y_snr_vs_lsb.png"
+
+for var in Y A B S; do
+    python3 "$PY_SENSE_ROOT/csv_snr.py" \
+        --in-dir "$RUNNER_OUTPUT_CASE_DIR/reporter" \
+        --out-csv "$RUNNER_OUTPUT_CASE_DIR/snr_vs_lsb/NBF_${var}_snr_vs_lsb.csv" \
+        --sweep-var "$var"
+
+    python3 "$PY_SENSE_ROOT/plot_snr_vs_lsb.py" \
+        --in-csv "$RUNNER_OUTPUT_CASE_DIR/snr_vs_lsb/NBF_${var}_snr_vs_lsb.csv" \
+        --out-png "$RUNNER_OUTPUT_CASE_DIR/snr_vs_lsb/NBF_${var}_snr_vs_lsb.png" \
+        --sweep-var "$var"
+done
 
 cp -f "$LOG_FILE" "$RUNNER_OUTPUT_CASE_DIR/run.log"
 
