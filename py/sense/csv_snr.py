@@ -4,8 +4,9 @@ import argparse
 from pathlib import Path
 
 
-def extract_nbf_y(folder_name: str) -> int | None:
-    m = re.search(r"NB_Y\d+_NBF_Y(\d+)", folder_name)
+def extract_nbf(folder_name: str, sweep_var: str) -> int | None:
+    pattern = rf"NB_{sweep_var}\d+_NBF_{sweep_var}(\d+)"
+    m = re.search(pattern, folder_name)
     return int(m.group(1)) if m else None
 
 
@@ -30,14 +31,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--in-dir",
         type=str,
-        required=True,
-        help="Directorio raíz donde buscar global_compare_report.rpt",
+        required=True
     )
     parser.add_argument(
         "--out-csv",
         type=str,
+        required=True
+    )
+    parser.add_argument(
+        "--sweep-var",
+        type=str,
         required=True,
-        help="Path del CSV de salida",
+        choices=["S", "Y", "A", "B"]
     )
     return parser.parse_args()
 
@@ -47,19 +52,21 @@ def main() -> None:
 
     root = Path(args.in_dir).resolve()
     out_csv = Path(args.out_csv).resolve()
+    sweep_var = args.sweep_var.upper()
 
     if not root.is_dir():
         raise FileNotFoundError(f"No existe el directorio de entrada: {root}")
 
+    nbf_col = f"NBF_{sweep_var}"
     rows = []
 
     for report_path in root.rglob("global_compare_report.rpt"):
         parent_folder = report_path.parent.name
-        nbf_y = extract_nbf_y(parent_folder)
+        nbf_val = extract_nbf(parent_folder, sweep_var)
         snr_db = extract_last_snr(report_path)
 
-        if nbf_y is None:
-            print(f"[WARN] No pude extraer NBF_Y de: {parent_folder}")
+        if nbf_val is None:
+            print(f"[WARN] No pude extraer {nbf_col} de: {parent_folder}")
             continue
 
         if snr_db is None:
@@ -67,24 +74,25 @@ def main() -> None:
             continue
 
         rows.append({
-            "NBF_Y": nbf_y,
+            nbf_col: nbf_val,
             "snr_db": snr_db,
         })
 
-    rows.sort(key=lambda x: x["NBF_Y"])
+    rows.sort(key=lambda x: x[nbf_col])
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
 
     with out_csv.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f,
-            fieldnames=["NBF_Y", "snr_db"]
+            fieldnames=[nbf_col, "snr_db"]
         )
         writer.writeheader()
         writer.writerows(rows)
 
     print(f"[OK] CSV generado: {out_csv}")
     print(f"[OK] Filas escritas: {len(rows)}")
+    print(f"[OK] Variable barrida: {nbf_col}")
 
 
 if __name__ == "__main__":
