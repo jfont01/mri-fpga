@@ -1,7 +1,6 @@
 __pycache__/
 .vscode/
 .venv/
-doc/
 raw_data/
 log/
 .Xil/
