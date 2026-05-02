@@ -106,6 +106,156 @@ class Fxp:
             FXP_STATS["underflow"] += 1
 
         return cls(bits_list, NB, NBF, signed)
+    
+    
+    @classmethod
+    def from_sint(cls, val: int, NB: int, NBF: int, signed: bool = True) -> "Fxp":
+        mask = (1 << NB) - 1
+        raw = val & mask
+        return cls.from_uint(raw, NB=NB, NBF=NBF, signed=signed)
+
+    def to_sint(self) -> int:
+        raw = self.to_uint()
+        if self.signed and (raw & (1 << (self.NB - 1))):
+            return raw - (1 << self.NB)
+        return raw
+
+    def is_negative(self) -> bool:
+        if not self.signed:
+            return False
+        return bool(self.bits[0])
+
+    def sign_bit(self) -> int:
+        return 1 if self.is_negative() else 0
+
+    def abs(self) -> "Fxp":
+        if (not self.signed) or (not self.is_negative()):
+            return self
+
+        x = self.to_sint()
+
+        # caso límite: mínimo negativo no tiene opuesto representable
+        if x == -(1 << (self.NB - 1)):
+            raise OverflowError(
+                f"abs() no representable para mínimo negativo en Q({self.NB},{self.NBF})"
+            )
+
+        return Fxp.from_sint(-x, NB=self.NB, NBF=self.NBF, signed=self.signed)
+
+    @staticmethod
+    def _udiv_restoring(dividend: int, divisor: int, nbits: int) -> tuple[int, int]:
+        if divisor == 0:
+            raise ZeroDivisionError("División por cero")
+
+        remainder = 0
+        quotient = 0
+
+        for i in range(nbits - 1, -1, -1):
+            remainder = (remainder << 1) | ((dividend >> i) & 1)
+
+            trial = remainder - divisor
+            if trial >= 0:
+                remainder = trial
+                quotient |= (1 << i)
+
+        return quotient, remainder
+
+    @classmethod
+    def div_restoring(
+        cls,
+        num: "Fxp",
+        den: "Fxp",
+        NB_out: int,
+        NBF_out: int,
+        mode: str = "round",
+        overflow: str = "saturate",
+        signed_out: bool | None = None,
+    ) -> "Fxp":
+
+        if not isinstance(num, Fxp):
+            raise TypeError(f"num debe ser Fxp, recibido {type(num)}")
+        if not isinstance(den, Fxp):
+            raise TypeError(f"den debe ser Fxp, recibido {type(den)}")
+
+        if den.to_sint() == 0:
+            raise ZeroDivisionError("División por cero en Fxp.div_restoring()")
+
+        if signed_out is None:
+            signed_out = bool(num.signed or den.signed)
+
+        FXP_STATS["fxp_div"] += 1
+
+        # signo del cociente
+        sign_q_neg = num.is_negative() ^ den.is_negative()
+
+        # magnitudes enteras raw
+        num_mag = abs(num.to_sint()) if num.signed else num.to_uint()
+        den_mag = abs(den.to_sint()) if den.signed else den.to_uint()
+
+        # q_raw_trunc representa el cociente truncado escalado a NBF_out:
+        # q_raw_trunc = floor( (num / den) * 2^NBF_out )
+        shift = NBF_out + den.NBF - num.NBF
+
+        if shift >= 0:
+            dividend = num_mag << shift
+            divisor = den_mag
+            nbits = max(1, num.NB + shift)
+        else:
+            dividend = num_mag
+            divisor = den_mag << (-shift)
+            nbits = max(1, num.NB)
+
+        q_raw_trunc, rem = cls._udiv_restoring(dividend, divisor, nbits)
+
+        if mode == "round":
+            need_rounding = ((rem << 1) >= divisor)
+        elif mode == "trunc":
+            need_rounding = False
+        else:
+            raise ValueError(f"Modo de cuantización inválido: {mode}")
+
+        q_signed_trunc = -q_raw_trunc if sign_q_neg else q_raw_trunc
+
+        # ------------------------------------------------------------------
+        # Truco para reutilizar cast():
+        # construimos un valor temporal con 2 bits fraccionales extra.
+        #
+        # need_rounding = False -> extra bits = 00  => no debe subir
+        # need_rounding = True  -> extra bits = 11  => debe subir al castear
+        #
+        # tmp tiene NBF_tmp = NBF_out + 2
+        # ------------------------------------------------------------------
+        NBF_tmp = NBF_out + 2
+        frac_ext = 0b11 if need_rounding else 0b00
+
+        q_tmp_sint = (q_signed_trunc << 2)
+        if q_signed_trunc >= 0:
+            q_tmp_sint |= frac_ext
+        else:
+            q_tmp_sint -= frac_ext
+
+        if signed_out:
+            mag_bits = 1 if q_tmp_sint == 0 else abs(q_tmp_sint).bit_length()
+            NB_tmp = max(NB_out + 2, mag_bits + 1)   # +1 por signo
+        else:
+            if q_tmp_sint < 0:
+                raise ValueError("Resultado negativo con signed_out=False")
+            NB_tmp = max(NB_out + 2, max(1, q_tmp_sint.bit_length()))
+
+        tmp = cls.from_sint(
+            q_tmp_sint,
+            NB=NB_tmp,
+            NBF=NBF_tmp,
+            signed=signed_out,
+        )
+
+        return tmp.cast(
+            NB_out=NB_out,
+            NBF_out=NBF_out,
+            mode=mode,
+            overflow=overflow,
+        )
+    
 
     @classmethod
     def div(
@@ -145,6 +295,11 @@ class Fxp:
             overflow=overflow,
         )
     
+
+
+
+
+
 
     ############################################################## MÉTODOS ESTÁTICOS ##############################################################
     @staticmethod
@@ -216,6 +371,12 @@ class Fxp:
             raise TypeError("shift amount debe ser int")
         return self.shift_right(k)
     
+    def __lshift__(self, k: int) -> "Fxp":
+        if not isinstance(k, int):
+            raise TypeError("shift amount debe ser int")
+        return self.shift_left(k)
+
+
     ############################################################## MÉTODOS ##############################################################
     def to_uint(self) -> int:
         return int("".join(str(b) for b in self.bits), 2)
@@ -315,6 +476,16 @@ class Fxp:
 
         res_val = self._val >> k
         return Fxp.from_apyfixed(res_val, signed=self.signed)
+    
+    def shift_left(self, k: int = 1) -> "Fxp":
+        if k == 0:
+            return self
+        if k < 0:
+            raise ValueError("k debe ser >= 0")
+
+        res_val = self._val << k
+        return Fxp.from_apyfixed(res_val, signed=self.signed)
+    
 
 
     
