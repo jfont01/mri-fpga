@@ -207,32 +207,30 @@ class Fxp:
 
         q_raw_trunc, rem = cls._udiv_restoring(dividend, divisor, nbits)
 
+        need_rounding = False
+
         if mode == "round":
             need_rounding = ((rem << 1) >= divisor)
+
         elif mode == "trunc":
-            need_rounding = False
+            # tu quantize(mode="trunc") usa floor(), no trunc hacia cero.
+            # Entonces, si el resultado final es negativo y hay residuo,
+            # hay que moverse 1 LSB más hacia -inf.
+            if sign_q_neg and rem != 0:
+                q_raw_trunc += 1
+
         else:
             raise ValueError(f"Modo de cuantización inválido: {mode}")
 
         q_signed_trunc = -q_raw_trunc if sign_q_neg else q_raw_trunc
 
-        # ------------------------------------------------------------------
-        # Truco para reutilizar cast():
-        # construimos un valor temporal con 2 bits fraccionales extra.
-        #
-        # need_rounding = False -> extra bits = 00  => no debe subir
-        # need_rounding = True  -> extra bits = 11  => debe subir al castear
-        #
-        # tmp tiene NBF_tmp = NBF_out + 2
-        # ------------------------------------------------------------------
         NBF_tmp = NBF_out + 2
         frac_ext = 0b11 if need_rounding else 0b00
 
-        q_tmp_sint = (q_signed_trunc << 2)
-        if q_signed_trunc >= 0:
-            q_tmp_sint |= frac_ext
+        if sign_q_neg:
+            q_tmp_sint = -(q_raw_trunc << 2) - frac_ext
         else:
-            q_tmp_sint -= frac_ext
+            q_tmp_sint =  (q_raw_trunc << 2) + frac_ext
 
         if signed_out:
             mag_bits = 1 if q_tmp_sint == 0 else abs(q_tmp_sint).bit_length()
