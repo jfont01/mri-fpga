@@ -8,6 +8,7 @@ amd/
 miscelaneas/
 output/
 track.*/
+~$*
 *.pdf
 *.docx
 *.doc
