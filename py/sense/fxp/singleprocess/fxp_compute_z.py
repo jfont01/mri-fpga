@@ -45,8 +45,13 @@ def fxp_compute_z_i(
             f"D no es invertible o no es positiva: d0={d0_f}, d1={d1_f}"
         )
 
-    z0 = CFxp.div_by_real(xi_q[0], d0, NB_out=NB, NBF_out=NBF, mode="round")
-    z1 = CFxp.div_by_real(xi_q[1], d1, NB_out=NB, NBF_out=NBF, mode="round")
+    z0_re = Fxp.div_restoring(xi_q[0].re, d0, NB_out=NB, NBF_out=NBF, mode="round")
+    z0_im = Fxp.div_restoring(xi_q[0].im, d0, NB_out=NB, NBF_out=NBF, mode="round")
+    z1_re = Fxp.div_restoring(xi_q[1].re, d1, NB_out=NB, NBF_out=NBF, mode="round")
+    z1_im = Fxp.div_restoring(xi_q[1].im, d1, NB_out=NB, NBF_out=NBF, mode="round")
+
+    z0 = CFxp(z0_re, z0_im)
+    z1 = CFxp(z1_re, z1_im)
 
     if stats_z is not None:
         update_acc_stats(stats_z, "Z0", z0)

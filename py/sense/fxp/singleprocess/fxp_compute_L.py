@@ -46,8 +46,10 @@ def fxp_compute_L_i(
 
     zero = Fxp.quantize(0.0, NB, NBF, signed=signed)
     one = Fxp.quantize(1.0, NB, NBF, signed=signed)
-
-    l10 = CFxp.div_by_real(a10, d0, NB_out=NB, NBF_out=NBF, mode="round")
+        
+    l10_re = Fxp.div_restoring(a10.re, d0, NB_out=NB, NBF_out=NBF, mode="round")
+    l10_im = Fxp.div_restoring(a10.im, d0, NB_out=NB, NBF_out=NBF, mode="round")
+    l10 = CFxp(l10_re, l10_im)
 
     if stats_L is not None:
         update_acc_stats(stats_L, "L10", l10)
