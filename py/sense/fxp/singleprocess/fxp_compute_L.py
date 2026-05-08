@@ -47,8 +47,8 @@ def fxp_compute_L_i(
     zero = Fxp.quantize(0.0, NB, NBF, signed=signed)
     one = Fxp.quantize(1.0, NB, NBF, signed=signed)
         
-    l10_re = Fxp.div_restoring(a10.re, d0, NB_out=NB, NBF_out=NBF, mode="round")
-    l10_im = Fxp.div_restoring(a10.im, d0, NB_out=NB, NBF_out=NBF, mode="round")
+    l10_re = Fxp.div_restoring(a10.re, d0, NB_out=NB, NBF_out=NBF, mode="trunc")
+    l10_im = Fxp.div_restoring(a10.im, d0, NB_out=NB, NBF_out=NBF, mode="trunc")
     l10 = CFxp(l10_re, l10_im)
 
     if stats_L is not None:
@@ -63,7 +63,7 @@ def fxp_compute_L_i(
 
     Lij[0, 0] = CFxp(one, zero)
     Lij[0, 1] = CFxp(zero, zero)
-    Lij[1, 0] = l10.cast(NB, NBF, mode="round")
+    Lij[1, 0] = l10
     Lij[1, 1] = CFxp(one, zero)
 
     return Lij

@@ -49,7 +49,7 @@ def fxp_compute_D_i(
 
     # |a10|^2 / d0
     abs_a10_sq = (a10.re * a10.re + a10.im * a10.im).cast(NB, NBF, mode="round")
-    quot = Fxp.div_restoring(abs_a10_sq, d0, NB_out=NB, NBF_out=NBF, mode="round")
+    quot = Fxp.div_restoring(abs_a10_sq, d0, NB_out=NB, NBF_out=NBF, mode="trunc")
 
     # d1 = real(a11) - |a10|^2 / d0
     d1 = (a11.re - quot).cast(NB, NBF, mode="round")

@@ -45,10 +45,10 @@ def fxp_compute_z_i(
             f"D no es invertible o no es positiva: d0={d0_f}, d1={d1_f}"
         )
 
-    z0_re = Fxp.div_restoring(xi_q[0].re, d0, NB_out=NB, NBF_out=NBF, mode="round")
-    z0_im = Fxp.div_restoring(xi_q[0].im, d0, NB_out=NB, NBF_out=NBF, mode="round")
-    z1_re = Fxp.div_restoring(xi_q[1].re, d1, NB_out=NB, NBF_out=NBF, mode="round")
-    z1_im = Fxp.div_restoring(xi_q[1].im, d1, NB_out=NB, NBF_out=NBF, mode="round")
+    z0_re = Fxp.div_restoring(xi_q[0].re, d0, NB_out=NB, NBF_out=NBF, mode="trunc")
+    z0_im = Fxp.div_restoring(xi_q[0].im, d0, NB_out=NB, NBF_out=NBF, mode="trunc")
+    z1_re = Fxp.div_restoring(xi_q[1].re, d1, NB_out=NB, NBF_out=NBF, mode="trunc")
+    z1_im = Fxp.div_restoring(xi_q[1].im, d1, NB_out=NB, NBF_out=NBF, mode="trunc")
 
     z0 = CFxp(z0_re, z0_im)
     z1 = CFxp(z1_re, z1_im)
