@@ -134,7 +134,6 @@ class Fxp:
 
         x = self.to_sint()
 
-        # caso límite: mínimo negativo no tiene opuesto representable
         if x == -(1 << (self.NB - 1)):
             raise OverflowError(
                 f"abs() no representable para mínimo negativo en Q({self.NB},{self.NBF})"
@@ -144,8 +143,6 @@ class Fxp:
 
     @staticmethod
     def _udiv_restoring(dividend: int, divisor: int, nbits: int) -> tuple[int, int]:
-        if divisor == 0:
-            raise ZeroDivisionError("División por cero")
 
         remainder = 0
         quotient = 0
@@ -172,14 +169,6 @@ class Fxp:
         signed_out: bool | None = None,
     ) -> "Fxp":
 
-        if not isinstance(num, Fxp):
-            raise TypeError(f"num debe ser Fxp, recibido {type(num)}")
-        if not isinstance(den, Fxp):
-            raise TypeError(f"den debe ser Fxp, recibido {type(den)}")
-
-        if den.to_sint() == 0:
-            raise ZeroDivisionError("División por cero en Fxp.div_restoring()")
-
         if signed_out is None:
             signed_out = bool(num.signed or den.signed)
 
@@ -189,11 +178,9 @@ class Fxp:
         sign_q_neg = num.is_negative() ^ den.is_negative()
 
         # magnitudes enteras raw
-        num_mag = abs(num.to_sint()) if num.signed else num.to_uint()
-        den_mag = abs(den.to_sint()) if den.signed else den.to_uint()
+        num_mag = abs(num.to_sint())
+        den_mag = abs(den.to_sint())
 
-        # q_raw_trunc representa el cociente truncado escalado a NBF_out:
-        # q_raw_trunc = floor( (num / den) * 2^NBF_out )
         shift = NBF_out + den.NBF - num.NBF
 
         if shift >= 0:
@@ -207,38 +194,19 @@ class Fxp:
 
         q_raw_trunc, rem = cls._udiv_restoring(dividend, divisor, nbits)
 
-        need_rounding = False
 
-        if mode == "round":
-            need_rounding = ((rem << 1) >= divisor)
-
-        elif mode == "trunc":
-            # tu quantize(mode="trunc") usa floor(), no trunc hacia cero.
-            # Entonces, si el resultado final es negativo y hay residuo,
-            # hay que moverse 1 LSB más hacia -inf.
-            if sign_q_neg and rem != 0:
-                q_raw_trunc += 1
-
-        else:
-            raise ValueError(f"Modo de cuantización inválido: {mode}")
-
-        q_signed_trunc = -q_raw_trunc if sign_q_neg else q_raw_trunc
+        if sign_q_neg and rem != 0:
+            q_raw_trunc += 1
 
         NBF_tmp = NBF_out + 2
-        frac_ext = 0b11 if need_rounding else 0b00
 
         if sign_q_neg:
-            q_tmp_sint = -(q_raw_trunc << 2) - frac_ext
+            q_tmp_sint = -(q_raw_trunc << 2)
         else:
-            q_tmp_sint =  (q_raw_trunc << 2) + frac_ext
+            q_tmp_sint =  (q_raw_trunc << 2)
 
-        if signed_out:
-            mag_bits = 1 if q_tmp_sint == 0 else abs(q_tmp_sint).bit_length()
-            NB_tmp = max(NB_out + 2, mag_bits + 1)   # +1 por signo
-        else:
-            if q_tmp_sint < 0:
-                raise ValueError("Resultado negativo con signed_out=False")
-            NB_tmp = max(NB_out + 2, max(1, q_tmp_sint.bit_length()))
+        mag_bits = 1 if q_tmp_sint == 0 else abs(q_tmp_sint).bit_length()
+        NB_tmp = max(NB_out + 2, mag_bits + 1)
 
         tmp = cls.from_sint(
             q_tmp_sint,

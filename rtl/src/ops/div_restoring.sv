@@ -17,7 +17,7 @@ module div_restoring #(
 
     output wire signed [NB_QUOTIENT-1:0]   o_quotient,
     output wire                            o_ready,
-    output wire                            o_busy,
+    output wire                            o_busy
     //output wire                            o_need_round_flag
 );
 
@@ -26,7 +26,7 @@ module div_restoring #(
     localparam integer NB_DEN_MAG      = NB_DEN + 1;
     localparam integer NB_QUOTIENT_INT = NB_NUM_MAG + SHIFT;   
     localparam integer NB_REMAINDER    = NB_DEN_MAG + 1;
-    localparam integer NB_COUNTER      = $clog2(NB_QUOTIENT_INT + 1)
+    localparam integer NB_COUNTER      = $clog2(NB_QUOTIENT_INT + 1);
 
 
     wire                              sign_num_w;
