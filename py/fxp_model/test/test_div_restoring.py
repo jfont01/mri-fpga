@@ -131,41 +131,7 @@ class TestFxpDivRestoring(unittest.TestCase):
         return rng.uniform(min_val, max_val)
 
 
-    def test_rng_trunc(self):
-        rng = random.Random(1234)
-
-        for i in range(N_INDIVIDUAL_TEST):
-            NB_in, NBF_in = self.gen_random_format(rng)
-            NB_out, NBF_out = self.gen_random_format(rng)
-
-            num_f = self.gen_random_value(rng, NB_in, NBF_in, True)
-            den_f = self.gen_random_value(rng, NB_in, NBF_in, True)
-
-            if abs(den_f) < 2.0 ** (-max(NBF_in - 2, 0)):
-                den_f = 0.5 if den_f >= 0 else -0.5
-
-            with self.subTest(
-                i=i,
-                num_f=num_f,
-                den_f=den_f,
-                NB_in=NB_in,
-                NBF_in=NBF_in,
-                NB_out=NB_out,
-                NBF_out=NBF_out,
-            ):
-                self.run_case(
-                    num_f=num_f,
-                    den_f=den_f,
-                    NB_in=NB_in,
-                    NBF_in=NBF_in,
-                    NB_out=NB_out,
-                    NBF_out=NBF_out,
-                    mode="trunc",
-                    overflow="saturate",
-                    signed=True,
-                )
-
-    def test_rng_round(self):
+    def test_rng(self):
         rng = random.Random(5678)
 
         for i in range(N_INDIVIDUAL_TEST):
@@ -177,27 +143,29 @@ class TestFxpDivRestoring(unittest.TestCase):
 
             if abs(den_f) < 2.0 ** (-max(NBF_in - 2, 0)):
                 den_f = 0.5 if den_f >= 0 else -0.5
-
-            with self.subTest(
-                i=i,
-                num_f=num_f,
-                den_f=den_f,
-                NB_in=NB_in,
-                NBF_in=NBF_in,
-                NB_out=NB_out,
-                NBF_out=NBF_out,
-            ):
-                self.run_case(
+            
+            modes = ["round", "trunc"]
+            for mode in modes:
+                with self.subTest(
+                    i=i,
                     num_f=num_f,
                     den_f=den_f,
                     NB_in=NB_in,
                     NBF_in=NBF_in,
                     NB_out=NB_out,
                     NBF_out=NBF_out,
-                    mode="round",
-                    overflow="saturate",
-                    signed=True,
-                )
+                ):
+                    self.run_case(
+                        num_f=num_f,
+                        den_f=den_f,
+                        NB_in=NB_in,
+                        NBF_in=NBF_in,
+                        NB_out=NB_out,
+                        NBF_out=NBF_out,
+                        mode=mode,
+                        overflow="saturate",
+                        signed=True,
+                    )
 
 
 
