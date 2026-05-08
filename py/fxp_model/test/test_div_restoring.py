@@ -1,7 +1,9 @@
 import unittest
 import sys
 import os
-import random, math
+import random
+import math
+from pathlib import Path
 
 PY_FXP_MODEL_ROOT = os.environ.get("PY_FXP_MODEL_ROOT")
 if PY_FXP_MODEL_ROOT is None:
@@ -14,8 +16,27 @@ from fxp import Fxp
 
 N_INDIVIDUAL_TEST = 100000
 
+
 class TestFxpDivRestoring(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.dump_dir = Path(__file__).resolve().parent / "dump_div_restoring"
+        cls.dump_dir.mkdir(parents=True, exist_ok=True)
+
+        cls.dump_files = {
+            "round_in": cls.dump_dir / "div_restoring_round_in.dat",
+            "round_out": cls.dump_dir / "div_restoring_round_out.dat",
+            "trunc_in": cls.dump_dir / "div_restoring_trunc_in.dat",
+            "trunc_out": cls.dump_dir / "div_restoring_trunc_out.dat",
+        }
+
+        cls._clear_dump_files()
+
+    @classmethod
+    def _clear_dump_files(cls):
+        for path in cls.dump_files.values():
+            path.write_text("", encoding="utf-8")
 
     def assert_fxp(self, dut: Fxp, ref: Fxp, ref_float: float):
         self.assertEqual(dut.NB, ref.NB)
@@ -51,6 +72,18 @@ class TestFxpDivRestoring(unittest.TestCase):
             ),
         )
 
+    def _append_line(self, path: Path, line: str) -> None:
+        with path.open("a", encoding="utf-8") as f:
+            f.write(line + "\n")
+
+    def _dump_input_case(self, mode: str, num: Fxp, den: Fxp) -> None:
+        path = self.dump_files[f"{mode}_in"]
+        self._append_line(path, f"{num.to_hex()} {den.to_hex()}")
+
+    def _dump_output_case(self, mode: str, dut: Fxp, ref: Fxp) -> None:
+        path = self.dump_files[f"{mode}_out"]
+        self._append_line(path, f"{dut.to_hex()} {ref.to_hex()}")
+
     def run_case(
         self,
         num_f: float,
@@ -64,13 +97,13 @@ class TestFxpDivRestoring(unittest.TestCase):
         signed: bool = True,
     ):
         if den_f == 0.0:
-            self.skipTest("den_f = 0.0 no permitido")
+            return
 
         num = Fxp.quantize(num_f, NB=NB_in, NBF=NBF_in, mode=mode, signed=signed)
         den = Fxp.quantize(den_f, NB=NB_in, NBF=NBF_in, mode=mode, signed=signed)
 
         if den.get_val() == 0.0:
-            self.skipTest(f"den cuantizado a cero: den_f={den_f}")
+            return
 
         min_neg_raw = -(1 << (NB_in - 1))
         if signed and num.to_sint() == min_neg_raw:
@@ -97,9 +130,10 @@ class TestFxpDivRestoring(unittest.TestCase):
             signed=signed,
         )
 
-        self.assert_fxp(dut, ref, ref_float)
-    
+        self._dump_input_case(mode, num, den)
+        self._dump_output_case(mode, dut, ref)
 
+        self.assert_fxp(dut, ref, ref_float)
 
     def gen_random_format(self, rng: random.Random) -> tuple[int, int]:
         NB = rng.randint(4, 64)
@@ -119,7 +153,7 @@ class TestFxpDivRestoring(unittest.TestCase):
             max_val = (2 ** (NB - NBF)) - (2 ** (-NBF))
             min_val = 0.0
         return min_val, max_val
-    
+
     def gen_random_value(
         self,
         rng: random.Random,
@@ -129,7 +163,6 @@ class TestFxpDivRestoring(unittest.TestCase):
     ) -> float:
         min_val, max_val = self.get_range_from(NB, NBF, signed)
         return rng.uniform(min_val, max_val)
-
 
     def test_rng(self):
         rng = random.Random(5678)
@@ -143,11 +176,11 @@ class TestFxpDivRestoring(unittest.TestCase):
 
             if abs(den_f) < 2.0 ** (-max(NBF_in - 2, 0)):
                 den_f = 0.5 if den_f >= 0 else -0.5
-            
-            modes = ["round", "trunc"]
-            for mode in modes:
+
+            for mode in ["round", "trunc"]:
                 with self.subTest(
                     i=i,
+                    mode=mode,
                     num_f=num_f,
                     den_f=den_f,
                     NB_in=NB_in,
@@ -166,7 +199,6 @@ class TestFxpDivRestoring(unittest.TestCase):
                         overflow="saturate",
                         signed=True,
                     )
-
 
 
 if __name__ == "__main__":
