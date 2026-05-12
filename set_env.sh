@@ -179,6 +179,10 @@ run_synthesis() {
   bash "$RTL_SYNTH_SCRIPT" "$@"
 }
 
+run_xsim() {
+  bash "$RTL_XSIM_SCRIPT" "$@"
+}
+
 
 
 # check_file "$RTL_SCRIPTS_SYNTH_RUNNER"
@@ -190,6 +194,9 @@ echo ""
 
 printf "[set_env.sh]    Sourcing .venv/bin/activate ...\n"
 source py/.venv/bin/activate
+
+source /tools/Xilinx/Vivado/2024.2/settings64.sh
+
 
 echo ""
 printf "[set_env.sh]    ${GREEN}Environment loaded successfully.${NC}\n"

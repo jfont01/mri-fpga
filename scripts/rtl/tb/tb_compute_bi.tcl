@@ -20,13 +20,21 @@ if {![file isdirectory $stimuli_dir]} {
     exit 1
 }
 
-set stim_file [file join $stimuli_dir "py_S.dat"]
-if {![file exists $stim_file]} {
-    puts "ERROR: stimulus file not found: $stim_file"
+set stim_s_file [file join $stimuli_dir "py_S.dat"]
+set stim_y_file [file join $stimuli_dir "py_y.dat"]
+
+if {![file exists $stim_s_file]} {
+    puts "ERROR: stimulus file not found: $stim_s_file"
     exit 1
 }
 
-file copy -force $stim_file [file join $sim_dir "py_S.dat"]
+if {![file exists $stim_y_file]} {
+    puts "ERROR: stimulus file not found: $stim_y_file"
+    exit 1
+}
+
+file copy -force $stim_s_file [file join $sim_dir "py_S.dat"]
+file copy -force $stim_y_file [file join $sim_dir "py_y.dat"]
 
 cd $sim_dir
 
@@ -34,7 +42,7 @@ if {[file exists "xsim.dir"]} {
     file delete -force "xsim.dir"
 }
 
-set top tb_compute_Aij
+set top tb_compute_bi
 set snapshot ${top}_snapshot
 
 puts "==> xvlog"
@@ -52,7 +60,7 @@ exec xsim $snapshot \
     -runall \
     -log [file join $log_dir "xsim_${case_name}.log"]
 
-set generated_file [file join $sim_dir "rtl_A.dat"]
+set generated_file [file join $sim_dir "rtl_b.dat"]
 
 if {![file exists $generated_file]} {
     puts "ERROR: simulation did not generate $generated_file"

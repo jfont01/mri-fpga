@@ -80,10 +80,13 @@ require_file "$PY_Z_DAT"
 require_file "$PY_S_DAT"
 require_file "$PY_Y_DAT"
 
-for d in A b D I L x z m_hat; do
-    mkdir -p "$TRACK_DIR/vm/$d"
-done
-mkdir -p "$TRACK_DIR/stimuli"
+TRACK_VECTORS_RTL="$TRACK_DIR/vectors/rtl"
+TRACK_VECTORS_PY="$TRACK_DIR/vectors/py"
+TRACK_STIMULI="$TRACK_DIR/stimuli"
+
+mkdir -p "$TRACK_VECTORS_RTL"
+mkdir -p "$TRACK_VECTORS_PY"
+mkdir -p "$TRACK_STIMULI"
 
 copy "$FXP_IFFT2D_RPT"      "$TRACK_DIR/fxp_ifft2d.rpt"
 copy "$FXP_QUANTIZER_S_RPT" "$TRACK_DIR/fxp_quantize_S.rpt"
@@ -92,16 +95,16 @@ copy "$GLOBAL_RPT"          "$TRACK_DIR/snr_global.rpt"
 copy "$GLOBAL_FXP_RPT"      "$TRACK_DIR/fxp_global.rpt"
 copy "$GLOBAL_FP_RPT"       "$TRACK_DIR/fp_global.rpt"
 
-copy "$PY_A_DAT"        "$TRACK_DIR/vm/A"
-copy "$PY_B_DAT"        "$TRACK_DIR/vm/b"
-copy "$PY_D_DAT"        "$TRACK_DIR/vm/D"
-copy "$PY_I_DAT"        "$TRACK_DIR/vm/I"
-copy "$PY_L_DAT"        "$TRACK_DIR/vm/L"
-copy "$PY_M_HAT_DAT"    "$TRACK_DIR/vm/m_hat"
-copy "$PY_X_DAT"        "$TRACK_DIR/vm/x"
-copy "$PY_Z_DAT"        "$TRACK_DIR/vm/z"
-copy "$PY_S_DAT"        "$TRACK_DIR/stimuli"
-copy "$PY_Y_DAT"        "$TRACK_DIR/stimuli"
+copy "$PY_A_DAT"        "$TRACK_VECTORS_PY"
+copy "$PY_B_DAT"        "$TRACK_VECTORS_PY"
+copy "$PY_D_DAT"        "$TRACK_VECTORS_PY"
+copy "$PY_I_DAT"        "$TRACK_VECTORS_PY"
+copy "$PY_L_DAT"        "$TRACK_VECTORS_PY"
+copy "$PY_M_HAT_DAT"    "$TRACK_VECTORS_PY"
+copy "$PY_X_DAT"        "$TRACK_VECTORS_PY"
+copy "$PY_Z_DAT"        "$TRACK_VECTORS_PY"
+copy "$PY_S_DAT"        "$TRACK_STIMULI"
+copy "$PY_Y_DAT"        "$TRACK_STIMULI"
 
 
 SV_PKG_DIR="$TRACK_DIR/package"
@@ -133,17 +136,23 @@ EOF
 
 echo "[run.sh]    Generated SVH package: $SV_PKG_FILE"
 
-FLIST="$TRACK_DIR/flist/tb_flist.f"
-mkdir -p "$(dirname "$FLIST")"
+FLIST_DIR="$TRACK_DIR/flist"
+mkdir -p "$FLIST_DIR"
 
-cat > "$FLIST" <<EOF
+cat > "$FLIST_DIR/tb_compute_Aij.flist" <<EOF
 $TRACK_DIR/package/track_params_pkg.svh
 $RTL_ROOT/src/ops/cast.sv
 $RTL_ROOT/src/ops/cmul.sv
 $RTL_ROOT/src/sense/compute_Aij.sv
+$RTL_ROOT/testbench/sense/tb_compute_Aij.sv
+EOF
+
+cat > "$FLIST_DIR/tb_compute_bi.flist" <<EOF
+$TRACK_DIR/package/track_params_pkg.svh
+$RTL_ROOT/src/ops/cast.sv
+$RTL_ROOT/src/ops/cmul.sv
 $RTL_ROOT/src/sense/compute_bi.sv
-$RTL_ROOT/tb/tb_compute_Aij.sv
-$RTL_ROOT/tb/tb_compute_bi.sv
+$RTL_ROOT/testbench/sense/tb_compute_bi.sv
 EOF
 
 
