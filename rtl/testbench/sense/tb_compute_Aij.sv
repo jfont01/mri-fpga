@@ -2,16 +2,20 @@
 
 module tb_compute_Aij;
 
-    localparam int NB_S  = 16;
-    localparam int NBF_S = 15;
-    localparam int NB_A  = 28;
-    localparam int NBF_A = 26;
+    localparam int NB_S  = track_params_pkg::NB_S;
+    localparam int NBF_S = track_params_pkg::NBF_S;
 
-    localparam int L      = 4;
-    localparam int Nx     = 32;
-    localparam int Ny     = 32;
-    localparam int Af     = 2;
-    localparam int offset = Ny / Af;
+    localparam int NB_A  = track_params_pkg::NB_A;
+    localparam int NBF_A = track_params_pkg::NBF_A;
+
+    localparam int L     = track_params_pkg::L;
+    localparam int AF    = track_params_pkg::AF;
+    localparam int N     = track_params_pkg::N;
+
+    localparam int Ny = N;
+    localparam int Nx = N;
+
+    localparam int offset = Ny / AF;
 
     logic i_clock;
     logic i_rst;

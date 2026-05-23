@@ -2,18 +2,23 @@
 
 module tb_compute_bi;
 
-    localparam int NB_S  = 16;
-    localparam int NBF_S = 15;
-    localparam int NB_Y  = 32;
-    localparam int NBF_Y = 29;
-    localparam int NB_B  = 32;
-    localparam int NBF_B = 30;
+    localparam int NB_S  = track_params_pkg::NB_S;
+    localparam int NBF_S = track_params_pkg::NBF_S;
 
-    localparam int L      = 4;
-    localparam int Nx     = 32;
-    localparam int Ny     = 32;
-    localparam int Af     = 2;
-    localparam int offset = Ny / Af;
+    localparam int NB_Y  = track_params_pkg::NB_Y;
+    localparam int NBF_Y = track_params_pkg::NBF_Y;
+
+    localparam int NB_B  = track_params_pkg::NB_B;
+    localparam int NBF_B = track_params_pkg::NBF_B;
+
+    localparam int L     = track_params_pkg::L;
+    localparam int AF    = track_params_pkg::AF;
+    localparam int N     = track_params_pkg::N;
+
+    localparam int Ny = N;
+    localparam int Nx = N;
+
+    localparam int offset = Ny / AF;
 
     logic i_clock;
     logic i_rst;
