@@ -40,7 +40,7 @@ puts "==> read_xdc"
 read_xdc $xdc
 
 puts "==> synth_design"
-synth_design -top compute_$case_name -part xck26-sfvc784-2LV-c
+synth_design -top wrapper_compute_$case_name -part xck26-sfvc784-2LV-c
 
 puts "==> report_utilization"
 report_utilization -file "$out_dir/compute_${case_name}_utilization_synth.rpt"

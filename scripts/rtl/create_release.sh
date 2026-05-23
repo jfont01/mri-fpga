@@ -108,7 +108,7 @@ copy "$PY_Y_DAT"        "$TRACK_STIMULI"
 
 
 SV_PKG_DIR="$TRACK_DIR/package"
-SV_PKG_FILE="$SV_PKG_DIR/track_params_pkg.svh"
+SV_PKG_FILE="$SV_PKG_DIR/track_params_pkg.sv"
 
 mkdir -p "$SV_PKG_DIR"
 
@@ -134,13 +134,13 @@ package track_params_pkg;
 endpackage
 EOF
 
-echo "[run.sh]    Generated SVH package: $SV_PKG_FILE"
+echo "[run.sh]    Generated SV package: $SV_PKG_FILE"
 
 FLIST_DIR="$TRACK_DIR/flist"
 mkdir -p "$FLIST_DIR"
 
 cat > "$FLIST_DIR/tb_compute_Aij.flist" <<EOF
-$TRACK_DIR/package/track_params_pkg.svh
+$TRACK_DIR/package/track_params_pkg.sv
 $RTL_ROOT/src/ops/cast.sv
 $RTL_ROOT/src/ops/cmul.sv
 $RTL_ROOT/src/sense/compute_Aij.sv
@@ -148,7 +148,7 @@ $RTL_ROOT/testbench/sense/tb_compute_Aij.sv
 EOF
 
 cat > "$FLIST_DIR/tb_compute_bi.flist" <<EOF
-$TRACK_DIR/package/track_params_pkg.svh
+$TRACK_DIR/package/track_params_pkg.sv
 $RTL_ROOT/src/ops/cast.sv
 $RTL_ROOT/src/ops/cmul.sv
 $RTL_ROOT/src/sense/compute_bi.sv
@@ -156,15 +156,19 @@ $RTL_ROOT/testbench/sense/tb_compute_bi.sv
 EOF
 
 cat > "$FLIST_DIR/synth_compute_Aij.flist" <<EOF
+$TRACK_DIR/package/track_params_pkg.sv
 $RTL_ROOT/src/ops/cast.sv
 $RTL_ROOT/src/ops/cmul.sv
 $RTL_ROOT/src/sense/compute_Aij.sv
+$RTL_ROOT/wrappers/wrapper_compute_Aij.sv
 EOF
 
 cat > "$FLIST_DIR/synth_compute_bi.flist" <<EOF
+$TRACK_DIR/package/track_params_pkg.sv
 $RTL_ROOT/src/ops/cast.sv
 $RTL_ROOT/src/ops/cmul.sv
 $RTL_ROOT/src/sense/compute_bi.sv
+$RTL_ROOT/wrappers/wrapper_compute_bi.sv
 EOF
 
 
