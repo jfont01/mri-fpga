@@ -5,6 +5,7 @@ usage() {
     cat <<EOF
 Usage:
   $0
+  $0 --case=all
   $0 --case=A
   $0 --case=b
   $0 --case=D
@@ -48,11 +49,12 @@ fi
 
 CMD=(python3 "$PY_VM_SCRIPT" --track-dir "$TRACK_DIR")
 
-if [[ -n "$CASE" ]]; then
+if [[ -n "$CASE" && "$CASE" != "all" ]]; then
     CMD+=(--case "$CASE")
 fi
 
 echo "[run_vm.sh] TRACK_DIR = $TRACK_DIR"
 echo "[run_vm.sh] SCRIPT    = $PY_VM_SCRIPT"
+echo "[run_vm.sh] CASE      = ${CASE:-all}"
 
 "${CMD[@]}"
