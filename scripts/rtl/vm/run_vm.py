@@ -1,136 +1,133 @@
 import argparse
-import os
-import shutil
+from pathlib import Path
+import sys
 
 
-def norm_hex(x: str, nb: int) -> str:
-    nhex = (nb + 3) // 4
-    return format(int(x, 16), f"0{nhex}x")
+CASES = ["A", "b", "D", "I", "L", "m_hat", "x", "z"]
 
 
-def normalize_dat_file(
-    input_path: str,
-    output_path: str,
-    nb: int,
-) -> None:
-    with open(input_path, "r", encoding="utf-8") as fin, \
-         open(output_path, "w", encoding="utf-8") as fout:
+def norm_hex(x: str) -> str:
+    return format(int(x, 16), "x")
 
-        for line in fin:
-            line = line.strip()
 
-            if not line:
+def normalize_line(line: str) -> str:
+    line = line.strip()
+
+    if not line:
+        return ""
+
+    if line.startswith("#"):
+        return line
+
+    parts = line.split()
+
+    if len(parts) < 2:
+        raise ValueError(f"Línea inválida: {line}")
+
+    prefix = parts[:-2]
+    re_hex = norm_hex(parts[-2]).lower()
+    im_hex = norm_hex(parts[-1]).lower()
+
+    return " ".join(prefix + [re_hex, im_hex])
+
+
+def read_normalized_lines(path: Path) -> list[str]:
+    lines: list[str] = []
+
+    with path.open("r", encoding="utf-8") as f:
+        for raw in f:
+            raw = raw.strip()
+
+            if not raw:
                 continue
 
-            if line.startswith("#"):
-                fout.write(line + "\n")
-                continue
+            norm = normalize_line(raw)
+            if norm:
+                lines.append(norm)
 
-            parts = line.split()
-
-            if len(parts) < 4:
-                raise ValueError(f"Línea inválida en {input_path}: {line}")
-
-            idx_parts = parts[:-2]
-            re_hex = norm_hex(parts[-2], nb)
-            im_hex = norm_hex(parts[-1], nb)
-
-            fout.write(" ".join(idx_parts + [re_hex, im_hex]) + "\n")
+    return lines
 
 
-def safe_copy(src: str, dst: str, nb: int) -> bool:
-    if not os.path.exists(src):
-        print(f"[vm_runner.py]   {src} doesn't exist. Skipping...")
+def compare_case(py_path: Path, rtl_path: Path) -> bool:
+    if not py_path.exists():
+        print(f"[vm_runner.py]   Missing py file : {py_path}")
         return False
 
-    print(f"[vm_runner.py]   Copying {src} to {dst}...")
+    if not rtl_path.exists():
+        print(f"[vm_runner.py]   Missing rtl file: {rtl_path}")
+        return False
 
-    os.makedirs(os.path.dirname(dst), exist_ok=True)
-    shutil.copy(src, dst)
+    py_lines = read_normalized_lines(py_path)
+    rtl_lines = read_normalized_lines(rtl_path)
 
-    tmp_path = dst + ".tmp"
-    normalize_dat_file(dst, tmp_path, nb=nb)
-    os.replace(tmp_path, dst)
-    return True
+    if py_lines == rtl_lines:
+        print(f"[OK] {py_path.stem} == {rtl_path.stem}")
+        return True
 
+    print(f"[ERROR] Files differ: {py_path.name} vs {rtl_path.name}")
 
-def compare_files_exact(rtl_path: str, py_path: str) -> None:
-    if not os.path.exists(rtl_path):
-        print(f"[vm_runner.py]   {rtl_path} doesn't exist. Skipping VM...")
-        return
-
-    if not os.path.exists(py_path):
-        print(f"[vm_runner.py]   {py_path} doesn't exist. Skipping VM...")
-        return
-
-    with open(rtl_path, "r", encoding="utf-8") as fa:
-        rtl_lines = [line.strip() for line in fa if line.strip()]
-
-    with open(py_path, "r", encoding="utf-8") as fb:
-        py_lines = [line.strip() for line in fb if line.strip()]
-
-    if rtl_lines == py_lines:
-        print(f"[OK] Files match exactly: {os.path.basename(rtl_path)}")
-        return
-
-    print(f"[ERROR] Files differ: {os.path.basename(rtl_path)}")
-
-    n = min(len(rtl_lines), len(py_lines))
+    n = min(len(py_lines), len(rtl_lines))
     for i in range(n):
-        if rtl_lines[i] != py_lines[i]:
-            print(f"First mismatch at line {i+1}")
-            print(f"  py : {py_lines[i]}")
-            print(f"  rtl: {rtl_lines[i]}")
-            return
+        if py_lines[i] != rtl_lines[i]:
+            print(f"  First mismatch at line {i+1}")
+            print(f"    py : {py_lines[i]}")
+            print(f"    rtl: {rtl_lines[i]}")
+            return False
 
-    if len(rtl_lines) != len(py_lines):
-        print(f"Different number of lines: py={len(py_lines)} rtl={len(rtl_lines)}")
+    if len(py_lines) != len(rtl_lines):
+        print(f"  Different number of lines: py={len(py_lines)} rtl={len(rtl_lines)}")
+
+    return False
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-
+    parser.add_argument(
+        "--track-dir",
+        type=str,
+        default=".",
+        help="Track root. Default: current working directory",
+    )
     parser.add_argument(
         "--case",
         type=str,
-        required=True,
-        choices=["A", "b", "D", "I", "L", "m_hat", "x", "z"],
+        choices=CASES,
+        default=None,
+        help="Run vector matching only for one case",
     )
-    parser.add_argument(
-        "--NB",
-        type=int,
-        required=True,
-    )
-    parser.add_argument(
-        "--rtl-src",
-        type=str,
-        required=True,
-        help="Path del archivo rtl_<case>.dat generado por Vivado/xsim",
-    )
-    parser.add_argument(
-        "--rtl-dst",
-        type=str,
-        required=True,
-        help="Path destino donde se copiará y normalizará rtl_<case>.dat",
-    )
-    parser.add_argument(
-        "--py-path",
-        type=str,
-        required=True,
-        help="Path del archivo py_<case>.dat contra el que se hará vector matching",
-    )
-
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
 
-    copied = safe_copy(args.rtl_src, args.rtl_dst, nb=args.NB)
-    if not copied:
-        return
+    track_dir = Path(args.track_dir).resolve()
+    py_dir = track_dir / "vectors" / "py"
+    rtl_dir = track_dir / "vectors" / "rtl"
 
-    compare_files_exact(args.rtl_dst, args.py_path)
+    if not py_dir.is_dir():
+        raise FileNotFoundError(f"Missing directory: {py_dir}")
+
+    if not rtl_dir.is_dir():
+        raise FileNotFoundError(f"Missing directory: {rtl_dir}")
+
+    cases = [args.case] if args.case is not None else CASES
+
+    all_ok = True
+
+    print(f"[vm_runner.py] Track dir : {track_dir}")
+    print(f"[vm_runner.py] PY dir    : {py_dir}")
+    print(f"[vm_runner.py] RTL dir   : {rtl_dir}")
+
+    for case in cases:
+        py_path = py_dir / f"py_{case}.dat"
+        rtl_path = rtl_dir / f"rtl_{case}.dat"
+
+        ok = compare_case(py_path, rtl_path)
+        all_ok = all_ok and ok
+
+    if not all_ok:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

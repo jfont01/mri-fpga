@@ -183,6 +183,10 @@ run_xsim() {
   bash "$RTL_XSIM_SCRIPT" "$@"
 }
 
+run_vm () {
+  bash "$RTL_VM_SCRIPT" "$@"
+}
+
 
 
 # check_file "$RTL_SCRIPTS_SYNTH_RUNNER"
