@@ -2,7 +2,7 @@ set track_dir [file normalize [lindex $argv 0]]
 set case_name [lindex $argv 1]
 
 set out_dir "$track_dir/synthesis/synth_$case_name"
-set flist "$track_dir/flist/tb_compute_${case_name}.flist"
+set flist "$track_dir/flist/synth_compute_${case_name}.flist"
 set xdc     "$track_dir/constraints/clock_$case_name.xdc"
 
 file mkdir $out_dir

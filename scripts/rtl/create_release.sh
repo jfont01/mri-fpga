@@ -155,6 +155,18 @@ $RTL_ROOT/src/sense/compute_bi.sv
 $RTL_ROOT/testbench/sense/tb_compute_bi.sv
 EOF
 
+cat > "$FLIST_DIR/synth_compute_Aij.flist" <<EOF
+$RTL_ROOT/src/ops/cast.sv
+$RTL_ROOT/src/ops/cmul.sv
+$RTL_ROOT/src/sense/compute_Aij.sv
+EOF
+
+cat > "$FLIST_DIR/synth_compute_bi.flist" <<EOF
+$RTL_ROOT/src/ops/cast.sv
+$RTL_ROOT/src/ops/cmul.sv
+$RTL_ROOT/src/sense/compute_bi.sv
+EOF
+
 
 SYNTHESIS_DIR="$TRACK_DIR/synthesis"
 mkdir -p "$SYNTHESIS_DIR"
