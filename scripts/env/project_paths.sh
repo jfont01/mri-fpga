@@ -43,13 +43,16 @@ export FPGA_MRI_ROOT
 # ==============================================================================
 # Global config
 # ==============================================================================
-export GLOBAL_CONF_PATH="$FPGA_MRI_ROOT/global_config.conf"
+export GLOBAL_CONFIG_CONF="$FPGA_MRI_ROOT/global_config.conf"
 
+# Backward compatibility
+export GLOBAL_CONF_PATH="$GLOBAL_CONFIG_CONF"
+export TRACK_CONF="$GLOBAL_CONFIG_CONF"
 # ==============================================================================
 # Tracks
 # ==============================================================================
 export TRACK_ROOT="$FPGA_MRI_ROOT/tracks"
-export TRACK_CONF="$TRACK_ROOT/track.conf"
+#export TRACK_CONF="$TRACK_ROOT/track.conf"
 
 # ==============================================================================
 # RTL paths
@@ -183,6 +186,8 @@ export RTL_XSIM_SCRIPT="$RTL_SCRIPTS_TB_PATH/run_xsim.sh"
 export RTL_VM_SCRIPT="$RTL_SCRIPTS_VM_PATH/run_vm.sh"
 export RTL_VM_PY="$RTL_SCRIPTS_VM_PATH/run_vm.py"
 export RTL_CREATE_RELEASE_SCRIPT="$RTL_SCRIPTS_PATH/create_release.sh"
+export CREATE_RELEASE_COMMON_HELPER_SH="$RTL_SCRIPTS_PATH/helpers/create_release_common.sh"
+export TRACK_RELEASE_HELPER_SH="$RTL_SCRIPTS_PATH/helpers/track_release_helper.sh"
 export TRACK_MANIFEST_HELPER_SH="$RTL_SCRIPTS_PATH/helpers/track_manifest_helper.sh"
 
 # ==============================================================================
@@ -272,6 +277,10 @@ PROJECT_REQUIRED_FILES=(
   "$PY_SENSE_FP_SCRIPT"
   "$PY_SENSE_FXP_SCRIPT"
   "$PY_SENSE_REPORTER_SCRIPT"
+
+  "$CREATE_RELEASE_COMMON_HELPER_SH"
+  "$TRACK_RELEASE_HELPER_SH"
+  "$TRACK_MANIFEST_HELPER_SH"
 
   # RTL runner scripts
   "$RTL_CREATE_RELEASE_SCRIPT"
