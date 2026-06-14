@@ -52,6 +52,7 @@ run_case() {
 
     vivado \
       -mode batch \
+      -notrace \
       -source "$TCL_PATH" \
       -log "$LOG_FILE" \
       -journal "$JOU_FILE" \

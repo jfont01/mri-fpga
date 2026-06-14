@@ -24,6 +24,7 @@ run_case() {
 
     vivado \
       -mode batch \
+      -notrace \
       -source "$RTL_SYNTH_TCL" \
       -log "$LOG_DIR/vivado.log" \
       -journal "$LOG_DIR/vivado.jou" \
