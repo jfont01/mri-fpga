@@ -141,24 +141,9 @@ class Fxp:
 
         return Fxp.from_sint(-x, NB=self.NB, NBF=self.NBF, signed=self.signed)
 
-    @staticmethod
-    def _udiv_restoring(dividend: int, divisor: int, nbits: int) -> tuple[int, int]:
-
-        remainder = 0
-        quotient = 0
-
-        for i in range(nbits - 1, -1, -1):
-            remainder = (remainder << 1) | ((dividend >> i) & 1)
-
-            trial = remainder - divisor
-            if trial >= 0:
-                remainder = trial
-                quotient |= (1 << i)
-
-        return quotient, remainder
 
     @classmethod
-    def div_restoring(
+    def divide(
         cls,
         num: "Fxp",
         den: "Fxp",
@@ -167,100 +152,20 @@ class Fxp:
         mode: str = "round",
         overflow: str = "saturate",
         signed_out: bool | None = None,
+        method: str | None = None,
     ) -> "Fxp":
+        from fxp_division import divide
 
-        if signed_out is None:
-            signed_out = bool(num.signed or den.signed)
-
-        FXP_STATS["fxp_div"] += 1
-
-        # signo del cociente
-        sign_q_neg = num.is_negative() ^ den.is_negative()
-
-        # magnitudes enteras raw
-        num_mag = abs(num.to_sint())
-        den_mag = abs(den.to_sint())
-
-        shift = NBF_out + den.NBF - num.NBF
-
-        if shift >= 0:
-            dividend = num_mag << shift
-            divisor = den_mag
-            nbits = max(1, num.NB + shift)
-        else:
-            dividend = num_mag
-            divisor = den_mag << (-shift)
-            nbits = max(1, num.NB)
-
-        q_raw_trunc, rem = cls._udiv_restoring(dividend, divisor, nbits)
-
-
-        if sign_q_neg and rem != 0:
-            q_raw_trunc += 1
-
-        NBF_tmp = NBF_out + 2
-
-        if sign_q_neg:
-            q_tmp_sint = -(q_raw_trunc << 2)
-        else:
-            q_tmp_sint =  (q_raw_trunc << 2)
-
-        mag_bits = 1 if q_tmp_sint == 0 else abs(q_tmp_sint).bit_length()
-        NB_tmp = max(NB_out + 2, mag_bits + 1)
-
-        tmp = cls.from_sint(
-            q_tmp_sint,
-            NB=NB_tmp,
-            NBF=NBF_tmp,
-            signed=signed_out,
-        )
-
-        return tmp.cast(
+        return divide(
+            num=num,
+            den=den,
             NB_out=NB_out,
             NBF_out=NBF_out,
             mode=mode,
             overflow=overflow,
+            signed_out=signed_out,
+            method=method,
         )
-    
-
-    @classmethod
-    def div(
-        cls,
-        num: "Fxp",
-        den: "Fxp",
-        NB_out: int,
-        NBF_out: int,
-        mode: str = "round",
-        overflow: str = "saturate",
-        signed_out: bool | None = None,
-    ) -> "Fxp":
-
-        if not isinstance(num, Fxp):
-            raise TypeError(f"num debe ser Fxp, recibido {type(num)}")
-        if not isinstance(den, Fxp):
-            raise TypeError(f"den debe ser Fxp, recibido {type(den)}")
-
-        den_f = float(den.get_val())
-        if den_f == 0.0:
-            raise ZeroDivisionError("División por cero en Fxp.div()")
-
-        if signed_out is None:
-            signed_out = bool(num.signed or den.signed)
-
-        if "fxp_div" in FXP_STATS:
-            FXP_STATS["fxp_div"] += 1
-
-        res_val = num._val / den._val
-
-        res_fxp = cls.from_apyfixed(res_val, signed=signed_out)
-
-        return res_fxp.cast(
-            NB_out=NB_out,
-            NBF_out=NBF_out,
-            mode=mode,
-            overflow=overflow,
-        )
-    
 
 
 

@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module cast
 #(
   parameter NB_IN = 8,

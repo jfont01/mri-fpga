@@ -41,6 +41,7 @@ create_track_directories
 
 copy_release_reports
 copy_release_vectors
+generate_division_vectors
 
 generate_track_params_pkg
 generate_track_flists

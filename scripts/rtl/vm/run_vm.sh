@@ -8,12 +8,19 @@ Usage:
   $0 --case=all
   $0 --case=A
   $0 --case=b
+  $0 --case=div_restoring
   $0 --case=D
   $0 --case=I
   $0 --case=L
   $0 --case=m_hat
   $0 --case=x
   $0 --case=z
+
+Notes:
+  - Default and --case=all compare only RTL-ready cases:
+      A, b, div_restoring
+  - D, I, L, m_hat, x and z are accepted explicitly, but they require
+    corresponding RTL output files to exist.
 EOF
 }
 
@@ -49,7 +56,7 @@ fi
 
 CMD=(python3 "$PY_VM_SCRIPT" --track-dir "$TRACK_DIR")
 
-if [[ -n "$CASE" && "$CASE" != "all" ]]; then
+if [[ -n "$CASE" ]]; then
     CMD+=(--case "$CASE")
 fi
 

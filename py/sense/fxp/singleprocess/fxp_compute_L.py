@@ -11,12 +11,17 @@ if PY_FXP_MODEL_ROOT is None:
 sys.path.insert(0, PY_FXP_MODEL_ROOT)
 
 from fxp import Fxp
+from fxp_division import divide
 from cfxp import CFxp
 from cfxptensor import CFxpTensor
 
 PY_SENSE_FXP_DIR = os.environ.get("PY_SENSE_FXP_DIR")
 if PY_SENSE_FXP_DIR is None:
     raise RuntimeError("[ERROR] PY_SENSE_FXP_DIR not defined")
+
+FXP_DIV_METHOD = os.environ.get("FXP_DIV_METHOD", "restoring")
+FXP_DIV_QUANT_MODE = os.environ.get("FXP_DIV_QUANT_MODE", "trunc")
+FXP_DIV_OVERFLOW = os.environ.get("FXP_DIV_OVERFLOW", "saturate")
 
 sys.path.insert(0, os.path.join(PY_SENSE_FXP_DIR, "helpers"))
 from fxp_stats import update_acc_stats
@@ -47,8 +52,8 @@ def fxp_compute_L_i(
     zero = Fxp.quantize(0.0, NB, NBF, signed=signed)
     one = Fxp.quantize(1.0, NB, NBF, signed=signed)
         
-    l10_re = Fxp.div_restoring(a10.re, d0, NB_out=NB, NBF_out=NBF, mode="trunc")
-    l10_im = Fxp.div_restoring(a10.im, d0, NB_out=NB, NBF_out=NBF, mode="trunc")
+    l10_re = Fxp.divide(a10.re, d0, NB_out=NB, NBF_out=NBF, mode=FXP_DIV_QUANT_MODE, overflow=FXP_DIV_OVERFLOW, method=FXP_DIV_METHOD)
+    l10_im = Fxp.divide(a10.im, d0, NB_out=NB, NBF_out=NBF, mode=FXP_DIV_QUANT_MODE, overflow=FXP_DIV_OVERFLOW, method=FXP_DIV_METHOD)
     l10 = CFxp(l10_re, l10_im)
 
     if stats_L is not None:

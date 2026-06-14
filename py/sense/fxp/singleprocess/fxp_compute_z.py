@@ -11,12 +11,17 @@ if PY_FXP_MODEL_ROOT is None:
 sys.path.insert(0, PY_FXP_MODEL_ROOT)
 
 from fxp import Fxp
+from fxp_division import divide
 from cfxp import CFxp
 from cfxptensor import CFxpTensor
 
 PY_SENSE_FXP_DIR = os.environ.get("PY_SENSE_FXP_DIR")
 if PY_SENSE_FXP_DIR is None:
     raise RuntimeError("[ERROR] PY_SENSE_FXP_DIR not defined")
+
+FXP_DIV_METHOD = os.environ.get("FXP_DIV_METHOD", "restoring")
+FXP_DIV_QUANT_MODE = os.environ.get("FXP_DIV_QUANT_MODE", "trunc")
+FXP_DIV_OVERFLOW = os.environ.get("FXP_DIV_OVERFLOW", "saturate")
 
 sys.path.insert(0, os.path.join(PY_SENSE_FXP_DIR, "helpers"))
 from fxp_stats import update_acc_stats
@@ -45,10 +50,10 @@ def fxp_compute_z_i(
             f"D no es invertible o no es positiva: d0={d0_f}, d1={d1_f}"
         )
 
-    z0_re = Fxp.div_restoring(xi_q[0].re, d0, NB_out=NB, NBF_out=NBF, mode="trunc")
-    z0_im = Fxp.div_restoring(xi_q[0].im, d0, NB_out=NB, NBF_out=NBF, mode="trunc")
-    z1_re = Fxp.div_restoring(xi_q[1].re, d1, NB_out=NB, NBF_out=NBF, mode="trunc")
-    z1_im = Fxp.div_restoring(xi_q[1].im, d1, NB_out=NB, NBF_out=NBF, mode="trunc")
+    z0_re = Fxp.divide(xi_q[0].re, d0, NB_out=NB, NBF_out=NBF, mode=FXP_DIV_QUANT_MODE, overflow=FXP_DIV_OVERFLOW, method=FXP_DIV_METHOD)
+    z0_im = Fxp.divide(xi_q[0].im, d0, NB_out=NB, NBF_out=NBF, mode=FXP_DIV_QUANT_MODE, overflow=FXP_DIV_OVERFLOW, method=FXP_DIV_METHOD)
+    z1_re = Fxp.divide(xi_q[1].re, d1, NB_out=NB, NBF_out=NBF, mode=FXP_DIV_QUANT_MODE, overflow=FXP_DIV_OVERFLOW, method=FXP_DIV_METHOD)
+    z1_im = Fxp.divide(xi_q[1].im, d1, NB_out=NB, NBF_out=NBF, mode=FXP_DIV_QUANT_MODE, overflow=FXP_DIV_OVERFLOW, method=FXP_DIV_METHOD)
 
     z0 = CFxp(z0_re, z0_im)
     z1 = CFxp(z1_re, z1_im)

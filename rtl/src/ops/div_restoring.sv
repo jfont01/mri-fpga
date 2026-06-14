@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module div_restoring #(
     parameter integer NB_NUM        = 16,
     parameter integer NBF_NUM       = 15,
@@ -47,9 +49,6 @@ module div_restoring #(
     wire                              trunc_neg_fix_w;
     wire        [NB_QUOTIENT_INT:0]   quotient_mag_w;
     wire signed [NB_QUOTIENT_INT:0]   quotient_full_w;
-    wire signed [NB_QUOTIENT_INT:0]   quotient_max_w;
-    wire signed [NB_QUOTIENT_INT:0]   quotient_min_w;
-    wire signed [NB_QUOTIENT_INT:0]   quotient_sat_w;
     // -----------------------------------------------------------------
 
     assign sign_num_w = i_num[NB_NUM-1];
@@ -76,7 +75,7 @@ module div_restoring #(
         end else begin
             ready_r <= 1'b0;
 
-            if (i_start) begin
+            if (i_start && !busy_r) begin
                 counter_r           <= '0;
                 quotient_r          <= num_scaled_w;
                 partial_remainder_r <= '0;
@@ -105,18 +104,20 @@ module div_restoring #(
     assign trunc_neg_fix_w = sign_q_w && (partial_remainder_r != '0);
     assign quotient_mag_w  = {1'b0, quotient_r} + trunc_neg_fix_w;
 
-    assign quotient_full_w = sign_q_w ? -$signed(quotient_mag_w)
-                                    :  $signed(quotient_mag_w);
+    assign quotient_full_w = sign_q_w ? -$signed(quotient_mag_w) :  $signed(quotient_mag_w);
 
-    assign quotient_max_w =  $signed({1'b0, {(NB_QUOTIENT-1){1'b1}}});
-    assign quotient_min_w =  $signed({1'b1, {(NB_QUOTIENT-1){1'b0}}});
+    cast #(
+        .NB_IN   (NB_QUOTIENT_INT + 1),
+        .NBF_IN  (NBF_QUOTIENT),
+        .NB_OUT  (NB_QUOTIENT),
+        .NBF_OUT (NBF_QUOTIENT),
+        .ROUND_MODE (1'b0)
+    ) u_round_sat_quotient (
+        .i_word (quotient_full_w),
+        .o_word (o_quotient)
+    );
 
-    assign quotient_sat_w = (quotient_full_w > quotient_max_w) ? quotient_max_w :
-                            (quotient_full_w < quotient_min_w) ? quotient_min_w :
-                                                                quotient_full_w;
-
-    assign o_quotient = quotient_sat_w[NB_QUOTIENT-1:0];
-    assign o_ready    = ready_r;
-    assign o_busy     = busy_r;
+    assign o_ready = ready_r;
+    assign o_busy  = busy_r;
 
 endmodule

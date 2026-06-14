@@ -80,6 +80,12 @@ export RTL_TB_DIV_RESTORING_SV="$RTL_TESTBENCH_DIR/ops/tb_div_restoring.sv"
 export RTL_CLOCK_AIJ_XDC="$RTL_CONSTRAINTS_DIR/clock_Aij.xdc"
 export RTL_CLOCK_BI_XDC="$RTL_CONSTRAINTS_DIR/clock_bi.xdc"
 
+# RTL Synthesis/Implemetation wrappers
+export RTL_WRAPPERS_DIR="$RTL_ROOT/wrappers"
+
+export RTL_WRAPPER_COMPUTE_AIJ_SV="$RTL_WRAPPERS_DIR/wrapper_compute_Aij.sv"
+export RTL_WRAPPER_COMPUTE_BI_SV="$RTL_WRAPPERS_DIR/wrapper_compute_bi.sv"
+export RTL_WRAPPER_DIV_RESTORING_SV="$RTL_WRAPPERS_DIR/wrapper_div_restoring.sv"
 # ==============================================================================
 # Python paths
 # ==============================================================================
@@ -362,6 +368,10 @@ PROJECT_REQUIRED_FILES=(
   "$RTL_TB_COMPUTE_AIJ_SV"
   "$RTL_TB_COMPUTE_BI_SV"
   "$RTL_TB_DIV_RESTORING_SV"
+
+  "$RTL_WRAPPER_DIV_RESTORING_SV"
+  "$RTL_WRAPPER_COMPUTE_BI_SV"
+  "$RTL_WRAPPER_COMPUTE_AIJ_SV"
 
   # RTL constraints
   "$RTL_CLOCK_AIJ_XDC"
