@@ -183,6 +183,7 @@ export RTL_XSIM_SCRIPT="$RTL_SCRIPTS_TB_PATH/run_xsim.sh"
 export RTL_VM_SCRIPT="$RTL_SCRIPTS_VM_PATH/run_vm.sh"
 export RTL_VM_PY="$RTL_SCRIPTS_VM_PATH/run_vm.py"
 export RTL_CREATE_RELEASE_SCRIPT="$RTL_SCRIPTS_PATH/create_release.sh"
+export TRACK_MANIFEST_HELPER_SH="$RTL_SCRIPTS_PATH/helpers/track_manifest_helper.sh"
 
 # ==============================================================================
 # Tool paths
@@ -356,6 +357,8 @@ PROJECT_REQUIRED_FILES=(
   # RTL constraints
   "$RTL_CLOCK_AIJ_XDC"
   "$RTL_CLOCK_BI_XDC"
+
+  "$TRACK_MANIFEST_HELPER_SH"
 )
 
 # ==============================================================================

@@ -1,8 +1,23 @@
 source "$TRACK_CONF"
 
+: "${TRACK_MANIFEST_HELPER_SH:?TRACK_MANIFEST_HELPER_SH is not defined}"
+source "$TRACK_MANIFEST_HELPER_SH"
+
+if ! declare -F generate_track_manifest_json >/dev/null; then
+    echo "[create_release.sh] ERROR: generate_track_manifest_json is not defined." >&2
+    echo "[create_release.sh] Did you run: source set_env.sh ?" >&2
+    exit 1
+fi
+
+# Nombre completo usado para buscar resultados Python existentes
 STIM_DIR_NAME="N${N}_Af${AF}_L${L}_axis${AXIS}_${PHANTOM}"
 CASE_DIR_NAME="NB_Y${NB_K}_NBF_Y${NBF_K}-NB_S${NB_S}_NBF_S${NBF_S}-NB_A${NB_A}_NBF_A${NBF_A}-NB_B${NB_B}_NBF_B${NBF_B}"
-TRACK_BASE="$TRACK_ROOT/track.${STIM_DIR_NAME}.${CASE_DIR_NAME}"
+
+# Nombre reducido usado solamente para crear el track
+TRACK_STIM_DIR_NAME="N${N}_Af${AF}_L${L}_axis${AXIS}"
+TRACK_CASE_DIR_NAME="NB_Y${NB_K}-NB_S${NB_S}-NB_A${NB_A}-NB_B${NB_B}"
+
+TRACK_BASE="$TRACK_ROOT/track.${TRACK_STIM_DIR_NAME}.${TRACK_CASE_DIR_NAME}"
 
 last_rev=0
 
@@ -199,3 +214,12 @@ EOF
 echo "[create_release.sh]    Generated XDC: $Aij_XDC"
 echo "[create_release.sh]    Generated XDC: $BI_XDC"
 
+###############################################################################
+# Track manifest JSON
+###############################################################################
+
+TRACK_MANIFEST_JSON="$TRACK_DIR/track_manifest.json"
+TRACK_REV="$next_rev"
+TRACK_CREATED_AT="$(date -Iseconds)"
+
+generate_track_manifest_json "$TRACK_MANIFEST_JSON"

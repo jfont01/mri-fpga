@@ -25,12 +25,14 @@ fi
 
 source "$PROJECT_PATHS_SCRIPT"
 
+printf "[set_env.sh] Sourcing track manifest helper...\n"
+source "$TRACK_MANIFEST_HELPER_SH"
+
 printf "[set_env.sh] Sourcing Python virtual environment...\n"
 source "$PY_VENV_ACTIVATE"
 
 printf "[set_env.sh] Sourcing Vivado settings...\n"
 source "$VIVADO_SETTINGS"
-
 # ==============================================================================
 # Convenience functions
 # ==============================================================================
