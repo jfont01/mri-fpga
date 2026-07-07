@@ -1,0 +1,57 @@
+{
+  "regression_dir": "build",
+  "defaults": {
+    "N_CYCLES": 20000,
+    "auto_defines": true
+  },
+  "cases": [
+    {
+      "name": "q8_5_to_q6_4_round",
+      "NB_IN": 8,
+      "NBF_IN": 5,
+      "NB_OUT": 6,
+      "NBF_OUT": 4,
+      "ROUND_MODE": 1
+    },
+    {
+      "name": "q8_5_to_q6_4_trunc",
+      "NB_IN": 8,
+      "NBF_IN": 5,
+      "NB_OUT": 6,
+      "NBF_OUT": 4,
+      "ROUND_MODE": 0
+    },
+    {
+      "name": "q12_8_to_q8_4_round",
+      "NB_IN": 12,
+      "NBF_IN": 8,
+      "NB_OUT": 8,
+      "NBF_OUT": 4,
+      "ROUND_MODE": 1
+    },
+    {
+      "name": "q12_8_to_q8_4_trunc",
+      "NB_IN": 12,
+      "NBF_IN": 8,
+      "NB_OUT": 8,
+      "NBF_OUT": 4,
+      "ROUND_MODE": 0
+    },
+    {
+      "name": "q10_6_to_q8_6_sat",
+      "NB_IN": 10,
+      "NBF_IN": 6,
+      "NB_OUT": 8,
+      "NBF_OUT": 6,
+      "ROUND_MODE": 0
+    },
+    {
+      "name": "q16_12_to_q12_8_round",
+      "NB_IN": 16,
+      "NBF_IN": 12,
+      "NB_OUT": 12,
+      "NBF_OUT": 8,
+      "ROUND_MODE": 1
+    }
+  ]
+}

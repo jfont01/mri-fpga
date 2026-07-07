@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-06-22T23:43:05-03:00",
+  "module": {
+    "name": "cast",
+    "dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast"
+  },
+  "regression": {
+    "json": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/testbench/cast_tb_regression.json",
+    "dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build",
+    "type": "vm",
+    "engine": "vivado_xsim"
+  },
+  "case": {
+    "name": "q10_6_to_q8_6_sat",
+    "dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat",
+    "params": {
+      "N_CYCLES": 20000,
+      "NB_IN": 10,
+      "NBF_IN": 6,
+      "NB_OUT": 8,
+      "NBF_OUT": 6,
+      "ROUND_MODE": 0
+    },
+    "xsim_defines": {
+      "CAST_NB_IN": 10,
+      "CAST_NBF_IN": 6,
+      "CAST_NB_OUT": 8,
+      "CAST_NBF_OUT": 6,
+      "CAST_ROUND_MODE": 0
+    },
+    "n_cycles": 20000
+  },
+  "artifacts": {
+    "manifest_file": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat/manifest.json",
+    "vector_match_report": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat/reports/vector_match.rpt",
+    "vivado_log": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat/simulation/vivado/vivado.log",
+    "vivado_journal": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat/simulation/vivado/vivado.jou",
+    "xvlog_log": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat/simulation/xsim/xvlog.log",
+    "xelab_log": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat/simulation/xsim/xelab.log",
+    "xsim_log": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat/simulation/xsim/xsim.log",
+    "stimuli_csv": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat/simulation/vectors/stimuli/in_ports.csv",
+    "expected_csv": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat/simulation/vectors/expected/out_ports.csv",
+    "actual_csv": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat/simulation/vectors/actual/out_ports.csv",
+    "expected_dat_dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat/simulation/vectors/expected/out_ports",
+    "actual_dat_dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat/simulation/vectors/actual/out_ports"
+  },
+  "result": {
+    "status": "PASS",
+    "vectors": 20000,
+    "errors": 0,
+    "elapsed_s": 7.781535547000203,
+    "elapsed": "7.78s",
+    "message": ""
+  }
+}

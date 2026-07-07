@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-06-22T23:42:42-03:00",
+  "module": {
+    "name": "cast",
+    "dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast"
+  },
+  "regression": {
+    "json": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/testbench/cast_tb_regression.json",
+    "dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build",
+    "type": "vm",
+    "engine": "vivado_xsim"
+  },
+  "case": {
+    "name": "q8_5_to_q6_4_trunc",
+    "dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q8_5_to_q6_4_trunc",
+    "params": {
+      "N_CYCLES": 20000,
+      "NB_IN": 8,
+      "NBF_IN": 5,
+      "NB_OUT": 6,
+      "NBF_OUT": 4,
+      "ROUND_MODE": 0
+    },
+    "xsim_defines": {
+      "CAST_NB_IN": 8,
+      "CAST_NBF_IN": 5,
+      "CAST_NB_OUT": 6,
+      "CAST_NBF_OUT": 4,
+      "CAST_ROUND_MODE": 0
+    },
+    "n_cycles": 20000
+  },
+  "artifacts": {
+    "manifest_file": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q8_5_to_q6_4_trunc/manifest.json",
+    "vector_match_report": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q8_5_to_q6_4_trunc/reports/vector_match.rpt",
+    "vivado_log": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q8_5_to_q6_4_trunc/simulation/vivado/vivado.log",
+    "vivado_journal": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q8_5_to_q6_4_trunc/simulation/vivado/vivado.jou",
+    "xvlog_log": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q8_5_to_q6_4_trunc/simulation/xsim/xvlog.log",
+    "xelab_log": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q8_5_to_q6_4_trunc/simulation/xsim/xelab.log",
+    "xsim_log": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q8_5_to_q6_4_trunc/simulation/xsim/xsim.log",
+    "stimuli_csv": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q8_5_to_q6_4_trunc/simulation/vectors/stimuli/in_ports.csv",
+    "expected_csv": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q8_5_to_q6_4_trunc/simulation/vectors/expected/out_ports.csv",
+    "actual_csv": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q8_5_to_q6_4_trunc/simulation/vectors/actual/out_ports.csv",
+    "expected_dat_dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q8_5_to_q6_4_trunc/simulation/vectors/expected/out_ports",
+    "actual_dat_dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q8_5_to_q6_4_trunc/simulation/vectors/actual/out_ports"
+  },
+  "result": {
+    "status": "PASS",
+    "vectors": 20000,
+    "errors": 0,
+    "elapsed_s": 7.784561432000373,
+    "elapsed": "7.78s",
+    "message": ""
+  }
+}

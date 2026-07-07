@@ -1,0 +1,1 @@
+"cast_tb" -snapshot "cast_tb_snapshot" -debug "typical" -log "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q10_6_to_q8_6_sat/simulation/xsim/xelab.log" 

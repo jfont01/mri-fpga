@@ -1,0 +1,6 @@
+0.7
+2020.2
+Nov  8 2024
+22:36:55
+/home/jfont/Desktop/new_IT/pruebas/modules/cast/rtl/cast.v,1782180975,systemVerilog,,/home/jfont/Desktop/new_IT/pruebas/modules/cast/testbench/cast_tb.sv,,cast,,,,CAST_NBF_IN=6;CAST_NBF_OUT=6;CAST_NB_IN=10;CAST_NB_OUT=8;CAST_ROUND_MODE=0,,,,
+/home/jfont/Desktop/new_IT/pruebas/modules/cast/testbench/cast_tb.sv,1782182093,systemVerilog,,,,cast_tb,,,,CAST_NBF_IN=6;CAST_NBF_OUT=6;CAST_NB_IN=10;CAST_NB_OUT=8;CAST_ROUND_MODE=0,,,,
