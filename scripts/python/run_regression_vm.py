@@ -417,10 +417,6 @@ def _run_iverilog_backend(
             f"[ERROR] tb flist not found: {tb_flist}. Run update_flist first."
         )
 
-    # El testbench escribe en actual/out_ports (Icarus no tiene $system).
-    actual_dir = case.case_dir / "simulation" / "vectors" / "actual" / "out_ports"
-    actual_dir.mkdir(parents=True, exist_ok=True)
-
     xsim_dir = case.case_dir / "simulation" / "xsim"
     xsim_dir.mkdir(parents=True, exist_ok=True)
     vvp_out = xsim_dir / "sim.vvp"
@@ -468,6 +464,12 @@ def run_sim_backend(
     (exportado por set_env.sh): 'xsim' en Linux, 'iverilog' en msys.
     """
     backend = os.environ.get("SIM_BACKEND", "").strip().lower()
+
+    # El testbench abre los .dat de salida con $fopen, que NO crea el
+    # directorio: hay que crearlo antes de simular. Vale para los dos backends
+    # (ni run_xsim.tcl ni Icarus lo crean por su cuenta).
+    actual_dir = case.case_dir / "simulation" / "vectors" / "actual" / "out_ports"
+    actual_dir.mkdir(parents=True, exist_ok=True)
 
     if backend == "xsim":
         _run_xsim_backend(case, module_dir, project_root, verbose, waves)

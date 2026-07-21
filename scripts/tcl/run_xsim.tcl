@@ -164,5 +164,20 @@ lappend xsim_cmd $xsim_log
 
 run_os_cmd "running simulation" $xsim_cmd
 
+# xsim puede devolver codigo 0 aunque el testbench haya hecho $fatal, asi que
+# el exit code no alcanza: hay que revisar el log. Sin esto, una simulacion
+# fallida se reporta como exitosa y el error recien aparece al comparar.
+if {[file exists $xsim_log]} {
+    set fh [open $xsim_log r]
+    set log_txt [read $fh]
+    close $fh
+
+    if {[regexp -line {FATAL|^Error|\$fatal} $log_txt]} {
+        puts stderr "\[run_xsim.tcl\] ---- xsim log ----"
+        puts stderr $log_txt
+        fail "la simulacion reporto errores (ver $xsim_log)"
+    }
+}
+
 info_msg "XSIM completed"
 info_msg "actual vectors: [file join $sim_dir vectors actual]"
