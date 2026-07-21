@@ -2,8 +2,62 @@
   "regression_dir": "build/synthesis",
   "defaults": {
     "PART_NAME": "xck26-sfvc784-2LV-c",
-    "CLOCK_PERIOD_NS": 5.000,
-    "CLOCK_UNCERTAINTY_NS": 0.05
+    "CLOCK_PERIOD_NS": 5.0,
+    "CLOCK_UNCERTAINTY_NS": 0.05,
+    "limits": {
+      "MIN_WNS_NS": -100.0,
+      "MIN_WHS_NS": -100.0
+    }
   },
-  "cases": []
+  "cases": [
+    {
+      "name": "nb8_q1_7",
+      "NB_IN": 8,
+      "NBF_IN": 7,
+      "NB_OUT": 8,
+      "NBF_OUT": 7
+    },
+    {
+      "name": "nb12_q1_11",
+      "NB_IN": 12,
+      "NBF_IN": 11,
+      "NB_OUT": 12,
+      "NBF_OUT": 11
+    },
+    {
+      "name": "nb16_q1_15",
+      "NB_IN": 16,
+      "NBF_IN": 15,
+      "NB_OUT": 16,
+      "NBF_OUT": 15
+    },
+    {
+      "name": "nb16_q2_14",
+      "NB_IN": 16,
+      "NBF_IN": 14,
+      "NB_OUT": 16,
+      "NBF_OUT": 14
+    },
+    {
+      "name": "nb18_q1_17",
+      "NB_IN": 18,
+      "NBF_IN": 17,
+      "NB_OUT": 18,
+      "NBF_OUT": 17
+    },
+    {
+      "name": "nb19_q1_18",
+      "NB_IN": 19,
+      "NBF_IN": 18,
+      "NB_OUT": 19,
+      "NBF_OUT": 18
+    },
+    {
+      "name": "nb24_q1_23",
+      "NB_IN": 24,
+      "NBF_IN": 23,
+      "NB_OUT": 24,
+      "NBF_OUT": 23
+    }
+  ]
 }
