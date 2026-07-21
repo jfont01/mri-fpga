@@ -10,7 +10,13 @@ TARGET ?= $(BUILD_DIR)/sim_tb
 DEFINES ?=
 ARGS ?=
 
+# Hooks para targets que necesitan includes/libs extra (p.ej. gtest).
+# Se agregan al final para no pisar los flags base.
+EXTRA_CPPFLAGS ?=
+EXTRA_LDFLAGS ?=
+
 RTLSIM_ROOT ?= $(CURDIR)
+HLS_AP_DIR ?= $(RTLSIM_ROOT)/include
 
 RTLSIM_HEADERS := \
 	$(RTLSIM_ROOT)/rtlsim.hpp \
@@ -19,22 +25,23 @@ RTLSIM_HEADERS := \
 
 SRC_DIRS := $(sort $(dir $(SRC) $(EXTRA_SRCS) $(EXTRA_HEADERS)))
 
-CPPFLAGS := -isystem $(XILINX_VITIS)/include
+CPPFLAGS := -isystem $(HLS_AP_DIR)
 CPPFLAGS += -I$(RTLSIM_ROOT)
 CPPFLAGS += $(addprefix -I,$(SRC_DIRS))
 CPPFLAGS += $(DEFINES)
+CPPFLAGS += $(EXTRA_CPPFLAGS)
 
 CXXFLAGS := -std=c++17 -O0 -g -Wall -Wextra
 
-LDFLAGS :=
+LDFLAGS := $(EXTRA_LDFLAGS)
 
 .PHONY: all run clean info check-env check-src rebuild
 
 all: check-env check-src $(TARGET)
 
 check-env:
-	@test -n "$(XILINX_VITIS)" || { echo "[Makefile] ERROR: XILINX_VITIS is not defined. Source Vitis settings first."; exit 1; }
-	@test -d "$(XILINX_VITIS)/include" || { echo "[Makefile] ERROR: Vitis include dir not found: $(XILINX_VITIS)/include"; exit 1; }
+	@test -n "$(RTLSIM_ROOT)" || { echo "[Makefile] ERROR: RTLSIM_ROOT is not defined. Source Vitis settings first."; exit 1; }
+	@test -d "$(HLS_AP_DIR)" || { echo "[Makefile] ERROR: Vitis include dir not found: $(HLS_AP_DIR)"; exit 1; }
 
 check-src:
 	@test -n "$(SRC)" || { echo "[Makefile] ERROR: SRC is not defined."; exit 1; }
@@ -57,7 +64,7 @@ rebuild: clean all
 
 info:
 	@echo "CXX            = $(CXX)"
-	@echo "XILINX_VITIS   = $(XILINX_VITIS)"
+	@echo "HLS_AP_DIR     = $(HLS_AP_DIR)"
 	@echo "RTLSIM_ROOT    = $(RTLSIM_ROOT)"
 	@echo "SRC            = $(SRC)"
 	@echo "EXTRA_SRCS     = $(EXTRA_SRCS)"
@@ -68,6 +75,7 @@ info:
 	@echo "CPPFLAGS       = $(CPPFLAGS)"
 	@echo "CXXFLAGS       = $(CXXFLAGS)"
 	@echo "LDFLAGS        = $(LDFLAGS)"
+	@echo "EXTRA_CPPFLAGS = $(EXTRA_CPPFLAGS)"
 	@echo "ARGS           = $(ARGS)"
 
 clean:

@@ -82,6 +82,7 @@ if {![file exists $stimuli_csv]} {
 
 set define_args {}
 set n_cycles ""
+set waves 0
 
 foreach arg [lrange $argv 2 end] {
     if {![regexp {^([^=]+)=(.*)$} $arg -> key value]} {
@@ -90,6 +91,8 @@ foreach arg [lrange $argv 2 end] {
 
     if {$key eq "N_CYCLES"} {
         set n_cycles $value
+    } elseif {$key eq "WAVES"} {
+        set waves $value
     } else {
         lappend define_args "-d"
         lappend define_args "${key}=${value}"
@@ -150,6 +153,12 @@ lappend xsim_cmd "-testplusarg"
 lappend xsim_cmd "CASE_DIR=$case_dir"
 lappend xsim_cmd "-testplusarg"
 lappend xsim_cmd "N_CYCLES=$n_cycles"
+
+if {$waves != 0} {
+    lappend xsim_cmd "-testplusarg"
+    lappend xsim_cmd "WAVES=1"
+}
+
 lappend xsim_cmd "-log"
 lappend xsim_cmd $xsim_log
 

@@ -8,6 +8,24 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+def resolve_executable(binary_path: Path) -> Path:
+    candidates = []
+
+    if os.name == "nt" or sys.platform == "win32":
+        candidates.append(binary_path.with_suffix(".exe"))
+
+    candidates.append(binary_path)  # sin extensión (Linux, o fallback)
+
+    for cand in candidates:
+        if cand.is_file():
+            return cand
+
+    raise FileNotFoundError(
+        f"[ERROR] no se encontró ejecutable para '{binary_path}'. "
+        f"Buscado: {[str(c) for c in candidates]}"
+    )
+
+
 from regression_common import (
     C,
     banner,
@@ -305,9 +323,12 @@ def compile_sim_case(
         label="compile C++ simulation model",
         verbose=verbose,
     )
-
-    if not case.binary_file.exists():
-        raise FileNotFoundError(f"[ERROR] binary was not created: {case.binary_file}")
+    try:
+        resolve_executable(case.binary_file)
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(
+            f"[ERROR] binary was not created for case {case.name}"
+        ) from exc
 
 
 def run_sim_case(
@@ -315,11 +336,11 @@ def run_sim_case(
     module_dir: Path,
     verbose: bool = False,
 ) -> None:
-    if not case.binary_file.exists():
-        raise FileNotFoundError(f"[ERROR] binary not found: {case.binary_file}")
-
+    
+    exe = resolve_executable(case.binary_file)
+    
     cmd = [
-        str(case.binary_file),
+        str(exe),
         "--case-dir",
         str(case.case_dir),
         "--n-cycles",
@@ -650,7 +671,9 @@ def main() -> int:
                     verbose=args.verbose,
                 )
             else:
-                if not case.binary_file.exists():
+                try:
+                    resolve_executable(case.binary_file)
+                except FileNotFoundError:
                     raise FileNotFoundError(
                         f"[ERROR] --skip-compile was used but binary does not exist: "
                         f"{case.binary_file}"

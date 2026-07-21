@@ -1,0 +1,40 @@
+{
+  "regression_dir": "build",
+  "defaults": {
+    "N_CYCLES": 4096,
+    "auto_defines": true,
+    "modes": [
+      "fixed",
+      "double"]
+  },
+  "cases": [
+    {
+      "name": "q2_14_to_q2_14",
+      "NB_IN": 16,
+      "NBF_IN": 14,
+      "NB_OUT": 16,
+      "NBF_OUT": 14
+    },
+    {
+      "name": "q1_15_to_q1_15",
+      "NB_IN": 16,
+      "NBF_IN": 15,
+      "NB_OUT": 16,
+      "NBF_OUT": 15
+    },
+    {
+      "name": "q2_14_to_q1_15",
+      "NB_IN": 16,
+      "NBF_IN": 14,
+      "NB_OUT": 16,
+      "NBF_OUT": 15
+    },
+    {
+      "name": "q8_5_to_q6_4",
+      "NB_IN": 8,
+      "NBF_IN": 5,
+      "NB_OUT": 6,
+      "NBF_OUT": 4
+    }
+  ]
+}

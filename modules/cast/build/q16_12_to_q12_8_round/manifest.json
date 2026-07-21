@@ -1,18 +1,18 @@
 {
-  "generated_at": "2026-06-22T23:43:13-03:00",
+  "generated_at": "2026-07-16T19:52:51-03:00",
   "module": {
     "name": "cast",
-    "dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast"
+    "dir": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast"
   },
   "regression": {
-    "json": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/testbench/cast_tb_regression.json",
-    "dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build",
+    "json": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/testbench/cast_tb_regression.json",
+    "dir": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build",
     "type": "vm",
     "engine": "vivado_xsim"
   },
   "case": {
     "name": "q16_12_to_q12_8_round",
-    "dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q16_12_to_q12_8_round",
+    "dir": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build/q16_12_to_q12_8_round",
     "params": {
       "N_CYCLES": 20000,
       "NB_IN": 16,
@@ -31,25 +31,25 @@
     "n_cycles": 20000
   },
   "artifacts": {
-    "manifest_file": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q16_12_to_q12_8_round/manifest.json",
-    "vector_match_report": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q16_12_to_q12_8_round/reports/vector_match.rpt",
-    "vivado_log": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q16_12_to_q12_8_round/simulation/vivado/vivado.log",
-    "vivado_journal": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q16_12_to_q12_8_round/simulation/vivado/vivado.jou",
-    "xvlog_log": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q16_12_to_q12_8_round/simulation/xsim/xvlog.log",
-    "xelab_log": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q16_12_to_q12_8_round/simulation/xsim/xelab.log",
-    "xsim_log": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q16_12_to_q12_8_round/simulation/xsim/xsim.log",
-    "stimuli_csv": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q16_12_to_q12_8_round/simulation/vectors/stimuli/in_ports.csv",
-    "expected_csv": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q16_12_to_q12_8_round/simulation/vectors/expected/out_ports.csv",
-    "actual_csv": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q16_12_to_q12_8_round/simulation/vectors/actual/out_ports.csv",
-    "expected_dat_dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q16_12_to_q12_8_round/simulation/vectors/expected/out_ports",
-    "actual_dat_dir": "/home/jfont/Desktop/new_IT/pruebas/modules/cast/build/q16_12_to_q12_8_round/simulation/vectors/actual/out_ports"
+    "manifest_file": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build/q16_12_to_q12_8_round/manifest.json",
+    "vector_match_report": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build/q16_12_to_q12_8_round/reports/vector_match.rpt",
+    "vivado_log": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build/q16_12_to_q12_8_round/simulation/vivado/vivado.log",
+    "vivado_journal": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build/q16_12_to_q12_8_round/simulation/vivado/vivado.jou",
+    "xvlog_log": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build/q16_12_to_q12_8_round/simulation/xsim/xvlog.log",
+    "xelab_log": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build/q16_12_to_q12_8_round/simulation/xsim/xelab.log",
+    "xsim_log": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build/q16_12_to_q12_8_round/simulation/xsim/xsim.log",
+    "stimuli_csv": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build/q16_12_to_q12_8_round/simulation/vectors/stimuli/in_ports.csv",
+    "expected_csv": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build/q16_12_to_q12_8_round/simulation/vectors/expected/out_ports.csv",
+    "actual_csv": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build/q16_12_to_q12_8_round/simulation/vectors/actual/out_ports.csv",
+    "expected_dat_dir": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build/q16_12_to_q12_8_round/simulation/vectors/expected/out_ports",
+    "actual_dat_dir": "C:/Users/JulianFont/Desktop/mri-fpga/modules/cast/build/q16_12_to_q12_8_round/simulation/vectors/actual/out_ports"
   },
   "result": {
     "status": "PASS",
     "vectors": 20000,
     "errors": 0,
-    "elapsed_s": 7.802989368999988,
-    "elapsed": "7.80s",
+    "elapsed_s": 1.4267969999928027,
+    "elapsed": "1.43s",
     "message": ""
   }
 }

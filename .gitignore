@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 raw_data/
 log/
+build/
 .Xil/
 amd/
 miscelaneas/

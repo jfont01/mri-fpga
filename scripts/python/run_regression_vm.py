@@ -7,6 +7,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+import shutil
+import subprocess
 
 from regression_common import (
     C,
@@ -86,7 +88,21 @@ class CaseResult:
     manifest_file: Path | None = None
     report_file: Path | None = None
 
+def _to_native_path(path: str) -> str:
 
+    if os.environ.get("SIM_BACKEND") != "iverilog":
+        return path
+    if shutil.which("cygpath") is None:
+        return path
+    try:
+        result = subprocess.run(
+            ["cygpath", "-m", path],
+            capture_output=True, text=True, check=True,
+        )
+        return result.stdout.strip()
+    except Exception:
+        return path
+    
 def extract_params(obj: dict[str, Any], meta_keys: set[str]) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -320,59 +336,148 @@ def validate_compare_inputs(case: RegressionCase) -> None:
             "[ERROR] missing comparison artifacts:\n" + msg
         )
 
+def _xsim_define_args(defines: dict[str, Any]) -> list[str]:
+    """Defines en formato XSIM: -d KEY=VALUE"""
+    args: list[str] = []
+    for key, value in defines.items():
+        args.append("-d")
+        args.append(f"{key}={value}")
+    return args
 
-def run_xsim_case(
+
+def _iverilog_args_from_flist(tb_flist: Path) -> list[str]:
+    args: list[str] = []
+    for raw in tb_flist.read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("-i "):
+            incdir = line[len("-i "):].strip()
+            args.append(f"-I{_to_native_path(incdir)}")
+        else:
+            args.append(_to_native_path(line))
+    return args
+
+
+def _run_xsim_backend(
     case: RegressionCase,
     module_dir: Path,
     project_root: Path,
-    verbose: bool = False,
+    verbose: bool,
+    waves: bool = False,
 ) -> None:
-    project_root = Path(project_root).resolve()
-    module_dir = Path(module_dir).resolve()
-
     run_xsim_tcl = resolve_tcl_from_env(
         "RUN_XSIM_TCL",
         project_root,
         ["scripts/tcl/run_xsim.tcl", "scripts/run_xsim.tcl"],
     )
-
     if not run_xsim_tcl.exists():
         raise FileNotFoundError(f"[ERROR] run_xsim.tcl not found: {run_xsim_tcl}")
 
     define_args = [f"{key}={value}" for key, value in case.xsim_defines.items()]
     runtime_args = [f"N_CYCLES={case.n_cycles}"]
+    if waves:
+        runtime_args.append("WAVES=1")
 
     vivado_log_dir = case.case_dir / "simulation" / "vivado"
     vivado_log_dir.mkdir(parents=True, exist_ok=True)
-
     vivado_journal = vivado_log_dir / "vivado.jou"
     vivado_log = vivado_log_dir / "vivado.log"
 
     cmd = [
-        "vivado",
-        "-mode",
-        "batch",
-        "-notrace",
-        "-journal",
-        str(vivado_journal),
-        "-log",
-        str(vivado_log),
-        "-source",
-        str(run_xsim_tcl),
+        "vivado", "-mode", "batch", "-notrace",
+        "-journal", str(vivado_journal),
+        "-log", str(vivado_log),
+        "-source", str(run_xsim_tcl),
         "-tclargs",
         str(case.case_dir),
         str(module_dir),
         *define_args,
         *runtime_args,
     ]
+    run_command(cmd=cmd, cwd=module_dir, label="run xsim", verbose=verbose)
 
-    run_command(
-        cmd=cmd,
-        cwd=module_dir,
-        label="run xsim",
-        verbose=verbose,
-    )
 
+def _run_iverilog_backend(
+    case: RegressionCase,
+    module_dir: Path,
+    prefix: str,
+    verbose: bool,
+    waves: bool = False,
+) -> None:
+    # flist del testbench (lo genera update_flist)
+    tb_flist_env = os.environ.get(f"{prefix}_TB_FLIST")
+    if tb_flist_env:
+        tb_flist = Path(tb_flist_env).resolve()
+    else:
+        tb_flist = (module_dir / "flist" / f"{module_dir.name}_tb.flist").resolve()
+
+    if not tb_flist.exists():
+        raise FileNotFoundError(
+            f"[ERROR] tb flist not found: {tb_flist}. Run update_flist first."
+        )
+
+    # El testbench escribe en actual/out_ports (Icarus no tiene $system).
+    actual_dir = case.case_dir / "simulation" / "vectors" / "actual" / "out_ports"
+    actual_dir.mkdir(parents=True, exist_ok=True)
+
+    xsim_dir = case.case_dir / "simulation" / "xsim"
+    xsim_dir.mkdir(parents=True, exist_ok=True)
+    vvp_out = xsim_dir / "sim.vvp"
+
+    # defines en formato iverilog: -D KEY=VALUE
+    define_args: list[str] = []
+    for key, value in case.xsim_defines.items():
+        define_args.append("-D")
+        define_args.append(f"{key}={value}")
+
+    flist_args = _iverilog_args_from_flist(tb_flist)
+
+    compile_cmd = [
+            "iverilog", "-g2012",
+            "-o", _to_native_path(str(vvp_out)),
+            *define_args, *flist_args,
+        ]
+    run_command(cmd=compile_cmd, cwd=module_dir, label="compile (iverilog)", verbose=verbose)
+
+    # plusargs: mismos nombres que XSIM (CASE_DIR / N_CYCLES)
+    run_cmd = [
+            "vvp", _to_native_path(str(vvp_out)),
+            f"+CASE_DIR={_to_native_path(str(case.case_dir))}",
+            f"+N_CYCLES={case.n_cycles}",
+        ]
+    if waves:
+        run_cmd.append("+WAVES")
+
+    run_command(cmd=run_cmd, cwd=module_dir, label="run (vvp)", verbose=verbose)
+
+    if waves:
+        step_msg(f"waves: {case.case_dir / 'simulation' / 'waves.vcd'}")
+
+
+def run_sim_backend(
+    case: RegressionCase,
+    module_dir: Path,
+    project_root: Path,
+    prefix: str,
+    verbose: bool = False,
+    waves: bool = False,
+) -> None:
+    """
+    Ejecuta la simulación RTL con el backend indicado por SIM_BACKEND
+    (exportado por set_env.sh): 'xsim' en Linux, 'iverilog' en msys.
+    """
+    backend = os.environ.get("SIM_BACKEND", "").strip().lower()
+
+    if backend == "xsim":
+        _run_xsim_backend(case, module_dir, project_root, verbose, waves)
+    elif backend == "iverilog":
+        _run_iverilog_backend(case, module_dir, prefix, verbose, waves)
+    else:
+        raise RuntimeError(
+            f"[ERROR] SIM_BACKEND inválido o no definido: '{backend}'. "
+            f"Esperado 'xsim' o 'iverilog'. ¿Sourceaste set_env.sh?"
+        )
 
 def compare_dat_files(
     case: RegressionCase,
@@ -595,6 +700,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-compare", action="store_true")
     parser.add_argument("--keep-going", action="store_true")
 
+    parser.add_argument("--waves", action="store_true",
+                        help="Genera ondas VCD en <case_dir>/simulation/waves.vcd "
+                             "(el testbench debe soportar el plusarg +WAVES).")
+
     parser.add_argument("--verbose", "-v", action="store_true")
     parser.add_argument("--no-color", action="store_true")
 
@@ -762,11 +871,13 @@ def main() -> int:
             if not args.skip_xsim:
                 validate_xsim_inputs(case)
 
-                run_xsim_case(
+                run_sim_backend(
                     case=case,
                     module_dir=module_dir,
                     project_root=project_root,
+                    prefix=prefix,
                     verbose=args.verbose,
+                    waves=args.waves,
                 )
 
             if not args.skip_compare:

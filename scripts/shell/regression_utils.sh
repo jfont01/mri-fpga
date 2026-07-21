@@ -61,3 +61,33 @@ run_regression_impl() {
     update_flist
     python3 "$RUN_REGRESSION_IMPL_PY" "$@"
 }
+
+run_compile_rtl() {
+    if [[ ! -f "$RUN_COMPILE_RTL_PY" ]]; then
+        echo "[regression_utils.sh] ERROR: missing run_compile_rtl.py" >&2
+        return 1
+    fi
+    python3 "$RUN_COMPILE_RTL_PY" "$@"
+}
+
+run_lint() {
+    if [[ ! -f "$RUN_LINT_PY" ]]; then
+        echo "[regression_utils.sh] ERROR: missing run_lint.py" >&2
+        return 1
+    fi
+    python3 "$RUN_LINT_PY" "$@"
+}
+
+run_gtest() {
+    if [[ -z "${PROJECT_ROOT:-}" ]]; then
+        echo "[regression_utils.sh] ERROR: PROJECT_ROOT is not defined." >&2
+        return 1
+    fi
+ 
+    if [[ ! -f "$RUN_GTEST_PY" ]]; then
+        echo "[regression_utils.sh] ERROR: missing run_gtest.py: $RUN_GTEST_PY" >&2
+        return 1
+    fi
+ 
+    python3 "$RUN_GTEST_PY" "$@"
+}

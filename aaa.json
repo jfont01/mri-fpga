@@ -1,0 +1,396 @@
+{
+  "common": { "fs_os": 192, "n_iterations": 27000, "mode": 1, "full_rate": 1, "reset_cycles": 3, "reset_time": 1000, "reset_clocks": 100, "enable_cycles": 4, "enable_time": 1150, "enable_clocks": 100, "enable_high_or_low": 0, "lt_enable_cycles": 4, "lt_enable_time": 1150, "lt_enable_clocks": 200, "lt_enable_high_or_low": 0, "fw_enable_cycles": 4, "fw_enable_time": 1150, "fw_enable_clocks": 200, "fw_enable_high_or_low": 0, "R_metric": 0, "error_min": -2, "error_max": 2, "tap_sel_min": 0, "tap_sel_max": 44 },
+  "test_plan": [
+    { "family": "legacy", "group": "original", "case_type": 1, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 2, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 3, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 4, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 5, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 6, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 7, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 8, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 9, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 10, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 11, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 12, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 13, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 14, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 15, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 16, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 17, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 18, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 19, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 20, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 21, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 22, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 23, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 24, "enabled": true },
+    { "family": "legacy", "group": "original", "case_type": 25, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 0, "seed": 1000, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 1, "seed": 1001, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 2, "seed": 1002, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 3, "seed": 1003, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 4, "seed": 1004, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 5, "seed": 1005, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 6, "seed": 1006, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 7, "seed": 1007, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 8, "seed": 1008, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 9, "seed": 1009, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 10, "seed": 1010, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 11, "seed": 1011, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 12, "seed": 1012, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 13, "seed": 1013, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 14, "seed": 1014, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 15, "seed": 1015, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 16, "seed": 1016, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 17, "seed": 1017, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 18, "seed": 1018, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 19, "seed": 1019, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 20, "seed": 1020, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 21, "seed": 1021, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 22, "seed": 1022, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 23, "seed": 1023, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 24, "seed": 1024, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 25, "seed": 1025, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 26, "seed": 1026, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 27, "seed": 1027, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 28, "seed": 1028, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 29, "seed": 1029, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 30, "seed": 1030, "enabled": true },
+    { "family": "mu_cross", "group": "full", "chunk": 31, "seed": 1031, "enabled": true },
+    { "family": "param_sweep", "group": "mu_taps_even", "case_type": 1, "seed": 2000, "enabled": true },
+    { "family": "param_sweep", "group": "mu_taps_even", "case_type": 2, "seed": 2001, "enabled": true },
+    { "family": "param_sweep", "group": "mu_taps_odd", "case_type": 1, "seed": 2010, "enabled": true },
+    { "family": "param_sweep", "group": "mu_taps_odd", "case_type": 2, "seed": 2011, "enabled": true },
+    { "family": "param_sweep", "group": "mu_offset", "case_type": 1, "seed": 2020, "enabled": true },
+    { "family": "param_sweep", "group": "mu_offset", "case_type": 2, "seed": 2021, "enabled": true },
+    { "family": "param_sweep", "group": "cal_adc_beta", "case_type": 1, "seed": 2030, "enabled": true },
+    { "family": "param_sweep", "group": "cal_adc_beta", "case_type": 2, "seed": 2031, "enabled": true },
+    { "family": "param_sweep", "group": "taps_leakage_even", "case_type": 1, "seed": 2040, "enabled": true },
+    { "family": "param_sweep", "group": "taps_leakage_even", "case_type": 2, "seed": 2041, "enabled": true },
+    { "family": "param_sweep", "group": "taps_leakage_odd", "case_type": 1, "seed": 2050, "enabled": true },
+    { "family": "param_sweep", "group": "taps_leakage_odd", "case_type": 2, "seed": 2051, "enabled": true },
+    { "family": "param_sweep", "group": "offset_leakage", "case_type": 1, "seed": 2060, "enabled": true },
+    { "family": "param_sweep", "group": "offset_leakage", "case_type": 2, "seed": 2061, "enabled": true },
+    { "family": "param_sweep", "group": "cal_adc_leakage", "case_type": 1, "seed": 2070, "enabled": true },
+    { "family": "param_sweep", "group": "cal_adc_leakage", "case_type": 2, "seed": 2071, "enabled": true },
+    { "family": "param_sweep", "group": "cal_adc_taps", "case_type": 1, "seed": 2080, "enabled": true },
+    { "family": "param_sweep", "group": "cal_adc_taps", "case_type": 2, "seed": 2081, "enabled": true },
+    { "family": "param_sweep", "group": "lt_afifo_delay", "case_type": 1, "seed": 2090, "enabled": true },
+    { "family": "param_sweep", "group": "lt_afifo_delay", "case_type": 2, "seed": 2091, "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "on", "fw_enable_state": "on", "lt_enable_state": "on", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "on", "fw_enable_state": "on", "lt_enable_state": "off", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "on", "fw_enable_state": "on", "lt_enable_state": "toggle", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "on", "fw_enable_state": "off", "lt_enable_state": "on", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "on", "fw_enable_state": "off", "lt_enable_state": "off", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "on", "fw_enable_state": "off", "lt_enable_state": "toggle", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "on", "fw_enable_state": "toggle", "lt_enable_state": "on", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "on", "fw_enable_state": "toggle", "lt_enable_state": "off", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "on", "fw_enable_state": "toggle", "lt_enable_state": "toggle", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "off", "fw_enable_state": "on", "lt_enable_state": "on", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "off", "fw_enable_state": "on", "lt_enable_state": "off", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "off", "fw_enable_state": "on", "lt_enable_state": "toggle", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "off", "fw_enable_state": "off", "lt_enable_state": "on", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "off", "fw_enable_state": "off", "lt_enable_state": "off", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "off", "fw_enable_state": "off", "lt_enable_state": "toggle", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "off", "fw_enable_state": "toggle", "lt_enable_state": "on", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "off", "fw_enable_state": "toggle", "lt_enable_state": "off", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "off", "fw_enable_state": "toggle", "lt_enable_state": "toggle", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "toggle", "fw_enable_state": "on", "lt_enable_state": "on", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "toggle", "fw_enable_state": "on", "lt_enable_state": "off", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "toggle", "fw_enable_state": "on", "lt_enable_state": "toggle", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "toggle", "fw_enable_state": "off", "lt_enable_state": "on", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "toggle", "fw_enable_state": "off", "lt_enable_state": "off", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "toggle", "fw_enable_state": "off", "lt_enable_state": "toggle", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "toggle", "fw_enable_state": "toggle", "lt_enable_state": "on", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "toggle", "fw_enable_state": "toggle", "lt_enable_state": "off", "enabled": true },
+    { "family": "enables_cross", "group": "full", "eq_enable_state": "toggle", "fw_enable_state": "toggle", "lt_enable_state": "toggle", "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "identity", "offset_profile": "zero", "seed": 3000, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "identity", "offset_profile": "half", "seed": 3001, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "identity", "offset_profile": "pos_sat", "seed": 3002, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "identity", "offset_profile": "neg_sat", "seed": 3003, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "identity", "offset_profile": "random", "seed": 3004, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "zero", "offset_profile": "zero", "seed": 3010, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "zero", "offset_profile": "half", "seed": 3011, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "zero", "offset_profile": "pos_sat", "seed": 3012, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "zero", "offset_profile": "neg_sat", "seed": 3013, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "zero", "offset_profile": "random", "seed": 3014, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "pos_sat", "offset_profile": "zero", "seed": 3020, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "pos_sat", "offset_profile": "half", "seed": 3021, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "pos_sat", "offset_profile": "pos_sat", "seed": 3022, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "pos_sat", "offset_profile": "neg_sat", "seed": 3023, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "pos_sat", "offset_profile": "random", "seed": 3024, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "neg_sat", "offset_profile": "zero", "seed": 3030, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "neg_sat", "offset_profile": "half", "seed": 3031, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "neg_sat", "offset_profile": "pos_sat", "seed": 3032, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "neg_sat", "offset_profile": "neg_sat", "seed": 3033, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "neg_sat", "offset_profile": "random", "seed": 3034, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "random", "offset_profile": "zero", "seed": 3040, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "random", "offset_profile": "half", "seed": 3041, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "random", "offset_profile": "pos_sat", "seed": 3042, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "random", "offset_profile": "neg_sat", "seed": 3043, "enabled": true },
+    { "family": "static_config", "group": "taps_offset", "taps_profile": "random", "offset_profile": "random", "seed": 3044, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 0, "seed": 3100, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 1, "seed": 3101, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 2, "seed": 3102, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 3, "seed": 3103, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 4, "seed": 3104, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 5, "seed": 3105, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 6, "seed": 3106, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 7, "seed": 3107, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 8, "seed": 3108, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 9, "seed": 3109, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 10, "seed": 3110, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 11, "seed": 3111, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 12, "seed": 3112, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 13, "seed": 3113, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 14, "seed": 3114, "enabled": true },
+    { "family": "static_config", "group": "afifo_delay", "afifo_delay": 15, "seed": 3115, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 1, "seed": 4010, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 1, "seed": 4011, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 2, "seed": 4020, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 2, "seed": 4021, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 3, "seed": 4030, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 3, "seed": 4031, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 4, "seed": 4040, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 4, "seed": 4041, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 5, "seed": 4050, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 5, "seed": 4051, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 6, "seed": 4060, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 6, "seed": 4061, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 7, "seed": 4070, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 7, "seed": 4071, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 8, "seed": 4080, "enabled": true },
+    { "family": "stimulus", "group": "generators", "case_type": 8, "seed": 4081, "enabled": true },
+    { "family": "counters", "group": "r_metric", "R_metric": 0, "seed": 5000, "enabled": true },
+    { "family": "counters", "group": "r_metric", "R_metric": 40, "seed": 5040, "enabled": true },
+    { "family": "counters", "group": "r_metric", "R_metric": 81, "seed": 5081, "enabled": true },
+    { "family": "counters", "group": "r_metric", "R_metric": 121, "seed": 5121, "enabled": true },
+    { "family": "counters", "group": "r_metric", "R_metric": 162, "seed": 5162, "enabled": true },
+    { "family": "counters", "group": "r_metric", "R_metric": 202, "seed": 5202, "enabled": true },
+    { "family": "counters", "group": "r_metric", "R_metric": 243, "seed": 5243, "enabled": true },
+    { "family": "counters", "group": "r_metric", "R_metric": 283, "seed": 5283, "enabled": true },
+    { "family": "counters", "group": "r_metric", "R_metric": 323, "seed": 5323, "enabled": true },
+    { "family": "counters", "group": "r_metric", "R_metric": 0, "counter_max_value": 163, "seed": 5363, "enabled": true },
+    { "family": "counters", "group": "r_metric", "R_metric": 0, "counter_max_value": 325, "seed": 5525, "enabled": true }
+  ],
+  "case_sequences": {
+    "legacy": {
+      "original": {
+        "defaults": {},
+        "cases": {
+          "1": { "taps_profile": "identity", "offset_profile": "half", "mu_taps_even": 0, "mu_taps_odd": 1, "mu_offset": 0, "taps_leakage_even_profile": "zero", "taps_leakage_odd_profile": "zero", "offset_leakage": 0, "cal_adc_beta_step": 5, "cal_adc_leakage": 0.002, "cal_adc_taps_profile": "random", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 1, "random_samples": 0, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 0 },
+          "2": { "taps_profile": "identity", "offset_profile": "half", "mu_taps_even": 1, "mu_taps_odd": 0, "mu_offset": 1, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 4, "cal_adc_leakage": 0.005, "cal_adc_taps_profile": "random", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 1, "random_samples": 0, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 3500, "seed": 1 },
+          "3": { "taps_profile": "identity", "offset_profile": "half", "mu_taps_even": 1, "mu_taps_odd": 1, "mu_offset": 1, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 5, "cal_adc_leakage": 0.002, "cal_adc_taps_profile": "identity", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 1, "random_samples": 0, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 1, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 2 },
+          "4": { "taps_profile": "pos_sat", "offset_profile": "pos_sat", "mu_taps_even": 7, "mu_taps_odd": 7, "mu_offset": 7, "taps_leakage_even_profile": "pos_sat", "taps_leakage_odd_profile": "pos_sat", "offset_leakage": "pos_sat", "cal_adc_beta_step": 2, "cal_adc_leakage": 0.006, "cal_adc_taps_profile": "pos_sat", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 0, "random_error": 0, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 1, "all_neg_sat": 0, "enable_time": 1150, "seed": 3 },
+          "5": { "taps_profile": "pos_sat", "offset_profile": "pos_sat", "mu_taps_even": 7, "mu_taps_odd": 7, "mu_offset": 7, "taps_leakage_even_profile": "pos_sat", "taps_leakage_odd_profile": "pos_sat", "offset_leakage": "pos_sat", "cal_adc_beta_step": 3, "cal_adc_leakage": 0.004, "cal_adc_taps_profile": "pos_sat", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 0, "random_error": 0, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 1, "all_neg_sat": 0, "enable_time": 1150, "seed": 4 },
+          "6": { "taps_profile": "neg_sat", "offset_profile": "neg_sat", "mu_taps_even": 7, "mu_taps_odd": 7, "mu_offset": 7, "taps_leakage_even_profile": "neg_sat", "taps_leakage_odd_profile": "neg_sat", "offset_leakage": "neg_sat", "cal_adc_beta_step": 5, "cal_adc_leakage": 0.004, "cal_adc_taps_profile": "neg_sat", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 0, "random_error": 0, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 1, "enable_time": 1150, "seed": 5 },
+          "7": { "taps_profile": "neg_sat", "offset_profile": "neg_sat", "mu_taps_even": 7, "mu_taps_odd": 7, "mu_offset": 7, "taps_leakage_even_profile": "neg_sat", "taps_leakage_odd_profile": "neg_sat", "offset_leakage": "neg_sat", "cal_adc_beta_step": 5, "cal_adc_leakage": 0.005, "cal_adc_taps_profile": "neg_sat", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 0, "random_error": 0, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 1, "enable_time": 1150, "seed": 6 },
+          "8": { "taps_profile": "zero", "offset_profile": "zero", "mu_taps_even": 0, "mu_taps_odd": 0, "mu_offset": 0, "taps_leakage_even_profile": "zero", "taps_leakage_odd_profile": "zero", "offset_leakage": 0, "cal_adc_beta_step": 4, "cal_adc_leakage": 0.002, "cal_adc_taps_profile": "zero", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 0, "random_error": 0, "zero_error": 1, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 7 },
+          "9": { "taps_profile": "zero", "offset_profile": "zero", "mu_taps_even": 0, "mu_taps_odd": 1, "mu_offset": 0, "taps_leakage_even_profile": "zero", "taps_leakage_odd_profile": "zero", "offset_leakage": 0, "cal_adc_beta_step": 5, "cal_adc_leakage": 0.005, "cal_adc_taps_profile": "zero", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 0, "random_error": 0, "zero_error": 1, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 8 },
+          "10": { "taps_profile": "identity", "offset_profile": "random", "mu_taps_even": 3, "mu_taps_odd": 3, "mu_offset": 3, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 5, "cal_adc_leakage": 0.001, "cal_adc_taps_profile": "identity", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 1, "random_samples": 0, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 9 },
+          "11": { "taps_profile": "identity", "offset_profile": "random", "mu_taps_even": 3, "mu_taps_odd": 3, "mu_offset": 3, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 2, "cal_adc_leakage": 0.005, "cal_adc_taps_profile": "identity", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 1, "random_samples": 0, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 10 },
+          "12": { "taps_profile": "random", "offset_profile": "random", "mu_taps_even": 4, "mu_taps_odd": 4, "mu_offset": 4, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 5, "cal_adc_leakage": 0.001, "cal_adc_taps_profile": "random", "afifo_delay": 7, "lt_afifo_delay": 3, "sine_wave_samples": 0, "random_samples": 1, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 1, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 11 },
+          "13": { "taps_profile": "random", "offset_profile": "random", "mu_taps_even": 5, "mu_taps_odd": 5, "mu_offset": 5, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 2, "cal_adc_leakage": 0.0, "cal_adc_taps_profile": "random", "afifo_delay": 9, "lt_afifo_delay": 4, "sine_wave_samples": 0, "random_samples": 1, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 1, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 12 },
+          "14": { "taps_profile": "random", "offset_profile": "random", "mu_taps_even": 6, "mu_taps_odd": 6, "mu_offset": 6, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 6, "cal_adc_leakage": 0.002, "cal_adc_taps_profile": "random", "afifo_delay": 11, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 1, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 1, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 13 },
+          "15": { "taps_profile": "random", "offset_profile": "random", "mu_taps_even": 2, "mu_taps_odd": 2, "mu_offset": 2, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 4, "cal_adc_leakage": 0.005, "cal_adc_taps_profile": "random", "afifo_delay": 13, "lt_afifo_delay": 6, "sine_wave_samples": 0, "random_samples": 1, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 14 },
+          "16": { "taps_profile": "random", "offset_profile": "random", "mu_taps_even": 7, "mu_taps_odd": 7, "mu_offset": 7, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 4, "cal_adc_leakage": 0.005, "cal_adc_taps_profile": "random", "afifo_delay": 15, "lt_afifo_delay": 7, "sine_wave_samples": 0, "random_samples": 1, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 15 },
+          "17": { "taps_profile": "random", "offset_profile": "random", "mu_taps_even": 1, "mu_taps_odd": 1, "mu_offset": 1, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 5, "cal_adc_leakage": 0.0, "cal_adc_taps_profile": "random", "afifo_delay": 6, "lt_afifo_delay": 2, "sine_wave_samples": 0, "random_samples": 1, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 16 },
+          "18": { "taps_profile": "random", "offset_profile": "random", "mu_taps_even": 5, "mu_taps_odd": 5, "mu_offset": 5, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 2, "cal_adc_leakage": 0.005, "cal_adc_taps_profile": "random", "afifo_delay": 8, "lt_afifo_delay": 4, "sine_wave_samples": 0, "random_samples": 1, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 17 },
+          "19": { "taps_profile": "random", "offset_profile": "random", "mu_taps_even": 3, "mu_taps_odd": 3, "mu_offset": 3, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 5, "cal_adc_leakage": 0.002, "cal_adc_taps_profile": "random", "afifo_delay": 15, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 1, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 18 },
+          "20": { "taps_profile": "identity", "offset_profile": "random", "mu_taps_even": 7, "mu_taps_odd": 7, "mu_offset": 7, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 1, "cal_adc_leakage": 0.003, "cal_adc_taps_profile": "identity", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 1, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 19 },
+          "21": { "taps_profile": "identity", "offset_profile": "random", "mu_taps_even": 3, "mu_taps_odd": 3, "mu_offset": 3, "taps_leakage_even_profile": "random", "taps_leakage_odd_profile": "random", "offset_leakage": "random", "cal_adc_beta_step": 5, "cal_adc_leakage": 0.005, "cal_adc_taps_profile": "identity", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 1, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 0, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 20 },
+          "22": { "taps_profile": "identity", "offset_profile": "zero", "mu_taps_even": 0, "mu_taps_odd": 0, "mu_offset": 1, "taps_leakage_even_profile": "flat", "taps_leakage_odd_profile": "flat", "offset_leakage": 6.1035e-05, "cal_adc_beta_step": 1, "cal_adc_leakage": 0.0005, "cal_adc_taps_profile": "identity", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 1, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 1, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 21, "taps_leakage_even_amplitude": 6.1035e-05, "taps_leakage_odd_amplitude": 6.1035e-05 },
+          "23": { "taps_profile": "identity", "offset_profile": "zero", "mu_taps_even": 1, "mu_taps_odd": 0, "mu_offset": 1, "taps_leakage_even_profile": "flat", "taps_leakage_odd_profile": "flat", "offset_leakage": 6.1035e-05, "cal_adc_beta_step": 2, "cal_adc_leakage": 0.0004, "cal_adc_taps_profile": "identity", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 1, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 1, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 22, "taps_leakage_even_amplitude": 6.1035e-05, "taps_leakage_odd_amplitude": 6.1035e-05 },
+          "24": { "taps_profile": "identity", "offset_profile": "zero", "mu_taps_even": 0, "mu_taps_odd": 1, "mu_offset": 1, "taps_leakage_even_profile": "flat", "taps_leakage_odd_profile": "flat", "offset_leakage": 6.1035e-05, "cal_adc_beta_step": 2, "cal_adc_leakage": 0.0005, "cal_adc_taps_profile": "identity", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 1, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 1, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 23, "taps_leakage_even_amplitude": 6.1035e-05, "taps_leakage_odd_amplitude": 6.1035e-05 },
+          "25": { "taps_profile": "identity", "offset_profile": "zero", "mu_taps_even": 1, "mu_taps_odd": 1, "mu_offset": 1, "taps_leakage_even_profile": "flat", "taps_leakage_odd_profile": "flat", "offset_leakage": 6.1035e-05, "cal_adc_beta_step": 5, "cal_adc_leakage": 0.0005, "cal_adc_taps_profile": "bypass", "afifo_delay": 5, "lt_afifo_delay": 5, "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 1, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 1, "all_pos_sat": 0, "all_neg_sat": 0, "enable_time": 1150, "seed": 24, "taps_leakage_even_amplitude": 6.1035e-05, "taps_leakage_odd_amplitude": 6.1035e-05 }
+        }
+      }
+    },
+    "mu_cross": {
+      "full": {
+        "defaults": {
+          "mu_even_values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          "mu_odd_values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          "mu_offset_values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          "combos_per_case": 128,
+          "base_time": 1200,
+          "step_cycles": 200,
+          "taps_profile": "identity",
+          "offset_profile": "half",
+          "afifo_delay": 5,
+          "sine_wave_samples": 1,
+          "random_error": 1,
+          "cal_adc_taps_profile": "identity"
+        }
+      }
+    },
+    "param_sweep": {
+      "mu_taps_even": {
+        "defaults": {
+          "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          "base_time": 1200,
+          "step_cycles": 400,
+          "taps_profile": "identity",
+          "offset_profile": "half",
+          "sine_wave_samples": 1,
+          "random_error": 1
+        }
+      },
+      "mu_taps_odd": {
+        "defaults": {
+          "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          "base_time": 1200,
+          "step_cycles": 400,
+          "taps_profile": "identity",
+          "offset_profile": "half",
+          "sine_wave_samples": 1,
+          "random_error": 1
+        }
+      },
+      "mu_offset": {
+        "defaults": {
+          "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          "base_time": 1200,
+          "step_cycles": 400,
+          "taps_profile": "identity",
+          "offset_profile": "half",
+          "sine_wave_samples": 1,
+          "random_error": 1
+        }
+      },
+      "cal_adc_beta": {
+        "defaults": {
+          "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          "base_time": 1200,
+          "step_cycles": 400,
+          "taps_profile": "identity",
+          "offset_profile": "half",
+          "sine_wave_samples": 1,
+          "random_error": 1
+        }
+      },
+      "taps_leakage_even": {
+        "defaults": {
+          "values": [
+            { "profile": "zero", "amplitude": 0 },
+            { "profile": "flat", "amplitude": "random" },
+            { "profile": "edges", "amplitude": "random" },
+            { "profile": "center", "amplitude": "random" },
+            { "profile": "ramp", "amplitude": "random" },
+            { "profile": "flat", "amplitude": "random" },
+            { "profile": "random" },
+            { "profile": "pos_sat" },
+            { "profile": "neg_sat" },
+            { "profile": "zero", "amplitude": 0 }
+          ],
+          "base_time": 1200,
+          "step_cycles": 400,
+          "taps_profile": "identity",
+          "offset_profile": "half",
+          "sine_wave_samples": 1,
+          "random_error": 1
+        }
+      },
+      "taps_leakage_odd": {
+        "defaults": {
+          "values": [
+            { "profile": "zero", "amplitude": 0 },
+            { "profile": "flat", "amplitude": "random" },
+            { "profile": "edges", "amplitude": "random" },
+            { "profile": "center", "amplitude": "random" },
+            { "profile": "ramp", "amplitude": "random" },
+            { "profile": "flat", "amplitude": "random" },
+            { "profile": "random" },
+            { "profile": "pos_sat" },
+            { "profile": "neg_sat" },
+            { "profile": "zero", "amplitude": 0 }
+          ],
+          "base_time": 1200,
+          "step_cycles": 400,
+          "taps_profile": "identity",
+          "offset_profile": "half",
+          "sine_wave_samples": 1,
+          "random_error": 1
+        }
+      },
+      "offset_leakage": {
+        "defaults": {
+          "values": [0, "random", "random", "random", "random", "pos_sat", "neg_sat", 0],
+          "base_time": 1200,
+          "step_cycles": 400,
+          "taps_profile": "identity",
+          "offset_profile": "half",
+          "sine_wave_samples": 1,
+          "random_error": 1
+        }
+      },
+      "cal_adc_leakage": {
+        "defaults": {
+          "values": [0, "random", "random", "random", "random", "max", 0],
+          "base_time": 1200,
+          "step_cycles": 400,
+          "taps_profile": "identity",
+          "offset_profile": "half",
+          "sine_wave_samples": 1,
+          "random_error": 1
+        }
+      },
+      "cal_adc_taps": {
+        "defaults": {
+          "values": ["identity", "zero", "pos_sat", "neg_sat", "random", "bypass", "identity"],
+          "base_time": 1200,
+          "step_cycles": 400,
+          "taps_profile": "identity",
+          "offset_profile": "half",
+          "sine_wave_samples": 1,
+          "random_error": 1
+        }
+      },
+      "lt_afifo_delay": {
+        "defaults": {
+          "values": [0, 1, 2, 3, 4, 5, 6, 7],
+          "base_time": 1200,
+          "step_cycles": 400,
+          "taps_profile": "identity",
+          "offset_profile": "half",
+          "sine_wave_samples": 1,
+          "random_error": 1
+        }
+      }
+    },
+    "enables_cross": {
+      "full": {
+        "defaults": { "toggle_period": 200, "taps_profile": "identity", "offset_profile": "half", "mu_taps_even": 4, "mu_taps_odd": 4, "mu_offset": 4, "sine_wave_samples": 1, "random_error": 1 }
+      }
+    },
+    "static_config": {
+      "taps_offset": {
+        "defaults": { "afifo_delay": 5, "mu_taps_even": 4, "mu_taps_odd": 4, "mu_offset": 4, "sine_wave_samples": 1, "random_error": 1 }
+      },
+      "afifo_delay": {
+        "defaults": { "taps_profile": "identity", "offset_profile": "half", "mu_taps_even": 4, "mu_taps_odd": 4, "mu_offset": 4, "sine_wave_samples": 1, "random_error": 1 }
+      }
+    },
+    "stimulus": {
+      "generators": {
+        "defaults": { "taps_profile": "identity", "offset_profile": "half", "mu_taps_even": 4, "mu_taps_odd": 4, "mu_offset": 4 },
+        "cases": {
+          "1": { "sine_wave_samples": 1, "random_samples": 0, "fi_adc": 0, "random_error": 1, "zero_error": 0 },
+          "2": { "sine_wave_samples": 0, "random_samples": 1, "fi_adc": 0, "random_error": 1, "zero_error": 0 },
+          "3": { "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 1, "random_error": 1, "zero_error": 0 },
+          "4": { "sine_wave_samples": 0, "random_samples": 0, "fi_adc": 0, "random_error": 0, "zero_error": 1 },
+          "5": { "sine_wave_samples": 0, "random_samples": 1, "fi_adc": 0, "random_error": 1, "zero_error": 0, "all_pos_sat": 1 },
+          "6": { "sine_wave_samples": 0, "random_samples": 1, "fi_adc": 0, "random_error": 1, "zero_error": 0, "all_neg_sat": 1 },
+          "7": { "sine_wave_samples": 1, "random_samples": 0, "fi_adc": 0, "random_error": 1, "zero_error": 0, "cal_adc_bypass": 1 },
+          "8": { "sine_wave_samples": 0, "random_samples": 1, "fi_adc": 0, "random_error": 1, "zero_error": 0, "error_min": -4, "error_max": 4 }
+        }
+      }
+    },
+    "counters": {
+      "r_metric": {
+        "defaults": { "taps_profile": "identity", "offset_profile": "half", "mu_taps_even": 4, "mu_taps_odd": 4, "mu_offset": 4, "sine_wave_samples": 1, "random_error": 1 }
+      }
+    }
+  }
+}

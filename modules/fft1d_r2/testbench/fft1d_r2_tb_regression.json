@@ -1,0 +1,35 @@
+{
+  "regression_dir": "build",
+  "defaults": {
+    "auto_defines": true
+  },
+  "cases": [
+    {
+      "name": "n64_q1_15_sine_k3",
+      "N": 64,
+      "NB": 16,
+      "NBF": 15,
+      "N_CYCLES": 10000,
+      "TW_RE_FILE": "\"C:/Users/JulianFont/Desktop/mri-fpga/modules/fft1d_r2/rtl/twiddles/fft1d_r2_tw_64_re.mem\"",
+      "TW_IM_FILE": "\"C:/Users/JulianFont/Desktop/mri-fpga/modules/fft1d_r2/rtl/twiddles/fft1d_r2_tw_64_im.mem\""
+    },
+    {
+      "name": "n256_q1_15_sine_k3",
+      "N": 256,
+      "NB": 16,
+      "NBF": 15,
+      "N_CYCLES": 10000,
+      "TW_RE_FILE": "\"C:/Users/JulianFont/Desktop/mri-fpga/modules/fft1d_r2/rtl/twiddles/fft1d_r2_tw_256_re.mem\"",
+      "TW_IM_FILE": "\"C:/Users/JulianFont/Desktop/mri-fpga/modules/fft1d_r2/rtl/twiddles/fft1d_r2_tw_256_im.mem\""
+    },
+    {
+      "name": "n1024_q1_15_sine_k3",
+      "N": 1024,
+      "NB": 16,
+      "NBF": 15,
+      "N_CYCLES": 10000,
+      "TW_RE_FILE": "\"C:/Users/JulianFont/Desktop/mri-fpga/modules/fft1d_r2/rtl/twiddles/fft1d_r2_tw_1024_re.mem\"",
+      "TW_IM_FILE": "\"C:/Users/JulianFont/Desktop/mri-fpga/modules/fft1d_r2/rtl/twiddles/fft1d_r2_tw_1024_im.mem\""
+    }
+  ]
+}

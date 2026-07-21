@@ -439,3 +439,110 @@ def resolve_tcl_from_env(
             return path
 
     return (project_root / fallback_candidates[0]).resolve()
+
+
+# ---------------------------------------------------------------------------
+# Resolución de `include de Verilog
+# ---------------------------------------------------------------------------
+#
+# Misma regla que flist_utils.sh (resolve_include_incdir), pero RECURSIVA:
+#
+#   1. relativo al directorio del archivo que hace el include
+#   2. $MODULES_ROOT/<modulo>/rtl/<archivo>, donde <modulo> es el nombre del
+#      archivo incluido sin extensión (convención del proyecto:
+#      `include "cast.v" -> modules/cast/rtl/cast.v)
+#
+# Es recursiva porque un include puede traer otros: fft1d_r2.v incluye cmul.v,
+# y cmul.v incluye cast.v. Sin recursión, compilar fft1d_r2.v fallaría si no
+# incluyera cast.v explícitamente.
+
+INCLUDE_RE = re.compile(r'^\s*`include\s+"([^"]+)"')
+
+
+def extract_verilog_includes(path: Path) -> list[str]:
+    """Devuelve los nombres de archivo de los `include de un fuente Verilog."""
+    includes: list[str] = []
+
+    try:
+        text = path.read_text(errors="ignore")
+    except OSError:
+        return includes
+
+    for line in text.splitlines():
+        match = INCLUDE_RE.match(line)
+        if match:
+            name = match.group(1)
+            if name not in includes:
+                includes.append(name)
+
+    return includes
+
+
+def resolve_include_file(
+    include_name: str,
+    from_dir: Path,
+    modules_root: Path | None,
+) -> Path | None:
+    """Resuelve un `include a un path concreto, o None si no se encuentra."""
+    candidate = Path(include_name)
+
+    if candidate.is_absolute() and candidate.exists():
+        return candidate.resolve()
+
+    local = (from_dir / include_name)
+    if local.exists():
+        return local.resolve()
+
+    if modules_root is not None:
+        base = Path(include_name).name
+        dep_module = Path(base).stem
+        dep = modules_root / dep_module / "rtl" / base
+        if dep.exists():
+            return dep.resolve()
+
+    return None
+
+
+def collect_include_dirs(
+    top_file: Path,
+    modules_root: Path | None = None,
+    missing: list[str] | None = None,
+) -> list[Path]:
+    """
+    Recorre recursivamente los `include a partir de top_file y devuelve la
+    lista de directorios (-I) necesaria para preprocesarlo.
+
+    Los includes que no se puedan resolver se acumulan en 'missing' (si se
+    pasa una lista), para poder reportarlos con un mensaje útil.
+    """
+    if modules_root is None:
+        env_root = os.environ.get("MODULES_ROOT")
+        modules_root = Path(env_root).resolve() if env_root else None
+
+    dirs: list[Path] = []
+    seen_files: set[Path] = set()
+    pending: list[Path] = [top_file.resolve()]
+
+    while pending:
+        current = pending.pop(0)
+
+        if current in seen_files:
+            continue
+
+        seen_files.add(current)
+
+        current_dir = current.parent.resolve()
+        if current_dir not in dirs:
+            dirs.append(current_dir)
+
+        for include_name in extract_verilog_includes(current):
+            resolved = resolve_include_file(include_name, current_dir, modules_root)
+
+            if resolved is None:
+                if missing is not None and include_name not in missing:
+                    missing.append(include_name)
+                continue
+
+            pending.append(resolved)
+
+    return dirs

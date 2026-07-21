@@ -141,28 +141,85 @@ resolve_include_incdir() {
     return 1
 }
 
+# Resuelve un `include a un PATH de archivo (no al directorio).
+# Misma regla que resolve_include_incdir: primero junto al archivo que lo
+# incluye, despues en $MODULES_ROOT/<modulo>/rtl/<archivo>.
+resolve_include_path() {
+    local include_file="$1"
+    local top_dir="$2"
+
+    local include_path
+    if [[ "$include_file" = /* ]]; then
+        include_path="$include_file"
+    else
+        include_path="$top_dir/$include_file"
+    fi
+
+    if [[ -f "$include_path" ]]; then
+        printf "%s\n" "$include_path"
+        return 0
+    fi
+
+    local include_base dep_module candidate
+    include_base="$(basename "$include_file")"
+    dep_module="${include_base%.*}"
+    candidate="$MODULES_ROOT/$dep_module/rtl/$include_base"
+
+    if [[ -f "$candidate" ]]; then
+        printf "%s\n" "$candidate"
+        return 0
+    fi
+
+    return 1
+}
+
+# RECURSIVO: sigue la cadena de includes (fft1d_r2.v -> cmul.v -> cast.v).
+# Sin recursion, un modulo que depende de otro de forma indirecta queda sin
+# su -i y el preprocesador falla.
 collect_incdirs_for_file() {
     local file="$1"
     local incdirs_array_name="$2"
+    local _seen_name="${3:-}"
 
     if [[ ! -f "$file" ]]; then
         flist_error "source file not found: $file"
         return 1
     fi
 
+    # lista de archivos ya visitados (evita ciclos)
+    local -a _local_seen
+    if [[ -z "$_seen_name" ]]; then
+        _local_seen=()
+        _seen_name="_local_seen"
+    fi
+    declare -n _seen="$_seen_name"
+
+    local file_real
+    file_real="$(cd "$(dirname "$file")" && pwd -P)/$(basename "$file")"
+
+    local s
+    for s in "${_seen[@]}"; do
+        [[ "$s" == "$file_real" ]] && return 0
+    done
+    _seen+=("$file_real")
+
     local file_dir
-    file_dir="$(cd "$(dirname "$file")" && pwd -P)" || return 1
+    file_dir="$(dirname "$file_real")"
 
     array_add_unique "$incdirs_array_name" "$file_dir"
 
-    local include_file
-    local include_dir
+    local include_file include_dir include_path
 
     while IFS= read -r include_file; do
         [[ -z "$include_file" ]] && continue
 
         include_dir="$(resolve_include_incdir "$include_file" "$file_dir")" || return 1
         array_add_unique "$incdirs_array_name" "$include_dir"
+
+        # bajar un nivel: el archivo incluido puede incluir otros
+        if include_path="$(resolve_include_path "$include_file" "$file_dir")"; then
+            collect_incdirs_for_file "$include_path" "$incdirs_array_name" "$_seen_name" || return 1
+        fi
     done < <(extract_verilog_includes "$file")
 }
 

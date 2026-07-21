@@ -93,6 +93,7 @@ export ${prefix}_TB_CPP="\$${prefix}_TB_DIR/${module_name}_tb.cpp"
 export ${prefix}_TB_HPP="\$${prefix}_TB_DIR/${module_name}_tb.hpp"
 export ${prefix}_TB_SV="\$${prefix}_TB_DIR/${module_name}_tb.sv"
 export ${prefix}_TB_REGRESSION_JSON="\$${prefix}_TB_DIR/${module_name}_tb_regression.json"
+export ${prefix}_GTEST_CPP="\$${prefix}/${module_name}_gtest.cpp"
 
 # Backward-compatible alias for simulation regression JSON
 export ${prefix}_REGRESSION_JSON="\$${prefix}_TB_REGRESSION_JSON"

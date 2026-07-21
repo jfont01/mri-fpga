@@ -84,8 +84,6 @@ module cast_tb;
         actual_csv_path      = {actual_dir, "/out_ports.csv"};
         actual_dat_path      = {actual_out_ports_dir, "/o_word.dat"};
 
-        void'($system({"mkdir -p \"", actual_out_ports_dir, "\""}));
-
         fd_i_word_dat = $fopen(stimuli_dat_path, "r");
         if (fd_i_word_dat == 0) begin
             $fatal(1, "[cast_tb] could not open input DAT: %s", stimuli_dat_path);

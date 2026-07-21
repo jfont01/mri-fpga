@@ -1,56 +1,4 @@
-#!/usr/bin/env bash
-
-# Este archivo debe ser sourced:
-#   source set_env.sh
-
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "[set_env.sh] ERROR: use: source set_env.sh" >&2
-    exit 1
-fi
-
-if [[ -z "${NEW_ARCH_TEST_DIR:-}" ]]; then
-    echo "[set_env.sh] ERROR: NEW_ARCH_TEST_DIR is not defined." >&2
-    return 1
-fi
-
-
-
-export PROJECT_ROOT="$NEW_ARCH_TEST_DIR"
-export MODULES_ROOT="$PROJECT_ROOT/modules"
-export FXP_MODEL_ROOT="$PROJECT_ROOT/model"
-export RTLSIM_ROOT="$PROJECT_ROOT/rtlsim"
-
-source "$PROJECT_ROOT/.venv/bin/activate"
-
-export SCRIPTS_DIR="$PROJECT_ROOT/scripts"
-export PYTHON_SCRIPTS_DIR="$SCRIPTS_DIR/python"
-export TCL_SCRIPTS_DIR="$SCRIPTS_DIR/tcl"
-export SHELL_SCRIPTS_DIR="$SCRIPTS_DIR/shell"
-
-export CONSTRAINTS_UTILS_SH="$SHELL_SCRIPTS_DIR/constraint_utils.sh"
-export FLIST_UTILS_SH="$SHELL_SCRIPTS_DIR/flist_utils.sh"
-export MODULE_UTILS_SH="$SHELL_SCRIPTS_DIR/module_utils.sh"
-export REGRESSION_UTILS_SH="$SHELL_SCRIPTS_DIR/regression_utils.sh"
-export XSIM_UTILS_SH="$SHELL_SCRIPTS_DIR/xsim_utils.sh"
-
-export RUN_XSIM_TCL="$TCL_SCRIPTS_DIR/run_xsim.tcl"
-export RUN_SYNTH_TCL="$TCL_SCRIPTS_DIR/run_synth.tcl"
-export RUN_IMPL_TCL="$TCL_SCRIPTS_DIR/run_impl.tcl"
-
-export RUN_REGRESSION_VM_PY="$PYTHON_SCRIPTS_DIR/run_regression_vm.py"
-export RUN_REGRESSION_SYNTH_PY="$PYTHON_SCRIPTS_DIR/run_regression_synth.py"
-export RUN_REGRESSION_IMPL_PY="$PYTHON_SCRIPTS_DIR/run_regression_impl.py"
-export RUN_REGRESSION_SIM_PY="$PYTHON_SCRIPTS_DIR/run_regression_sim.py"
-
-export MAKEFILE="$SCRIPTS_DIR/Makefile"
-
-export VIVADO_ROOT="/tools/Xilinx/Vivado"
-export VIVADO_VERSION="2024.2"
-export VIVADO_BIN="$VIVADO_ROOT/$VIVADO_VERSION/bin/vivado"
-export VIVADO_SETTINGS_64_SH="$VIVADO_ROOT/$VIVADO_VERSION/settings64.sh"
-
-source $VIVADO_SETTINGS_64_SH
-
+# ============================== Common Functions ==============================
 log() {
     echo "[set_env.sh] $*"
 }
@@ -66,6 +14,99 @@ source_project_script() {
     source "$script_path"
 }
 
+# ============================== Variables Checks ==============================
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    echo "[set_env.sh] ERROR: use: source set_env.sh" >&2
+    exit 1
+fi
+
+if [[ -z "${FPGA_MRI_ROOT:-}" ]]; then
+    echo "[set_env.sh] ERROR: FPGA_MRI_ROOT is not defined." >&2
+    return 1
+fi
+
+# ============================== Roots Paths ==============================
+export PROJECT_ROOT="$FPGA_MRI_ROOT"
+export MODULES_ROOT="$PROJECT_ROOT/modules"
+export FXP_MODEL_ROOT="$PROJECT_ROOT/model"
+export RTLSIM_ROOT="$PROJECT_ROOT/rtlsim"
+
+# ============================== Dirs Paths ==============================
+export SCRIPTS_DIR="$PROJECT_ROOT/scripts"
+export PYTHON_SCRIPTS_DIR="$SCRIPTS_DIR/python"
+export TCL_SCRIPTS_DIR="$SCRIPTS_DIR/tcl"
+export SHELL_SCRIPTS_DIR="$SCRIPTS_DIR/shell"
+
+# ============================== Shell Scripts ==============================
+export CONSTRAINTS_UTILS_SH="$SHELL_SCRIPTS_DIR/constraint_utils.sh"
+export FLIST_UTILS_SH="$SHELL_SCRIPTS_DIR/flist_utils.sh"
+export MODULE_UTILS_SH="$SHELL_SCRIPTS_DIR/module_utils.sh"
+export REGRESSION_UTILS_SH="$SHELL_SCRIPTS_DIR/regression_utils.sh"
+export XSIM_UTILS_SH="$SHELL_SCRIPTS_DIR/xsim_utils.sh"
+export PLATFORM_UTILS_SH="$SHELL_SCRIPTS_DIR/platform_utils.sh"
+export IVERILOG_UTILS_SH="$SHELL_SCRIPTS_DIR/iverilog_utils.sh"
+
+# ============================== TCL Scripts ==============================
+export RUN_XSIM_TCL="$TCL_SCRIPTS_DIR/run_xsim.tcl"
+export RUN_SYNTH_TCL="$TCL_SCRIPTS_DIR/run_synth.tcl"
+export RUN_IMPL_TCL="$TCL_SCRIPTS_DIR/run_impl.tcl"
+
+# ============================== Python Scripts ==============================
+export RUN_REGRESSION_VM_PY="$PYTHON_SCRIPTS_DIR/run_regression_vm.py"
+export RUN_REGRESSION_SYNTH_PY="$PYTHON_SCRIPTS_DIR/run_regression_synth.py"
+export RUN_REGRESSION_IMPL_PY="$PYTHON_SCRIPTS_DIR/run_regression_impl.py"
+export RUN_REGRESSION_SIM_PY="$PYTHON_SCRIPTS_DIR/run_regression_sim.py"
+export RUN_COMPILE_RTL_PY="$PYTHON_SCRIPTS_DIR/run_compile_rtl.py"
+export RUN_LINT_PY="$PYTHON_SCRIPTS_DIR/run_lint.py"
+export RUN_GTEST_PY="$PYTHON_SCRIPTS_DIR/run_gtest.py"
+
+
+# ============================== Makefile ==============================
+export MAKEFILE="$SCRIPTS_DIR/Makefile"
+
+# ============================== Platform detect ==============================
+source_project_script "$PLATFORM_UTILS_SH" || return 1
+export PLATFORM="$(detect_platform)"
+export SIM_BACKEND="$(select_sim_backend)"
+
+if [[ "$PLATFORM" == "linux" ]]; then
+    source "$PROJECT_ROOT/.venv/bin/activate"
+    log "venv activated in Linux"
+else
+    log "using MSYS Python packages installed with"
+fi 
+if platform_has_vivado; then
+    export VIVADO_ROOT="/tools/Xilinx/Vivado"
+    export VIVADO_VERSION="2024.2"
+    export VIVADO_BIN="$VIVADO_ROOT/$VIVADO_VERSION/bin/vivado"
+    export VIVADO_SETTINGS_64_SH="$VIVADO_ROOT/$VIVADO_VERSION/settings64.sh"
+    source "$VIVADO_SETTINGS_64_SH"
+else
+    log "Vivado no disponible en plataforma '$PLATFORM' -- se usará $SIM_BACKEND para simulación"
+fi
+
+# ============================== Platform detect ==============================
+mkdir -p "$MODULES_ROOT"
+
+source_project_script "$MODULE_UTILS_SH" || return 1
+source_module_vars
+source_project_script "$CONSTRAINTS_UTILS_SH" || return 1
+source_project_script "$FLIST_UTILS_SH" || return 1
+source_project_script "$REGRESSION_UTILS_SH" || return 1
+if platform_has_vivado; then
+    source_project_script "$XSIM_UTILS_SH" || return 1
+else
+    source_project_script "$IVERILOG_UTILS_SH" || return 1
+fi
+
+# ============================== Echos ==============================
+log "environment loaded"
+log "PROJECT_ROOT=$PROJECT_ROOT"
+log "MODULES_ROOT=$MODULES_ROOT"
+log "FXP_MODEL_ROOT=$FXP_MODEL_ROOT"
+
+
+# ============================== Help function ==============================
 help_env() {
     cat <<EOF
 [set_env.sh] Available commands
@@ -120,6 +161,32 @@ Synthesis:
         run_regression_synth --list-cases
         run_regression_synth --keep-going
 
+Unit tests (modelo C++):
+  run_gtest [options]
+      Corre Google Test sobre el modelo, en modo fixed y double.
+      Casos desde: testbench/<module>_gtest_regression.json
+      
+      Outputs: build/<case>_<mode>/reports/gtest.{rpt,xml}
+      
+      Examples:
+        run_gtest --list-cases
+        run_gtest --mode double
+        run_gtest --case q2_14 --gtest-filter 'CmulModel.Overflow*'
+        run_gtest --keep-going
+
+Compile checks:
+  run_compile_rtl [--testbench]
+      Compila y elabora el RTL del módulo actual con los DEFAULTS de los
+      parámetros (sin defines). No simula ni necesita vectores.
+
+      --testbench / -t
+          Incluye además el testbench y elabora con top = <module>_tb.
+          Sirve para cazar errores de sintaxis del .sv sin correr el vm.
+          
+      Ejemplos:
+        run_compile_rtl                # solo el RTL
+        run_compile_rtl --testbench    # RTL + testbench
+
 Generated module structure:
   modules/<module_name>/
     build/
@@ -146,25 +213,7 @@ Deprecated in the new layout:
   modules/<module_name>/<module_name>.conf
 
 Example:
-  create_module kernel_Aij
+  create_module fft2d
 
 EOF
 }
-
-mkdir -p "$MODULES_ROOT"
-
-source "$MODULE_UTILS_SH"
-
-source_module_vars
-
-source_project_script "$CONSTRAINTS_UTILS_SH" || return 1
-source_project_script "$FLIST_UTILS_SH" || return 1
-source_project_script "$MODULE_UTILS_SH" || return 1
-source_project_script "$REGRESSION_UTILS_SH" || return 1
-source_project_script "$XSIM_UTILS_SH" || return 1
-
-
-log "environment loaded"
-log "PROJECT_ROOT=$PROJECT_ROOT"
-log "MODULES_ROOT=$MODULES_ROOT"
-log "FXP_MODEL_ROOT=$FXP_MODEL_ROOT"
