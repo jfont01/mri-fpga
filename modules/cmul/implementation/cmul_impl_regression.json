@@ -3,11 +3,7 @@
   "defaults": {
     "PART_NAME": "xck26-sfvc784-2LV-c",
     "CLOCK_PERIOD_NS": 5.0,
-    "CLOCK_UNCERTAINTY_NS": 0.05,
-    "limits": {
-      "MIN_WNS_NS": -100.0,
-      "MIN_WHS_NS": -100.0
-    }
+    "CLOCK_UNCERTAINTY_NS": 0.05
   },
   "cases": [
     {
