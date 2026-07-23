@@ -447,7 +447,7 @@ public:
     }
 
     template <typename T>
-    void add_out_reg_o(const std::string& name, const Reg<T>& reg)
+    void add_reg_o(const std::string& name, const Reg<T>& reg)
     {
         out_ports.add_signal(name + ".o", [&reg]() {
             return reg.o;

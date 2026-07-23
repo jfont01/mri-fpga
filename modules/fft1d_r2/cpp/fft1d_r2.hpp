@@ -58,18 +58,18 @@ enum parameters : int {
  * --------------------------------------------------------------------------
  */
 
-constexpr int ct_log2(int n)
-{
-    return (n <= 1) ? 0 : 1 + ct_log2(n / 2);
-}
+constexpr int ct_clog2(int n) { int r = 0; while ((1 << r) < n) ++r; return r; }
 
 enum localparameters : int {
     NBI   = NB - NBF,   // bits enteros (incluye el signo). Default: 1 -> Q1.15
-    LOG2N = ct_log2(N), // cantidad de etapas (6 para N=64)
+    LOG2N = ct_clog2(N), // cantidad de etapas (6 para N=64)
     NH    = N / 2,      // mariposas por etapa / entradas de la ROM de twiddles
     LOADING_state = 0,
     COMPUTE_state = 1,
-    OUTPUT_state = 2
+    OUTPUT_state = 2 ,
+    NB_COUNT = LOG2N,
+    NB_STAGE = ct_clog2(LOG2N),
+    NB_BTFLY = LOG2N - 1
 };
 
 /*
@@ -87,7 +87,12 @@ enum localparameters : int {
  * datapath de punto fijo del proyecto.
  */
 
-using bit_t = rtl::bit_t;
+using bit_t     = rtl::bit_t;
+using state_t   = ap_uint<2>;
+using count_t   = ap_uint<NB_COUNT>;
+using stage_t   = ap_uint<NB_STAGE>;
+using btfly_t   = ap_uint<NB_BTFLY>;
+
 #ifdef DOUBLE
     using in_t  = double;
     using out_t = double;
@@ -147,6 +152,11 @@ public:
     rtl::OutPort<out_t>  o_re;
     rtl::OutPort<out_t>  o_im;
 
+    rtl::Reg<state_t> r_state;
+    rtl::Reg<count_t> r_count; // usado en LOADING y en OUTPUT (0..N-1)
+    rtl::Reg<stage_t> r_stage; // usado en COMPUTE (0..LOG2N-1)
+    rtl::Reg<btfly_t> r_btfly;    // usado en COMPUTE (0..N/2-1)
+
     void connect_clocks(rtl::ClockDomain& clk) override;
     void init() override;
     void combinational() override;
@@ -161,16 +171,6 @@ private:
 
     static int bit_reverse(int x, int bits);
 
-    /*
-     * ------------------------------------------------------------------
-     * Registers (FSM + contadores)
-     * ------------------------------------------------------------------
-     */
-
-    rtl::Reg<int> r_state;
-    rtl::Reg<int> r_count; // usado en LOADING y en OUTPUT (0..N-1)
-    rtl::Reg<int> r_stage; // usado en COMPUTE (0..LOG2N-1)
-    rtl::Reg<int> r_btfly;    // usado en COMPUTE (0..N/2-1)
 
     /*
      * ------------------------------------------------------------------

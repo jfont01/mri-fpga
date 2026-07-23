@@ -140,6 +140,12 @@ void run_tb(const tb_args& args)
     vectors.add_out_port("o_re",    dut.o_re);
     vectors.add_out_port("o_im",    dut.o_im);
 
+    vectors.add_reg_o("r_state", dut.r_state);
+    vectors.add_reg_o("r_count", dut.r_count);
+    vectors.add_reg_o("r_stage", dut.r_stage);
+    vectors.add_reg_o("r_btfly", dut.r_btfly);
+
+
     for (int cycle = 0; cycle < args.n_cycles; ++cycle) {
         bool  v = false;
         in_t  re(0);
