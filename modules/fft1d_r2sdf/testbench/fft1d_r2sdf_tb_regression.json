@@ -1,0 +1,32 @@
+{
+  "regression_dir": "build",
+  "defaults": {
+    "auto_defines": true
+  },
+  "cases": [
+    {
+      "name": "n64_q1_15_sine_k3",
+      "N": 64,
+      "NB": 16,
+      "NBF": 15,
+      "N_CYCLES": 144,
+      "TW_DIR": "/home/jfont/Desktop/mri-fpga/modules/fft1d_r2sdf/rtl/twiddles/n64"
+    },
+    {
+      "name": "n256_q1_15_sine_k3",
+      "N": 256,
+      "NB": 16,
+      "NBF": 15,
+      "N_CYCLES": 528,
+      "TW_DIR": "/home/jfont/Desktop/mri-fpga/modules/fft1d_r2sdf/rtl/twiddles/n256"
+    },
+    {
+      "name": "n1024_q1_15_sine_k3",
+      "N": 1024,
+      "NB": 16,
+      "NBF": 15,
+      "N_CYCLES": 2064,
+      "TW_DIR": "/home/jfont/Desktop/mri-fpga/modules/fft1d_r2sdf/rtl/twiddles/n1024"
+    }
+  ]
+}
