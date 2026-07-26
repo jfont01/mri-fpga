@@ -86,15 +86,11 @@ y armar el resto del pipeline.
 - Explicame las cosas en detalle, con fórmulas, cuando sea relevante.
 
 ## Bibliografía que estoy usando
-- Pruessmann et al. 1999 (SENSE, paper original)
-- Roemer et al. 1990 (NMR phased array, RSS)
-- Uecker et al. 2014 (ESPIRiT)
-- Garrido 2022 (survey de arquitecturas FFT pipelined)
-- Brown/Cheng/Haacke, MRI: Physical Principles (cap. 28, parallel imaging)
-- Akçakaya et al., MR Image Reconstruction (cap. 2-3, 6)
-- Paul & Mathew, Regularized Image Reconstruction in Parallel MRI (cap. 2,
-  regularización de Tikhonov)
-- Khan, Digital Design of Signal Processing Systems
-- Handbook of Real-Time Fast Fourier Transforms: Algorithms to Product Testing by 
-  Winthrop W. Smith, Joanne M. Smith (1995)
-- Eres libre de proponer Bibliografía tal como Libros/Papers
+- VER LO SUBIDO EN EL PROYECTO
+- Eres libre de proponerme papers y bibliografia, de hecho te lo agradeceria. 
+Tanto en lo referente a arquitecturas eficientes para fft1d/2d en función de lo que 
+quiero hacer y la placa con la que estoy trabajando, asi como lo referente al algoritmo SENSE y el 
+problema de MRI en tiempo real que quiero resolver en la FPGA.
+
+
+
