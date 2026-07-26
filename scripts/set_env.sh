@@ -59,6 +59,7 @@ export RUN_REGRESSION_SIM_PY="$PYTHON_SCRIPTS_DIR/run_regression_sim.py"
 export RUN_COMPILE_RTL_PY="$PYTHON_SCRIPTS_DIR/run_compile_rtl.py"
 export RUN_LINT_PY="$PYTHON_SCRIPTS_DIR/run_lint.py"
 export RUN_GTEST_PY="$PYTHON_SCRIPTS_DIR/run_gtest.py"
+export RUN_PLOT_FFT1D_PY="$PYTHON_SCRIPTS_DIR/run_plot_fft1d.py"
 
 
 # ============================== Makefile ==============================

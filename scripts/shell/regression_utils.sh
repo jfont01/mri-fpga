@@ -91,3 +91,15 @@ run_gtest() {
  
     python3 "$RUN_GTEST_PY" "$@"
 }
+
+run_plot_fft1d () {
+    if [[ -z "${PROJECT_ROOT:-}" ]]; then
+        echo "[regression_utils.sh] ERROR: PROJECT_ROOT is not defined." >&2
+        return 1
+    fi
+ 
+    if [[ ! -f "$RUN_PLOT_FFT1D_PY" ]]; then
+        echo "[regression_utils.sh] ERROR: missing run_plot_fft1d.py: $RUN_PLOT_FFT1D_PY" >&2
+        return 1
+    fi
+}
