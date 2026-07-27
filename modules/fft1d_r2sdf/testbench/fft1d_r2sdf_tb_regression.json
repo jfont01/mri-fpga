@@ -6,27 +6,108 @@
   "cases": [
     {
       "name": "n64_q1_15_sine_k3",
-      "N": 64,
-      "NB": 16,
-      "NBF": 15,
-      "N_CYCLES": 144,
-      "TW_DIR": "/home/jfont/Desktop/mri-fpga/modules/fft1d_r2sdf/rtl/twiddles/n64"
+      "N": 64, "NB": 16, "NBF": 15, "N_CYCLES": 144,
+      "TW_DIR": "rtl/twiddles/n64",
+      "STIM_TYPE": 0, "STIM_NTONES": 1,
+      "STIM_K0": 3, "STIM_A0": 500,
+      "PLOT_REORDER": "bitrev"
     },
     {
       "name": "n256_q1_15_sine_k3",
-      "N": 256,
-      "NB": 16,
-      "NBF": 15,
-      "N_CYCLES": 528,
-      "TW_DIR": "/home/jfont/Desktop/mri-fpga/modules/fft1d_r2sdf/rtl/twiddles/n256"
+      "N": 256, "NB": 16, "NBF": 15, "N_CYCLES": 528,
+      "TW_DIR": "rtl/twiddles/n256",
+      "STIM_TYPE": 0, "STIM_NTONES": 1,
+      "STIM_K0": 3, "STIM_A0": 500,
+      "PLOT_REORDER": "bitrev"
     },
     {
       "name": "n1024_q1_15_sine_k3",
-      "N": 1024,
-      "NB": 16,
-      "NBF": 15,
-      "N_CYCLES": 2064,
-      "TW_DIR": "/home/jfont/Desktop/mri-fpga/modules/fft1d_r2sdf/rtl/twiddles/n1024"
+      "N": 1024, "NB": 16, "NBF": 15, "N_CYCLES": 2064,
+      "TW_DIR": "rtl/twiddles/n1024",
+      "STIM_TYPE": 0, "STIM_NTONES": 1,
+      "STIM_K0": 3, "STIM_A0": 500,
+      "PLOT_REORDER": "bitrev"
+    },
+    {
+      "name": "n64_q1_15_multitone_3",
+      "N": 64, "NB": 16, "NBF": 15, "N_CYCLES": 144,
+      "TW_DIR": "rtl/twiddles/n64",
+      "STIM_TYPE": 0, "STIM_NTONES": 3,
+      "STIM_K0": 3,  "STIM_A0": 300,
+      "STIM_K1": 7,  "STIM_A1": 200,
+      "STIM_K2": 12, "STIM_A2": 150,
+      "PLOT_REORDER": "bitrev"
+    },
+    {
+      "name": "n256_q1_15_multitone_5",
+      "N": 256, "NB": 16, "NBF": 15, "N_CYCLES": 528,
+      "TW_DIR": "rtl/twiddles/n256",
+      "STIM_TYPE": 0, "STIM_NTONES": 5,
+      "STIM_K0": 10,  "STIM_A0": 300,
+      "STIM_K1": 25,  "STIM_A1": 250,
+      "STIM_K2": 50,  "STIM_A2": 200,
+      "STIM_K3": 90,  "STIM_A3": 150,
+      "STIM_K4": 130, "STIM_A4": 100,
+      "PLOT_REORDER": "bitrev"
+    },
+    {
+      "name": "n64_q1_15_chirp",
+      "N": 64, "NB": 16, "NBF": 15, "N_CYCLES": 144,
+      "TW_DIR": "rtl/twiddles/n64",
+      "STIM_TYPE": 1,
+      "STIM_CHIRP_K0": 2, "STIM_CHIRP_K1": 28, "STIM_CHIRP_AMP": 500,
+      "PLOT_REORDER": "bitrev"
+    },
+    {
+      "name": "n256_q1_15_chirp",
+      "N": 256, "NB": 16, "NBF": 15, "N_CYCLES": 528,
+      "TW_DIR": "rtl/twiddles/n256",
+      "STIM_TYPE": 1,
+      "STIM_CHIRP_K0": 5, "STIM_CHIRP_K1": 120, "STIM_CHIRP_AMP": 500,
+      "PLOT_REORDER": "bitrev"
+    },
+    {
+      "name": "n64_q1_15_impulse",
+      "N": 64, "NB": 16, "NBF": 15, "N_CYCLES": 144,
+      "TW_DIR": "rtl/twiddles/n64",
+      "STIM_TYPE": 2,
+      "STIM_IMP_POS": 0, "STIM_IMP_AMP": 900,
+      "STIM_NORMALIZE": 0,
+      "PLOT_REORDER": "bitrev"
+    },
+    {
+      "name": "n64_q1_15_noise",
+      "N": 64, "NB": 16, "NBF": 15, "N_CYCLES": 144,
+      "TW_DIR": "rtl/twiddles/n64",
+      "STIM_TYPE": 3,
+      "STIM_NOISE_SEED": 12345, "STIM_NOISE_AMP": 300,
+      "PLOT_REORDER": "bitrev"
+    },
+    {
+      "name": "n64_q1_15_multitone_2",
+      "N": 64, "NB": 16, "NBF": 15, "N_CYCLES": 144,
+      "TW_DIR": "rtl/twiddles/n64",
+      "STIM_TYPE": 0, "STIM_NTONES": 2,
+      "STIM_K0": 3,  "STIM_A0": 300,
+      "STIM_K1": 7,  "STIM_A1": 200,
+      "PLOT_REORDER": "bitrev"
+    },
+    {
+      "name": "n1024_q1_15_chirp",
+      "N": 1024, "NB": 16, "NBF": 15, "N_CYCLES": 4000,
+      "TW_DIR": "rtl/twiddles/n1024",
+      "STIM_TYPE": 1,
+      "STIM_CHIRP_K0": 5, "STIM_CHIRP_K1": 120, "STIM_CHIRP_AMP": 500,
+      "PLOT_REORDER": "bitrev"
+    },
+    {
+      "name": "n1024_q1_15_multitone_2",
+      "N": 1024, "NB": 16, "NBF": 15, "N_CYCLES": 4000,
+      "TW_DIR": "rtl/twiddles/n1024",
+      "STIM_TYPE": 0, "STIM_NTONES": 2,
+      "STIM_K0": 3,  "STIM_A0": 300,
+      "STIM_K1": 7,  "STIM_A1": 200,
+      "PLOT_REORDER": "bitrev"
     }
   ]
 }

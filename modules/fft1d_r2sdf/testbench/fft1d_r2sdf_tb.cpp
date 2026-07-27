@@ -30,6 +30,121 @@
 
 #include "fft1d_r2sdf_tb.hpp"
 
+/*
+ * Puente de prefijos para el estimulo.
+ *
+ * auto_defines convierte las claves del JSON en FFT1D_R2SDF_<KEY>, pero el
+ * header de estimulos (fft1d_stimulus.hpp) es generico y usa el prefijo
+ * FFT1D_STIM_<...> (para poder reusarlo en r22sdf y otros modulos). Aca
+ * traducimos: si el build system definio FFT1D_R2SDF_STIM_X, lo reexponemos
+ * como FFT1D_STIM_X ANTES de incluir el header. Asi el JSON usa el prefijo del
+ * modulo y el header queda desacoplado.
+ */
+#ifdef FFT1D_R2SDF_STIM_TYPE
+#define FFT1D_STIM_TYPE FFT1D_R2SDF_STIM_TYPE
+#endif
+#ifdef FFT1D_R2SDF_STIM_NTONES
+#define FFT1D_STIM_NTONES FFT1D_R2SDF_STIM_NTONES
+#endif
+#ifdef FFT1D_R2SDF_STIM_K0
+#define FFT1D_STIM_K0 FFT1D_R2SDF_STIM_K0
+#endif
+#ifdef FFT1D_R2SDF_STIM_A0
+#define FFT1D_STIM_A0 FFT1D_R2SDF_STIM_A0
+#endif
+#ifdef FFT1D_R2SDF_STIM_PH0
+#define FFT1D_STIM_PH0 FFT1D_R2SDF_STIM_PH0
+#endif
+#ifdef FFT1D_R2SDF_STIM_K1
+#define FFT1D_STIM_K1 FFT1D_R2SDF_STIM_K1
+#endif
+#ifdef FFT1D_R2SDF_STIM_A1
+#define FFT1D_STIM_A1 FFT1D_R2SDF_STIM_A1
+#endif
+#ifdef FFT1D_R2SDF_STIM_PH1
+#define FFT1D_STIM_PH1 FFT1D_R2SDF_STIM_PH1
+#endif
+#ifdef FFT1D_R2SDF_STIM_K2
+#define FFT1D_STIM_K2 FFT1D_R2SDF_STIM_K2
+#endif
+#ifdef FFT1D_R2SDF_STIM_A2
+#define FFT1D_STIM_A2 FFT1D_R2SDF_STIM_A2
+#endif
+#ifdef FFT1D_R2SDF_STIM_PH2
+#define FFT1D_STIM_PH2 FFT1D_R2SDF_STIM_PH2
+#endif
+#ifdef FFT1D_R2SDF_STIM_K3
+#define FFT1D_STIM_K3 FFT1D_R2SDF_STIM_K3
+#endif
+#ifdef FFT1D_R2SDF_STIM_A3
+#define FFT1D_STIM_A3 FFT1D_R2SDF_STIM_A3
+#endif
+#ifdef FFT1D_R2SDF_STIM_PH3
+#define FFT1D_STIM_PH3 FFT1D_R2SDF_STIM_PH3
+#endif
+#ifdef FFT1D_R2SDF_STIM_K4
+#define FFT1D_STIM_K4 FFT1D_R2SDF_STIM_K4
+#endif
+#ifdef FFT1D_R2SDF_STIM_A4
+#define FFT1D_STIM_A4 FFT1D_R2SDF_STIM_A4
+#endif
+#ifdef FFT1D_R2SDF_STIM_PH4
+#define FFT1D_STIM_PH4 FFT1D_R2SDF_STIM_PH4
+#endif
+#ifdef FFT1D_R2SDF_STIM_K5
+#define FFT1D_STIM_K5 FFT1D_R2SDF_STIM_K5
+#endif
+#ifdef FFT1D_R2SDF_STIM_A5
+#define FFT1D_STIM_A5 FFT1D_R2SDF_STIM_A5
+#endif
+#ifdef FFT1D_R2SDF_STIM_PH5
+#define FFT1D_STIM_PH5 FFT1D_R2SDF_STIM_PH5
+#endif
+#ifdef FFT1D_R2SDF_STIM_K6
+#define FFT1D_STIM_K6 FFT1D_R2SDF_STIM_K6
+#endif
+#ifdef FFT1D_R2SDF_STIM_A6
+#define FFT1D_STIM_A6 FFT1D_R2SDF_STIM_A6
+#endif
+#ifdef FFT1D_R2SDF_STIM_PH6
+#define FFT1D_STIM_PH6 FFT1D_R2SDF_STIM_PH6
+#endif
+#ifdef FFT1D_R2SDF_STIM_K7
+#define FFT1D_STIM_K7 FFT1D_R2SDF_STIM_K7
+#endif
+#ifdef FFT1D_R2SDF_STIM_A7
+#define FFT1D_STIM_A7 FFT1D_R2SDF_STIM_A7
+#endif
+#ifdef FFT1D_R2SDF_STIM_PH7
+#define FFT1D_STIM_PH7 FFT1D_R2SDF_STIM_PH7
+#endif
+#ifdef FFT1D_R2SDF_STIM_CHIRP_K0
+#define FFT1D_STIM_CHIRP_K0 FFT1D_R2SDF_STIM_CHIRP_K0
+#endif
+#ifdef FFT1D_R2SDF_STIM_CHIRP_K1
+#define FFT1D_STIM_CHIRP_K1 FFT1D_R2SDF_STIM_CHIRP_K1
+#endif
+#ifdef FFT1D_R2SDF_STIM_CHIRP_AMP
+#define FFT1D_STIM_CHIRP_AMP FFT1D_R2SDF_STIM_CHIRP_AMP
+#endif
+#ifdef FFT1D_R2SDF_STIM_IMP_POS
+#define FFT1D_STIM_IMP_POS FFT1D_R2SDF_STIM_IMP_POS
+#endif
+#ifdef FFT1D_R2SDF_STIM_IMP_AMP
+#define FFT1D_STIM_IMP_AMP FFT1D_R2SDF_STIM_IMP_AMP
+#endif
+#ifdef FFT1D_R2SDF_STIM_NOISE_SEED
+#define FFT1D_STIM_NOISE_SEED FFT1D_R2SDF_STIM_NOISE_SEED
+#endif
+#ifdef FFT1D_R2SDF_STIM_NOISE_AMP
+#define FFT1D_STIM_NOISE_AMP FFT1D_R2SDF_STIM_NOISE_AMP
+#endif
+#ifdef FFT1D_R2SDF_STIM_NORMALIZE
+#define FFT1D_STIM_NORMALIZE FFT1D_R2SDF_STIM_NORMALIZE
+#endif
+
+#include "fft1d_stimulus.hpp"
+
 #include "rtlsim.hpp"
 
 #include <cmath>
@@ -52,23 +167,29 @@ namespace {
 constexpr double PI = 3.14159265358979323846;
 
 /*
- * Estimulo: un frame de senoidal compleja (k0, amp) durante los primeros N
- * ciclos, seguido de idle (i_valid=0) para drenar la latencia del pipeline.
+ * Estimulo configurable por defines (ver fft1d_stimulus.hpp): multitono,
+ * chirp, impulso o ruido, con parametros que llegan desde el JSON via
+ * auto_defines. El frame de N muestras se precalcula UNA vez y luego se
+ * entrega muestra a muestra.
  *
- * A diferencia del iterativo, aca i_valid=1 se mantiene N ciclos SEGUIDOS: el
- * R2SDF exige una muestra por ciclo sin huecos dentro del frame.
+ * i_valid=1 se mantiene N ciclos SEGUIDOS: el R2SDF exige una muestra por
+ * ciclo sin huecos dentro del frame. Tras el frame, idle para drenar la
+ * latencia del pipeline.
  */
-constexpr int    K0  = 3;
-constexpr double AMP = 0.5;
+std::vector<double> g_stim_re;
+std::vector<double> g_stim_im;
+
+void init_stimulus()
+{
+    fft1d_stimulus::generate_frame(N, g_stim_re, g_stim_im);
+}
 
 void frame_stimulus(int cycle, bool& valid, in_t& re, in_t& im)
 {
     if (cycle < N) {
-        const double angle = 2.0 * PI * static_cast<double>(K0)
-                             * static_cast<double>(cycle) / static_cast<double>(N);
         valid = true;
-        re = in_t(AMP * std::cos(angle));
-        im = in_t(AMP * std::sin(angle));
+        re = in_t(g_stim_re[cycle]);
+        im = in_t(g_stim_im[cycle]);
     }
     else {
         valid = false;
@@ -150,6 +271,11 @@ void run_tb(const tb_args& args)
     vectors.add_reg_o("r_count",     dut.r_count);
     vectors.add_reg_o("r_out_valid", dut.r_out_valid);
 
+    // Precalcula el frame de estimulo (tipo y parametros vienen de defines).
+    init_stimulus();
+    std::cout << "[fft1d_r2sdf_tb] stimulus: " << fft1d_stimulus::type_name()
+              << "  N=" << N << "\n";
+
     for (int cycle = 0; cycle < args.n_cycles; ++cycle) {
         bool  v = false;
         in_t  re(0);
@@ -181,7 +307,7 @@ void run_tb(const tb_args& args)
     report_file << "LOG2N       : " << fft1d_r2sdf::LOG2N   << "\n";
     report_file << "LATENCY     : " << fft1d_r2sdf::LATENCY << " (+1 por reg de salida -> N)\n";
     report_file << "\n";
-    report_file << "stimulus    : complex sine k0=" << K0 << " amp=" << AMP << "\n";
+    report_file << "stimulus    : " << fft1d_stimulus::type_name() << "\n";
     report_file << "\n";
 
     report_file << "input_csv   : " << vectors.in_ports_csv()  << "\n";

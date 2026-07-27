@@ -1,7 +1,6 @@
 `timescale 1ns/1ps
 `default_nettype none
 
-
 `ifndef FFT1D_R2SDF_N
 `define FFT1D_R2SDF_N 512
 `endif
@@ -12,12 +11,20 @@
 `define FFT1D_R2SDF_NBF 15
 `endif
 `ifndef FFT1D_R2SDF_TW_DIR
-`define FFT1D_R2SDF_TW_DIR "twiddles"
+`define FFT1D_R2SDF_TW_DIR twiddles
 `endif
 
+/*
+ * STRINGIFY: convierte un token del preprocesador en un string literal.
+ *
+ * Esto permite pasar TW_DIR por -d SIN comillas:
+ *     xvlog -d FFT1D_R2SDF_TW_DIR=/ruta/a/twiddles/n64
+ * en vez de con comillas literales (-d ...=\"/ruta\"), que se rompen al pasar
+ * por el shell y por el exec de Tcl (bash Linux, MSYS y cmd las escapan
+ * distinto -> no portable). Con STRINGIFY las comillas las agrega Verilog, no
+ * el shell: el path viaja crudo y el `" del preprocesador lo entrecomilla aca.
+ */
 `define STRINGIFY(x) `"x`"
-
-
 
 // -----------------------------------------------------------------------------
 // fft1d_r2sdf_tb -- testbench del pipeline vm para el R2SDF.
@@ -178,17 +185,28 @@ module fft1d_r2sdf_tb;
         $fwrite(fd__csv, "cycle,o_valid,o_last,o_re,o_im,r_count,r_out_valid\n");
 
         // ---------------------------------------- reset (= init del modelo)
+        //
+        // El modelo C++ arranca con init() (count=0) y su primer sim.cycle()
+        // lleva count a 1. Para alinear el RTL (reset SINCRONO, activo alto):
+        // se aplica i_rst=1 y se pasa UN posedge (r_count <= 0), luego se
+        // suelta i_rst en el negedge siguiente. El lazo NO debe empezar con
+        // otro negedge: por eso el @(negedge) inicial del lazo se saca y el
+        // input del primer ciclo se setea aca mismo tras soltar el reset.
         i_rst   = 1'b1;
         i_valid = 1'b0;
         i_re    = '0;
         i_im    = '0;
+        @(posedge i_clock);   // r_count <= 0 (reset sincrono)
         @(negedge i_clock);
-        @(posedge i_clock);   // el modelo arranca sin consumir ciclo
-        i_rst = 1'b0;
+        i_rst = 1'b0;         // reset liberado; el proximo posedge ya cuenta
 
         // ------------------------------------------------- lazo por ciclo
+        // Cada iteracion: se coloca el estimulo (ya en fase de nivel bajo del
+        // clock), se cruza el posedge (avanza el RTL) y se muestrea tras #1.
+        // La primera iteracion aprovecha el negedge en que se solto el reset.
         for (int cycle = 0; cycle < n_cycles; cycle++) begin
-            @(negedge i_clock);
+            if (cycle != 0)
+                @(negedge i_clock);
 
             if ($fscanf(fd__i_valid, "%d", s__i_valid) != 1)
                 $fatal(1, "[fft1d_r2sdf_tb] i_valid: faltan muestras en cycle=%0d", cycle);

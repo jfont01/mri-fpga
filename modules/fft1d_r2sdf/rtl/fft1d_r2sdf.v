@@ -125,7 +125,11 @@ module fft1d_r2sdf #(
     end
   end
 
-  assign o_cplx_sample = r_out;
+  // Cuando r_out_valid=0 la salida es basura del pipeline sin cebar (puede ser
+  // X en el arranque de simulacion). Se fuerza a 0 para espejar el modelo C++
+  // y para que el vm no compare muestras invalidas. Es solo un mux de salida;
+  // la muestra valida no se altera.
+  assign o_cplx_sample = r_out_valid ? r_out : {(2*NB){1'b0}};
   assign o_valid       = r_out_valid;
   assign o_last        = r_out_last;
 

@@ -152,10 +152,14 @@ void fft1d_r2sdf_model::combinational()
         v_im = y_im;
     }
 
-    // las salidas salen del registro: funcion del estado, no de la entrada
-    o_re    = r_out_re.o;
-    o_im    = r_out_im.o;
-    o_valid = bit_t(r_out_valid.o);
+    // las salidas salen del registro: funcion del estado, no de la entrada.
+    // Cuando o_valid=0 la salida es basura del pipeline sin cebar (en RTL puede
+    // ser X en el arranque de simulacion); se fuerza a 0 para que el vm no
+    // compare muestras invalidas. La salida valida no se altera.
+    const bool ov = r_out_valid.o;
+    o_valid = bit_t(ov);
+    o_re    = ov ? r_out_re.o : out_t(0);
+    o_im    = ov ? r_out_im.o : out_t(0);
 
     // se guardan para que sequential() los cargue en el registro de salida
     chain_re_ = v_re;
