@@ -206,7 +206,7 @@ def make_figure(x_in, X_out, N, order, info, title, out_png, k0=None):
 # ----------------------------------------------------------------------
 # Procesar un caso para una fuente (expected|actual)
 # ----------------------------------------------------------------------
-def plot_one(case_name, case_dir, params, src, k0_override):
+def plot_one(case_name, case_dir, params, src, k0_override, reorder_override):
     vroot = case_dir / "simulation" / "vectors"
     in_dir = vroot / "stimuli" / "in_ports"
     out_dir = vroot / src / "out_ports"
@@ -250,11 +250,23 @@ def plot_one(case_name, case_dir, params, src, k0_override):
     k0, k0_src = resolve_k0(case_name, case_dir, k0_override)
     order, info = detect_order(X_raw, k0=k0)
 
+    # Modo de reorden: prioridad CLI > PLOT_REORDER del JSON > 'auto'.
+    reorder = reorder_override or str(params.get("PLOT_REORDER", "auto")).lower()
+
     X_out, applied = X_raw, "none"
-    if order == "bitrev":
+    if reorder == "bitrev":
+        # Forzado: la salida del R2SDF siempre es bit-reversed. Util para
+        # multitono/chirp/ruido, donde no hay pico unico que detectar.
         X_out = bitrev_permute(X_raw)
         order, info = detect_order(X_out, k0=k0)
-        applied = "bitrev(auto)"
+        applied = "bitrev(forzado)"
+    elif reorder == "none":
+        applied = "none(forzado)"
+    else:  # auto
+        if order == "bitrev":
+            X_out = bitrev_permute(X_raw)
+            order, info = detect_order(X_out, k0=k0)
+            applied = "bitrev(auto)"
 
     plots_dir = case_dir / "plots"
     plots_dir.mkdir(parents=True, exist_ok=True)
@@ -278,6 +290,10 @@ def main():
     ap.add_argument("--only", type=str, default=None, help="plotear solo este caso")
     ap.add_argument("--k0", type=int, default=None, help="forzar k0 (sobreescribe autodeteccion)")
     ap.add_argument("--json", type=Path, default=None, help="ruta al JSON de regresion (override)")
+    ap.add_argument("--reorder", choices=["auto", "none", "bitrev"], default=None,
+                    help="reordenamiento de la salida: auto (detecta por el pico), "
+                         "bitrev (fuerza bit-reversed->natural), none (grafica cruda). "
+                         "Si se omite, usa PLOT_REORDER del caso en el JSON, o 'auto'.")
     args = ap.parse_args()
 
     module_name, module_dir, prefix = detect_current_module()
@@ -326,7 +342,7 @@ def main():
 
         for src in srcs:
             total += 1
-            if plot_one(name, case_dir, params, src, args.k0):
+            if plot_one(name, case_dir, params, src, args.k0, args.reorder):
                 done += 1
 
     print(f"\n[run_plot_fft1d] figuras generadas: {done}/{total}")

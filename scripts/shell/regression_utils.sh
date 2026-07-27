@@ -102,4 +102,6 @@ run_plot_fft1d () {
         echo "[regression_utils.sh] ERROR: missing run_plot_fft1d.py: $RUN_PLOT_FFT1D_PY" >&2
         return 1
     fi
+
+    python3 "$RUN_PLOT_FFT1D_PY" "$@"
 }
