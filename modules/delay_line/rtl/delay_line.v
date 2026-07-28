@@ -21,12 +21,12 @@
 module delay_line #(
   parameter int DEPTH  = 256,
   parameter int WIDTH  = 32,
-  parameter int ADDR_W = 8      // = $clog2(DEPTH), o 1 si DEPTH==1
+  parameter int ADDR_W = $clog2(DEPTH)      // = $clog2(DEPTH), o 1 si DEPTH==1
 )(
-  input  wire                i_clock,
-  input  wire [ADDR_W-1:0]   i_addr,
-  input  wire [WIDTH-1:0]    i_data,
-  output wire [WIDTH-1:0]    o_data
+  input  wire                       i_clock,
+  input  wire [ADDR_W - 1 : 0]      i_addr,
+  input  wire [WIDTH - 1 : 0]       i_data,
+  output wire [WIDTH - 1 : 0]       o_data
 );
 
   generate
