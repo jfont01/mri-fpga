@@ -1,0 +1,17 @@
+#pragma once
+
+#include "../cpp/fft1d_r22sdf.hpp"
+
+#include <filesystem>
+
+namespace fft1d_r22sdf_tb {
+
+struct tb_args {
+    std::filesystem::path case_dir {"."};
+    int n_cycles {16};
+};
+
+tb_args parse_args(int argc, char** argv);
+void run_tb(const tb_args& args);
+
+} // namespace fft1d_r22sdf_tb
