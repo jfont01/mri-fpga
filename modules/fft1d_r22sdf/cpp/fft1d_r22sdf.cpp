@@ -1,75 +1,21 @@
 #include "fft1d_r22sdf.hpp"
 
+// -----------------------------------------------------------------------------
+// fft1d_r22sdf.cpp
+//
+// El modelo fft1d_r22sdf_model esta definido inline en el header (metodos y
+// recursion radix-2^2). Esta unidad de traduccion existe para (a) dar un punto
+// de compilacion del modelo consistente con el resto de los modulos, y (b)
+// alojar cualquier tabla o helper no-inline que se agregue mas adelante (por
+// ejemplo, cuando se cierre el modelo bit-exacto ciclo-a-ciclo del pipeline SDF
+// y haga falta estado adicional).
+//
+// Ver la NOTA DE ESTADO en fft1d_r22sdf.hpp: hoy este modelo es el golden
+// ALGORITMICO (FFT radix-2^2 verificada vs DFT), no el bit-exacto del RTL.
+// -----------------------------------------------------------------------------
+
 namespace fft1d_r22sdf {
 
-void fft1d_r22sdf_model::connect_clocks(rtl::ClockDomain& clk)
-{
-    (void)clk;
-
-    /*
-     * Add sequential state/registers to the clock domain.
-     *
-     * Example:
-     *
-     * clk.add(valid_r);
-     * clk.add(y_r);
-     */
-}
-
-void fft1d_r22sdf_model::init()
-{
-    /*
-     * Initialize ports, wires and registers.
-     *
-     * Example:
-     *
-     * i_en   = false;
-     * i_word = in_t {};
-     *
-     * o_en   = false;
-     * o_word = out_t {};
-     *
-     * y_w = out_t {};
-     *
-     * valid_r.set_initial_value(false);
-     * y_r.set_initial_value(out_t {});
-     */
-}
-
-void fft1d_r22sdf_model::combinational()
-{
-    /*
-     * Describe combinational behavior.
-     *
-     * Example:
-     *
-     * y_w = out_t(i_word.value());
-     *
-     * o_en   = valid_r.o;
-     * o_word = y_r.o;
-     */
-}
-
-void fft1d_r22sdf_model::sequential()
-{
-    /*
-     * Describe clocked behavior.
-     *
-     * Important:
-     * - Assign next register values using reg.i
-     * - Read current register values using reg.o
-     *
-     * Example:
-     *
-     * valid_r.i = i_en.value();
-     *
-     * if (i_en.value()) {
-     *     y_r.i = y_w.value();
-     * }
-     * else {
-     *     y_r.i = y_r.o;
-     * }
-     */
-}
+// Sin definiciones fuera de linea por ahora: el modelo es header-only inline.
 
 } // namespace fft1d_r22sdf
