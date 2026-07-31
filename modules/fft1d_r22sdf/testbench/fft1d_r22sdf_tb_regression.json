@@ -1,8 +1,12 @@
 {
   "regression_dir": "build",
   "defaults": {
-    "N_CYCLES": 16,
+    "modes": ["fixed", "double"],
     "auto_defines": true
   },
-  "cases": []
+  "cases": [
+    { "name": "n64_q1_15",   "N": 64,   "NB": 16, "NBF": 15 },
+    { "name": "n256_q1_15",  "N": 256,  "NB": 16, "NBF": 15 },
+    { "name": "n1024_q1_15", "N": 1024, "NB": 16, "NBF": 15 }
+  ]
 }

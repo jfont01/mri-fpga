@@ -30,7 +30,7 @@ export FFT1D_R22SDF_TB_CPP="$FFT1D_R22SDF_TB_DIR/fft1d_r22sdf_tb.cpp"
 export FFT1D_R22SDF_TB_HPP="$FFT1D_R22SDF_TB_DIR/fft1d_r22sdf_tb.hpp"
 export FFT1D_R22SDF_TB_SV="$FFT1D_R22SDF_TB_DIR/fft1d_r22sdf_tb.sv"
 export FFT1D_R22SDF_TB_REGRESSION_JSON="$FFT1D_R22SDF_TB_DIR/fft1d_r22sdf_tb_regression.json"
-export FFT1D_R22SDF_GTEST_CPP="$FFT1D_R22SDF/fft1d_r22sdf_gtest.cpp"
+export FFT1D_R22SDF_GTEST_CPP="$FFT1D_R22SDF_TB_DIR/fft1d_r22sdf_gtest.cpp"
 
 # Backward-compatible alias for simulation regression JSON
 export FFT1D_R22SDF_REGRESSION_JSON="$FFT1D_R22SDF_TB_REGRESSION_JSON"
