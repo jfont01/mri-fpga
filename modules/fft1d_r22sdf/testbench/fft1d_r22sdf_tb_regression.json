@@ -1,12 +1,75 @@
 {
   "regression_dir": "build",
   "defaults": {
-    "modes": ["fixed", "double"],
-    "auto_defines": true
+    "auto_defines": true,
+    "PLOT_REORDER": "bitrev"
   },
   "cases": [
-    { "name": "n64_q1_15",   "N": 64,   "NB": 16, "NBF": 15 },
-    { "name": "n256_q1_15",  "N": 256,  "NB": 16, "NBF": 15 },
-    { "name": "n1024_q1_15", "N": 1024, "NB": 16, "NBF": 15 }
+    {
+      "name": "n64_q1_15_tone",
+      "N": 64, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n64",
+      "N_CYCLES": 160,
+      "STIM_TYPE": 0, "STIM_NTONES": 1,
+      "STIM_K0": 3, "STIM_A0": 500, "STIM_PH0": 0
+    },
+    {
+      "name": "n64_q1_15_multitone",
+      "N": 64, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n64",
+      "N_CYCLES": 160,
+      "STIM_TYPE": 0, "STIM_NTONES": 3,
+      "STIM_K0": 3,  "STIM_A0": 400, "STIM_PH0": 0,
+      "STIM_K1": 10, "STIM_A1": 300, "STIM_PH1": 45,
+      "STIM_K2": 25, "STIM_A2": 200, "STIM_PH2": 90
+    },
+    {
+      "name": "n64_q1_15_impulse",
+      "N": 64, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n64",
+      "N_CYCLES": 160,
+      "STIM_TYPE": 2, "STIM_IMP_POS": 0, "STIM_IMP_AMP": 900
+    },
+    {
+      "name": "n64_q1_15_noise",
+      "N": 64, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n64",
+      "N_CYCLES": 160,
+      "STIM_TYPE": 3, "STIM_NOISE_SEED": 12345, "STIM_NOISE_AMP": 700
+    },
+    {
+      "name": "n256_q1_15_multitone",
+      "N": 256, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n256",
+      "N_CYCLES": 560,
+      "STIM_TYPE": 0, "STIM_NTONES": 3,
+      "STIM_K0": 5,   "STIM_A0": 400, "STIM_PH0": 0,
+      "STIM_K1": 33,  "STIM_A1": 300, "STIM_PH1": 30,
+      "STIM_K2": 100, "STIM_A2": 200, "STIM_PH2": 60
+    },
+    {
+      "name": "n256_q1_15_chirp",
+      "N": 256, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n256",
+      "N_CYCLES": 560,
+      "STIM_TYPE": 1, "STIM_CHIRP_K0": 2, "STIM_CHIRP_K1": 80, "STIM_CHIRP_AMP": 700
+    },
+    {
+      "name": "n1024_q1_15_multitone",
+      "N": 1024, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n1024",
+      "N_CYCLES": 2200,
+      "STIM_TYPE": 0, "STIM_NTONES": 3,
+      "STIM_K0": 7,   "STIM_A0": 400, "STIM_PH0": 0,
+      "STIM_K1": 128, "STIM_A1": 300, "STIM_PH1": 45,
+      "STIM_K2": 511, "STIM_A2": 200, "STIM_PH2": 90
+    },
+    {
+      "name": "n1024_q1_15_noise",
+      "N": 1024, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n1024",
+      "N_CYCLES": 2200,
+      "STIM_TYPE": 3, "STIM_NOISE_SEED": 777, "STIM_NOISE_AMP": 700
+    }
   ]
 }

@@ -27,6 +27,7 @@ constexpr double PI = 3.14159265358979323846;
 
 using fft1d_r22sdf::N;
 using fft1d_r22sdf::LOG2N;
+using fft1d_r22sdf::LATENCY;
 using fft1d_r22sdf::in_t;
 using fft1d_r22sdf::out_t;
 using fft1d_r22sdf::fft1d_r22sdf_model;
@@ -79,9 +80,12 @@ std::vector<std::complex<double>> run_dut(const std::vector<std::complex<double>
     std::vector<std::complex<double>> bitrev_out;
     bitrev_out.reserve(N);
 
-    // La latencia del modelo es un frame (N): produce la salida del frame k
-    // durante el frame k+1. Con 2N ciclos + margen se captura el frame completo.
-    const int total_cycles = 2 * N + 8;
+    /*
+     * El pipeline esta SEGMENTADO: el primer o_valid llega en el ciclo LATENCY
+     * (70 para N=64, 265 para N=256, 1036 para N=1024). La ventana debe cubrir
+     * LATENCY + N para capturar el frame completo; se agrega margen.
+     */
+    const int total_cycles = LATENCY + N + 16;
 
     for (int c = 0; c < total_cycles; ++c) {
         if (c < N) {
@@ -208,7 +212,7 @@ TEST(Fft1dR22Sdf, TwoConsecutiveFrames)
     sim.init();
 
     std::vector<std::complex<double>> frame2_bitrev;
-    const int total = 3 * N + 8;
+    const int total = LATENCY + 2 * N + 16;
     int captured = 0;
 
     for (int c = 0; c < total; ++c) {
