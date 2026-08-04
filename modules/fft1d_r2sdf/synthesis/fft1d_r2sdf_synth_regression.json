@@ -2,8 +2,16 @@
   "regression_dir": "build/synthesis",
   "defaults": {
     "PART_NAME": "xck26-sfvc784-2LV-c",
-    "CLOCK_PERIOD_NS": 5.000,
+    "CLOCK_PERIOD_NS": 5.0,
     "CLOCK_UNCERTAINTY_NS": 0.05
   },
-  "cases": []
+  "cases": [
+    {
+      "name": "n1024_q1_15",
+      "N": 1024,
+      "NB": 16,
+      "NBF": 15,
+      "TW_DIR": "twiddles/n1024"
+    }
+  ]
 }

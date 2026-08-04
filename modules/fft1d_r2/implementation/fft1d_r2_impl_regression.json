@@ -2,8 +2,17 @@
   "regression_dir": "build/implementation",
   "defaults": {
     "PART_NAME": "xck26-sfvc784-2LV-c",
-    "CLOCK_PERIOD_NS": 5.000,
+    "CLOCK_PERIOD_NS": 5.0,
     "CLOCK_UNCERTAINTY_NS": 0.05
   },
-  "cases": []
+  "cases": [
+    {
+      "name": "n1024_q1_15",
+      "N": 1024,
+      "NB": 16,
+      "NBF": 15,
+      "TW_RE_FILE": "rtl/twiddles/fft1d_r2_tw_1024_re.mem",
+      "TW_IM_FILE": "rtl/twiddles/fft1d_r2_tw_1024_im.mem"
+    }
+  ]
 }
