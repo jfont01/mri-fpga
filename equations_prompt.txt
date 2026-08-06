@@ -1,0 +1,906 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noquoting]{babel}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
+
+\newcommand{\Fdd}{\mathcal{F}_{\mathrm{2D}}}
+\newcommand{\iFdd}{\mathcal{F}^{-1}_{\mathrm{2D}}}
+\newcommand{\Af}{A_f}
+\newcommand{\Nx}{N_x}
+\newcommand{\Ny}{N_y}
+\newcommand{\herm}{^{\mathsf{H}}}
+
+\title{\vspace{-1.5cm}Reconstrucción SENSE en tiempo real sobre FPGA\\
+\large Documento de referencia: formulación, arquitecturas y estado del desarrollo}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-1cm}
+
+\section{Contexto del proyecto}
+
+\paragraph{Objetivo.} Reconstrucción de imagen de resonancia magnética en \textbf{tiempo
+real} (20~cuadros por segundo) mediante el algoritmo SENSE, implementada sobre FPGA. El
+propósito es realizar la reconstrucción dentro de la cadena de procesamiento del
+escáner, evitando transferir el volumen completo de datos crudos a una estación de
+trabajo externa.
+
+\paragraph{Parámetros del sistema.}
+\begin{center}
+\begin{tabular}{@{}l l@{}}
+\toprule
+Imagen reconstruida & $1024\times1024$ ($\Nx\times\Ny$) \\
+Bobinas receptoras & $L=8$ \\
+Factor de aceleración & $\Af=2$ (submuestreo en phase-encode) \\
+Datos por bobina tras submuestreo & $1024\times512$ \\
+Formato numérico & punto fijo $Q1.15$ (16~bits con signo) \\
+Tasa objetivo & 20~fps ($50$~ms por cuadro) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{División de tareas.} El sistema se reparte entre el procesador (PS) y la lógica
+programable (PL):
+\begin{itemize}[nosep,leftmargin=*]
+  \item \textbf{PS} (una vez por sesión, en punto flotante): estimación de los mapas de
+        sensibilidad $S_\ell$, cálculo de la matriz de \emph{unfolding} $\mathbf{U}$ para
+        cada posición, y configuración del acelerador.
+  \item \textbf{PL} (cada cuadro, en punto fijo): IFFT2D por bobina, \emph{corner-turn},
+        producto matriz--vector del \emph{unfolding} y cálculo de magnitud.
+\end{itemize}
+
+\section{Plataforma}
+
+\paragraph{Dispositivo.} Kria KV260 (módulo K26, Zynq UltraScale+ MPSoC \texttt{XCK26}).
+
+\begin{center}
+\begin{tabular}{@{}l l l@{}}
+\toprule
+Recurso & Cantidad & Observación \\
+\midrule
+DSP48E2 & 1248 & 4 por multiplicación compleja directa; 3 con Karatsuba \\
+Block RAM & 144 $\times$ 36\,Kb & $\approx648$~KiB \\
+UltraRAM & 64 $\times$ 288\,Kb & $\approx2{,}25$~MiB \\
+DDR4 & 4~GiB, 64~bits & hasta 2400~MT/s $\Rightarrow$ $\approx19{,}2$~GB/s teóricos \\
+Puertos PL$\rightarrow$PS & 4$\times$HP + 2$\times$HPC & AXI4, configurables a 128/64/32~bits \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Consideraciones de acceso a memoria.} Los datos de las ocho bobinas
+($8\times2$~MiB $=16$~MiB por cuadro) exceden ampliamente la memoria interna, de modo que
+\textbf{residen necesariamente en DDR4}; la memoria interna actúa como almacenamiento
+intermedio para hacer eficiente ese acceso. La recomendación del fabricante para
+maximizar el rendimiento es emplear buses de 128~bits y ráfagas de longitud~16, lo que
+determina el tamaño natural del bloque de transposición (Sección~\ref{sec:ct}).
+
+Un puerto HP de 128~bits a 300~MHz ofrece $\approx4{,}8$~GB/s teóricos; en la práctica se
+alcanza del orden del 70--80\,\% de esa cifra.
+
+\section{Notación}
+
+\paragraph{Convenciones.} El \emph{sombrero} ($\hat{\;}$) indica \textbf{estimación}: la
+cantidad recuperada por el algoritmo, que difiere de la verdadera por ruido y
+cuantización. La \emph{tilde} ($\tilde{\;}$) indica \textbf{submuestreo}: la cantidad
+efectivamente adquirida bajo aceleración. La dirección $x$ es la de \emph{readout}
+(frecuencia) y la $y$ la de \emph{phase-encode}; \textbf{la aceleración se aplica en $y$}.
+La negrita denota los vectores y matrices del sistema local de un píxel.
+
+\begin{center}
+\begin{tabular}{@{}l l l@{}}
+\toprule
+Símbolo & Significado & Dominio \\
+\midrule
+$L$ & cantidad de bobinas receptoras & $\mathbb{N}$ \\
+$\ell$ & índice de bobina & $1,\dots,L$ \\
+$\Af$ & factor de aceleración & $\mathbb{N}$ \\
+$\Nx,\Ny$ & puntos de readout y de phase-encode & $\mathbb{N}$ \\[2pt]
+$m[n_x,n_y]$ & imagen compleja verdadera & $\mathbb{C}^{\Nx\times\Ny}$ \\
+$\hat{m}[n_x,n_y]$ & imagen compleja estimada & $\mathbb{C}^{\Nx\times\Ny}$ \\
+$I[n_x,n_y]$ & imagen clínica (magnitud) & $\mathbb{R}_{\ge0}^{\Nx\times\Ny}$ \\[2pt]
+$S_\ell[n_x,n_y]$ & mapa de sensibilidad de la bobina $\ell$ & $\mathbb{C}^{\Nx\times\Ny}$ \\
+$K_\ell[k_x,k_y]$ & $k$-space completo de la bobina $\ell$ & $\mathbb{C}^{\Nx\times\Ny}$ \\
+$\tilde{K}_\ell[k_x,\tilde{k}_y]$ & $k$-space submuestreado & $\mathbb{C}^{\Nx\times\Ny/\Af}$ \\
+$\tilde{y}_\ell[n_x,\tilde{n}_y]$ & imagen aliaseada de la bobina $\ell$ & $\mathbb{C}^{\Nx\times\Ny/\Af}$ \\[2pt]
+$\boldsymbol{\Psi}$ & covarianza de ruido entre bobinas & $\mathbb{C}^{L\times L}$ \\
+$\mathbf{S}$ & matriz de codificación local & $\mathbb{C}^{L\times \Af}$ \\
+$\mathbf{U}$ & matriz de \emph{unfolding} local & $\mathbb{C}^{\Af\times L}$ \\
+$g_a$ & factor $g$ (amplificación de ruido) & $\mathbb{R}_{\ge1}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Modelo de adquisición}
+
+Cada bobina observa el objeto ponderado por su sensibilidad, y el escáner adquiere la
+transformada de Fourier de ese producto:
+\begin{equation}
+K_\ell \;=\; \Fdd\big\{\, m \odot S_\ell \,\big\},
+\qquad \ell = 1,\dots,L ,
+\end{equation}
+donde $\odot$ es el producto elemento a elemento (Hadamard). Explícitamente,
+\begin{equation}
+K_\ell[k_x,k_y] \;=\; \sum_{n_x=0}^{\Nx-1}\sum_{n_y=0}^{\Ny-1}
+m[n_x,n_y]\,S_\ell[n_x,n_y]\;
+e^{-j2\pi\left(\frac{k_xn_x}{\Nx}+\frac{k_yn_y}{\Ny}\right)} .
+\end{equation}
+
+\section{Submuestreo y aliasing}
+
+SENSE acelera adquiriendo una de cada $\Af$ líneas de phase-encode:
+\begin{equation}
+\tilde{K}_\ell[k_x,\tilde{k}_y] \;=\; K_\ell\big[k_x,\;\Af\,\tilde{k}_y\big],
+\qquad \tilde{k}_y = 0,\dots,\tfrac{\Ny}{\Af}-1 .
+\end{equation}
+
+Muestrear cada $\Af$ puntos en frecuencia equivale a replicar y sumar en el dominio
+espacial con período $\Ny/\Af$. La imagen que se obtiene por bobina es, por lo tanto,
+\emph{aliaseada}:
+\begin{equation}
+\boxed{\;
+\tilde{y}_\ell[n_x,\tilde{n}_y] \;=\;
+\sum_{a=0}^{\Af-1}
+m\Big[n_x,\;\tilde{n}_y + a\tfrac{\Ny}{\Af}\Big]\;
+S_\ell\Big[n_x,\;\tilde{n}_y + a\tfrac{\Ny}{\Af}\Big] \; }
+\label{eq:alias}
+\end{equation}
+
+Nótese que $m$ y $S_\ell$ viven en la grilla completa ($\Ny$ filas) mientras que
+$\tilde{y}_\ell$ vive en la reducida ($\Ny/\Af$ filas). Con $\Af=2$ y $\Ny=1024$:
+\begin{equation}
+\tilde{y}_\ell[n_x,\tilde n_y] =
+m[n_x,\tilde n_y]\,S_\ell[n_x,\tilde n_y] +
+m[n_x,\tilde n_y{+}512]\,S_\ell[n_x,\tilde n_y{+}512] .
+\end{equation}
+
+\section{Reconstrucción por bobina: IFFT2D}
+
+\begin{equation}
+\tilde{y}_\ell \;=\; \iFdd\big\{\tilde{K}_\ell\big\},
+\qquad
+\tilde{y}_\ell[n_x,\tilde n_y] = \frac{1}{\Nx \Ny'}
+\sum_{k_x}\sum_{\tilde k_y} \tilde{K}_\ell[k_x,\tilde k_y]\,
+e^{+j2\pi\left(\frac{k_xn_x}{\Nx}+\frac{\tilde k_y\tilde n_y}{\Ny'}\right)},
+\end{equation}
+con $\Ny' = \Ny/\Af$. La transformada es \textbf{separable}, lo que permite realizarla
+como dos pasadas de transformadas unidimensionales:
+\begin{equation}
+\boxed{\;\iFdd = \mathcal{F}^{-1}_{n_y}\circ\mathcal{F}^{-1}_{n_x}\;}
+\qquad\text{(primero filas, luego columnas)}
+\label{eq:sep}
+\end{equation}
+
+Para $\Nx=1024$, $\Ny=1024$, $\Af=2$:
+\begin{itemize}[nosep]
+  \item \textbf{Fase 1} (readout): $\Ny/\Af = 512$ transformadas de $\Nx = 1024$ puntos.
+  \item \textbf{Fase 2} (phase-encode): $\Nx = 1024$ transformadas de $\Ny/\Af = 512$ puntos.
+\end{itemize}
+Entre ambas fases es necesario reordenar el acceso a memoria (\emph{corner-turn},
+Sección~\ref{sec:ct}).
+
+\section{Unfolding SENSE}
+
+\subsection{Sistema local}
+
+La ecuación~\eqref{eq:alias} define, para cada posición $(n_x,\tilde n_y)$ de la grilla
+reducida, un sistema lineal independiente. Definimos
+\begin{equation}
+\mathbf{\tilde y} =
+\begin{bmatrix}\tilde y_1[n_x,\tilde n_y]\\ \vdots\\ \tilde y_L[n_x,\tilde n_y]\end{bmatrix}
+\in\mathbb{C}^{L},
+\qquad
+\mathbf{m} =
+\begin{bmatrix} m[n_x,\tilde n_y]\\ \vdots\\ m[n_x,\tilde n_y+(\Af{-}1)\tfrac{\Ny}{\Af}]\end{bmatrix}
+\in\mathbb{C}^{\Af},
+\end{equation}
+\begin{equation}
+[\mathbf{S}]_{\ell,a} = S_\ell\Big[n_x,\;\tilde n_y + a\tfrac{\Ny}{\Af}\Big]
+\in\mathbb{C}^{L\times \Af} .
+\end{equation}
+
+El modelo directo queda entonces
+\begin{equation}
+\boxed{\;\mathbf{\tilde y} = \mathbf{S}\,\mathbf{m}\;}
+\end{equation}
+
+\subsection{Planteo como problema de optimización}
+
+El sistema está \textbf{sobredeterminado} ($L > \Af$; con $L=8$, $\Af=2$ son 8 ecuaciones
+y 2 incógnitas), de modo que $\mathbf{S}$ \textbf{no es cuadrada y no admite inversa}. En
+presencia de ruido no existe $\mathbf{m}$ que satisfaga exactamente
+$\mathbf{\tilde y} = \mathbf{S}\mathbf{m}$, y la reconstrucción se plantea como la
+minimización del residuo, ponderado por la covarianza de ruido:
+\begin{equation}
+\boxed{\;
+\hat{\mathbf{m}} \;=\; \arg\min_{\mathbf{m}\in\mathbb{C}^{\Af}}
+\;\big\|\boldsymbol{\Psi}^{-1/2}\big(\mathbf{\tilde y}-\mathbf{S}\mathbf{m}\big)\big\|_2^2 \;}
+\label{eq:argmin}
+\end{equation}
+
+El factor $\boldsymbol{\Psi}^{-1/2}$ realiza el \emph{blanqueo} del ruido: transforma el
+problema a uno de ruido blanco unitario, en el que los mínimos cuadrados ordinarios son el
+estimador de máxima verosimilitud (y, por Gauss--Markov, el insesgado de mínima varianza).
+
+Anulando el gradiente de~\eqref{eq:argmin} respecto de $\mathbf{m}$ se obtienen las
+\textbf{ecuaciones normales}:
+\begin{equation}
+\underbrace{\big(\mathbf{S}\herm\boldsymbol{\Psi}^{-1}\mathbf{S}\big)}_{\textstyle \mathbf{A}\;\in\;\mathbb{C}^{\Af\times\Af}}\mathbf{m}
+\;=\;
+\underbrace{\mathbf{S}\herm\boldsymbol{\Psi}^{-1}\mathbf{\tilde y}}_{\textstyle \mathbf{b}} ,
+\label{eq:normales}
+\end{equation}
+cuya solución define la matriz de \emph{unfolding}
+\begin{equation}
+\boxed{\;
+\hat{\mathbf{m}} = \mathbf{U}\,\mathbf{\tilde y},
+\qquad
+\mathbf{U} = \big(\mathbf{S}\herm\boldsymbol{\Psi}^{-1}\mathbf{S}\big)^{-1}
+             \mathbf{S}\herm\boldsymbol{\Psi}^{-1} \;}
+\label{eq:unfold}
+\end{equation}
+con $\mathbf{U}\in\mathbb{C}^{\Af\times L}$ (en este trabajo, $2\times 8$). El superíndice
+$\mathsf{H}$ denota transposición \emph{conjugada}: usar la transpuesta sin conjugar
+recupera igualmente la señal en ausencia de ruido, pero no minimiza la varianza del error.
+
+Cuando el ruido es blanco e independiente entre bobinas ($\boldsymbol{\Psi}=\mathbf{I}$),
+la expresión se reduce a la pseudoinversa de Moore--Penrose por izquierda:
+\begin{equation}
+\mathbf{U} = \big(\mathbf{S}\herm\mathbf{S}\big)^{-1}\mathbf{S}\herm = \mathbf{S}^{+} .
+\end{equation}
+
+\subsection{Regularización de Tikhonov}
+
+En regiones donde las sensibilidades de los píxeles superpuestos son casi paralelas,
+$\mathbf{A}$ resulta mal condicionada y el ruido se amplifica sin control (factor $g$
+elevado). Añadiendo un término de penalización sobre la norma de la solución:
+\begin{equation}
+\hat{\mathbf{m}}_\lambda = \arg\min_{\mathbf{m}}
+\;\big\|\boldsymbol{\Psi}^{-1/2}\big(\mathbf{\tilde y}-\mathbf{S}\mathbf{m}\big)\big\|_2^2
+\;+\;\lambda^2\|\mathbf{m}\|_2^2 ,
+\end{equation}
+cuya solución es
+\begin{equation}
+\mathbf{U}_\lambda = \big(\mathbf{S}\herm\boldsymbol{\Psi}^{-1}\mathbf{S}
+                     + \lambda^2\mathbf{I}\big)^{-1}\mathbf{S}\herm\boldsymbol{\Psi}^{-1} .
+\end{equation}
+El parámetro $\lambda$ arbitra el compromiso entre sesgo y varianza: acota
+$\|\mathbf{U}\|$ a costa de introducir un error sistemático. En un caso mal condicionado
+($\kappa(\mathbf{S})\sim10^6$), pasar de $\lambda=0$ a $\lambda=10^{-2}$ reduce
+$\|\mathbf{U}\|_2$ de $\sim\!4\times10^{5}$ a $0{,}2$ y el error con ruido en más de tres
+órdenes de magnitud.
+
+\subsection{Métodos de resolución}
+
+La ecuación~\eqref{eq:unfold} prescribe \emph{qué} calcular, no \emph{cómo}. Se comparan
+cuatro procedimientos, todos ellos exactos en aritmética infinita pero de estabilidad
+numérica muy distinta.
+
+\paragraph{(a) Inversa explícita.} Formar $\mathbf{A}$ e invertirla directamente. Es el
+procedimiento más económico para $\Af$ pequeño (con $\Af=2$ la inversa tiene forma
+cerrada, ec.~\eqref{eq:inv2x2}), pero el menos estable.
+
+\paragraph{(b) Factorización de Cholesky.} Como $\mathbf{A}=\mathbf{S}\herm\boldsymbol{\Psi}^{-1}\mathbf{S}$
+es hermitiana y definida positiva (siempre que $\mathbf{S}$ tenga rango completo), admite
+la factorización
+\begin{equation}
+\mathbf{A} = \mathbf{L}\mathbf{L}\herm,
+\qquad \mathbf{L}\ \text{triangular inferior con diagonal real positiva},
+\end{equation}
+y el sistema~\eqref{eq:normales} se resuelve en dos sustituciones, sin invertir nada:
+\begin{equation}
+\mathbf{L}\,\mathbf{z} = \mathbf{b} \quad(\text{adelante}),
+\qquad
+\mathbf{L}\herm\,\hat{\mathbf{m}} = \mathbf{z} \quad(\text{atrás}).
+\end{equation}
+Para $\Af=2$, con $\mathbf{A}=\left[\begin{smallmatrix} a & b\\ \bar b & d\end{smallmatrix}\right]$
+($a,d\in\mathbb{R}_{>0}$), la factorización es explícita:
+\begin{equation}
+\mathbf{L} =
+\begin{bmatrix}
+\sqrt{a} & 0\\[4pt]
+\dfrac{\bar b}{\sqrt{a}} & \sqrt{\,d-\dfrac{|b|^2}{a}\,}
+\end{bmatrix} ,
+\end{equation}
+requiriendo únicamente dos raíces cuadradas y dos divisiones. El radicando
+$d-|b|^2/a$ es el complemento de Schur y su magnitud es un indicador directo del
+condicionamiento: si tiende a cero, las sensibilidades son casi paralelas.
+
+\paragraph{(c) Factorización QR.} Descomponiendo $\mathbf{S}=\mathbf{Q}\mathbf{R}$ con
+$\mathbf{Q}\in\mathbb{C}^{L\times \Af}$ de columnas ortonormales y $\mathbf{R}$ triangular
+superior, el problema de mínimos cuadrados se reduce a
+\begin{equation}
+\mathbf{R}\,\hat{\mathbf{m}} = \mathbf{Q}\herm\mathbf{\tilde y} ,
+\end{equation}
+resuelto por sustitución hacia atrás. \textbf{No se forma $\mathbf{S}\herm\mathbf{S}$}, lo
+que evita el deterioro del condicionamiento.
+
+\paragraph{(d) Descomposición en valores singulares.} Con
+$\mathbf{S}=\mathbf{W}\boldsymbol{\Sigma}\mathbf{V}\herm$,
+\begin{equation}
+\hat{\mathbf{m}} = \mathbf{V}\boldsymbol{\Sigma}^{-1}\mathbf{W}\herm\mathbf{\tilde y} .
+\end{equation}
+Es el procedimiento más costoso y el más robusto; además permite truncar los valores
+singulares por debajo de un umbral (\emph{TSVD}), que es una forma alternativa de
+regularización, y expone directamente $\kappa(\mathbf{S})=\sigma_{\max}/\sigma_{\min}$.
+
+\subsection{Estabilidad numérica y costo}
+
+El punto crítico es que \textbf{las ecuaciones normales elevan al cuadrado el número de
+condición}:
+\begin{equation}
+\boxed{\;\kappa\big(\mathbf{S}\herm\mathbf{S}\big) = \kappa\big(\mathbf{S}\big)^2\;}
+\end{equation}
+de modo que los métodos (a) y (b), que operan sobre $\mathbf{A}$, pierden aproximadamente
+el doble de dígitos significativos que (c) y (d), que operan sobre $\mathbf{S}$.
+
+\begin{center}
+\begin{tabular}{@{}l c c c@{}}
+\toprule
+Método & Opera sobre & Costo aprox.\ (flops) & Error, caso $\kappa(\mathbf{S})\!\sim\!10^6$ \\
+\midrule
+Inversa explícita & $\mathbf{S}\herm\mathbf{S}$ & $L\Af^2+\Af^3$              & $8\times10^{-4}$ \\
+Cholesky          & $\mathbf{S}\herm\mathbf{S}$ & $L\Af^2+\tfrac{1}{3}\Af^3$  & $8\times10^{-4}$ \\
+QR (Householder)  & $\mathbf{S}$                & $2L\Af^2-\tfrac{2}{3}\Af^3$ & $2\times10^{-10}$ \\
+SVD               & $\mathbf{S}$                & $\sim4L\Af^2+22\Af^3$       & $2\times10^{-10}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+En el caso bien condicionado los cuatro métodos coinciden hasta la precisión de máquina
+($\sim10^{-16}$); las diferencias sólo se manifiestan cuando el sistema está mal
+condicionado, es decir, precisamente en las regiones de factor $g$ elevado.
+
+\paragraph{Implicancia para la implementación.} Como $\mathbf{U}$ se calcula \emph{una vez
+por sesión} en el procesador y en aritmética de punto flotante, el costo del método es
+irrelevante frente al del procesamiento por cuadro. Conviene por lo tanto emplear el
+procedimiento más robusto disponible (QR o SVD, con regularización si el mapa de $g$ lo
+justifica) y reservar al hardware únicamente el producto matriz--vector
+$\hat{\mathbf{m}}=\mathbf{U}\mathbf{\tilde y}$. Ésta es la diferencia esencial con las
+arquitecturas que resuelven la pseudoinversa en hardware, donde el módulo de inversión
+llega a ocupar más de tres cuartas partes del área total.
+
+\subsection{Caso $\Af=2$ en forma cerrada}
+
+Con $\Af=2$ la matriz a invertir es $2\times2$, y su inversa admite expresión directa. Si
+$\mathbf{A} = \mathbf{S}\herm\boldsymbol{\Psi}^{-1}\mathbf{S} =
+\left[\begin{smallmatrix} a & b \\ c & d\end{smallmatrix}\right]$, entonces
+\begin{equation}
+\mathbf{A}^{-1} = \frac{1}{ad-bc}\begin{bmatrix} d & -b \\ -c & a\end{bmatrix} .
+\label{eq:inv2x2}
+\end{equation}
+Esto hace viable calcular $\mathbf{U}$ una sola vez por sesión (en el procesador),
+dejando al hardware únicamente el producto matriz--vector de la
+ecuación~\eqref{eq:unfold}: un MAC complejo de $\Af\times L = 2\times 8$ por píxel.
+
+\subsection{Calidad: factor $g$}
+
+La aceleración degrada la relación señal a ruido por dos causas: la reducción de muestras
+($\sqrt{\Af}$) y el condicionamiento del sistema local (factor $g$):
+\begin{equation}
+g_a[n_x,\tilde n_y] =
+\sqrt{\Big[\big(\mathbf{S}\herm\boldsymbol{\Psi}^{-1}\mathbf{S}\big)^{-1}\Big]_{aa}
+      \Big[\mathbf{S}\herm\boldsymbol{\Psi}^{-1}\mathbf{S}\Big]_{aa}} \;\ge\; 1 ,
+\end{equation}
+\begin{equation}
+\boxed{\;\mathrm{SNR}_{\mathrm{acel}} = \frac{\mathrm{SNR}_{\mathrm{full}}}{g\,\sqrt{\Af}}\;}
+\end{equation}
+El mapa de $g$ es la métrica espacial de calidad propia de SENSE: valores cercanos a $1$
+indican buena geometría de bobinas; valores altos señalan zonas donde
+$\mathbf{S}\herm\mathbf{S}$ está mal condicionada y el ruido se amplifica.
+
+\subsection{Métricas de calidad de imagen}
+
+Sea $I_{\mathrm{ref}}$ la reconstrucción de referencia (aritmética de doble precisión, sin
+aceleración) e $I$ la obtenida por el sistema bajo evaluación. Se emplean:
+
+\paragraph{Potencia de artefacto (\emph{Artifact Power}).}
+\begin{equation}
+\mathrm{AP} = \frac{\sum_{n_x,n_y}\big|I[n_x,n_y]-I_{\mathrm{ref}}[n_x,n_y]\big|^2}
+                   {\sum_{n_x,n_y}\big|I_{\mathrm{ref}}[n_x,n_y]\big|^2} .
+\end{equation}
+
+\paragraph{Relación señal a ruido de pico.}
+\begin{equation}
+\mathrm{PSNR} = 10\log_{10}\!\left(\frac{\max^2(I_{\mathrm{ref}})}{\mathrm{MSE}}\right),
+\qquad
+\mathrm{MSE} = \frac{1}{\Nx\Ny}\sum_{n_x,n_y}\big(I-I_{\mathrm{ref}}\big)^2 .
+\end{equation}
+
+\paragraph{Índice de similitud estructural.}
+\begin{equation}
+\mathrm{SSIM}(u,v) =
+\frac{(2\mu_u\mu_v+c_1)(2\sigma_{uv}+c_2)}
+     {(\mu_u^2+\mu_v^2+c_1)(\sigma_u^2+\sigma_v^2+c_2)},
+\end{equation}
+evaluado sobre ventanas locales, con $c_1=(k_1 R)^2$, $c_2=(k_2 R)^2$, $k_1=0{,}01$,
+$k_2=0{,}03$ y $R$ el rango dinámico.
+
+Estas tres métricas son globales y no capturan la distribución espacial de la
+amplificación de ruido; conviene reportarlas \textbf{junto con el mapa de $g$}, que sí lo
+hace.
+
+\section{Imagen clínica}
+
+\begin{equation}
+I[n_x,n_y] = \big|\hat{m}[n_x,n_y]\big| =
+\sqrt{\Re\{\hat{m}\}^2 + \Im\{\hat{m}\}^2} .
+\end{equation}
+
+En hardware se calcula con CORDIC en modo \emph{vectoring}, que converge a
+$K\sqrt{\Re^2+\Im^2}$ con ganancia
+\begin{equation}
+K = \prod_{i=0}^{n-1}\sqrt{1+2^{-2i}} \;\approx\; 1{,}6468,
+\qquad K^{-1} \approx 0{,}6073,
+\end{equation}
+compensada premultiplicando por $K^{-1}$.
+
+\section{Transformada rápida: arquitecturas}
+
+\subsection{DFT y descomposición radix-2}
+
+\begin{equation}
+X[k] = \sum_{n=0}^{N-1} x[n]\,W_N^{nk},
+\qquad W_N = e^{-j2\pi/N} .
+\end{equation}
+
+La descomposición \emph{decimation-in-frequency} (DIF) radix-2 separa índices pares e
+impares de frecuencia:
+\begin{equation}
+X[2r]   = \sum_{n=0}^{N/2-1}\Big(x[n]+x[n{+}\tfrac{N}{2}]\Big)W_{N/2}^{nr},
+\qquad
+X[2r{+}1] = \sum_{n=0}^{N/2-1}\Big(x[n]-x[n{+}\tfrac{N}{2}]\Big)W_N^{n}\,W_{N/2}^{nr} .
+\end{equation}
+
+La \textbf{mariposa} radix-2, con el escalado $\tfrac12$ que usa la implementación en punto
+fijo, es
+\begin{equation}
+y_0 = \tfrac{1}{2}\big(d + x\big), \qquad
+y_1 = \tfrac{1}{2}\big(d - x\big),
+\end{equation}
+donde $x$ es la muestra del \emph{stream} y $d$ la que sale de la línea de retardo.
+
+\subsection{Radix-$2^2$}
+
+La identidad que sustenta el algoritmo es
+\begin{equation}
+\boxed{\;W_N^{N/4} = e^{-j\pi/2} = -j \;}
+\qquad\Longrightarrow\qquad
+-j\,(a+jb) = b - ja ,
+\end{equation}
+es decir, un intercambio de partes real e imaginaria más una inversión de signo:
+\textbf{no requiere multiplicador}.
+
+Aplicando dos pasos de descomposición conjuntamente, con el mapeo de índices
+\begin{equation}
+n = \Big\langle \tfrac{N}{2}n_1 + \tfrac{N}{4}n_2 + n_3 \Big\rangle_N,
+\qquad
+k = \big\langle k_1 + 2k_2 + 4k_3 \big\rangle_N,
+\end{equation}
+el factor de giro compuesto se descompone como
+\begin{equation}
+W_N^{\left(\frac{N}{4}n_2+n_3\right)(k_1+2k_2+4k_3)}
+= (-j)^{\,n_2(k_1+2k_2)}\;W_N^{\,n_3(k_1+2k_2)}\;W_{N/4}^{\,n_3k_3},
+\end{equation}
+y se obtiene el núcleo de mariposa de dos niveles (He y Torkelson, ec.~6):
+\begin{equation}
+\boxed{\;
+H(k_1,k_2,n_3) =
+\underbrace{\Big[x(n_3)+(-1)^{k_1}x\big(n_3+\tfrac{N}{2}\big)\Big]}_{\text{BF2I}}
++\;(-j)^{k_1+2k_2}
+\underbrace{\Big[x\big(n_3+\tfrac{N}{4}\big)+(-1)^{k_1}x\big(n_3+\tfrac{3N}{4}\big)\Big]}_{\text{BF2II}} \;}
+\end{equation}
+
+El factor $(-j)^{k_1+2k_2}$ toma únicamente los valores triviales $\{1,-j,-1,j\}$. La
+consecuencia arquitectural es que \textbf{sólo una de cada dos etapas requiere
+multiplicador no trivial}. Requiere $N$ potencia de $4$.
+
+\subsection{Comparación de arquitecturas}
+
+Familias: \emph{SDF} (single-path delay feedback), \emph{SDC} (single-path delay
+commutator), \emph{MDC} (multi-path delay commutator). Las SDF procesan una muestra por
+ciclo; las MDC procesan $P$ vías en paralelo, completando la transformada en $N/P$ ciclos
+a costa de aproximadamente $P$ veces los multiplicadores y mayor memoria, de modo que el
+producto (recursos $\times$ tiempo) permanece aproximadamente constante.
+
+\begin{center}
+\begin{tabular}{@{}l c c c c@{}}
+\toprule
+Arquitectura & Multiplicadores & Sumadores & Memoria & Control \\
+\midrule
+R2MDC   & $2(\log_4 N-1)$ & $4\log_4 N$ & $3N/2-2$ & simple \\
+R2SDF   & $\log_2 N-1$    & $2\log_2 N$ & $N-1$    & simple \\
+R4SDF   & $\log_4 N-1$    & $8\log_4 N$ & $N-1$    & medio \\
+R4MDC   & $3(\log_4 N-1)$ & $8\log_4 N$ & $5N/2-4$ & simple \\
+R4SDC   & $\log_4 N-1$    & $3\log_4 N$ & $2N-2$   & complejo \\
+\textbf{R2$^2$SDF} & $\boldsymbol{\log_4 N-1}$ & $4\log_4 N$ & $N-1$ & simple \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Para $N=1024$: el R2SDF requiere $\log_2 N - 2 = 8$ multiplicadores complejos y el
+R2$^2$SDF $\log_4 N - 1 = 4$. Con un multiplicador complejo directo (4 DSP) esto se
+traduce en $32$ frente a $16$ DSP; con multiplicación de Karatsuba (3 DSP), $24$ frente a
+$12$. \textbf{La memoria y el número de sumadores son idénticos}: la ventaja del
+radix-$2^2$ reside exclusivamente en multiplicadores y en la ROM de factores de giro.
+
+\subsection{Orden de salida y tamaños admisibles}
+
+\paragraph{Inversión de bits.} El pipeline SDF entrega las frecuencias en orden de
+\textbf{bits invertidos}: la muestra emitida en la posición $j$ corresponde al índice
+frecuencial
+\begin{equation}
+\mathrm{bitrev}(j) = \sum_{i=0}^{\log_2N-1} j_i\,2^{\log_2N-1-i},
+\qquad j = \sum_{i} j_i 2^i .
+\end{equation}
+El reordenamiento puede realizarse en el consumidor (por ejemplo, en el direccionamiento
+de escritura a memoria) sin costo adicional de lógica.
+
+\paragraph{Tamaños no potencia de cuatro.} El radix-$2^2$ empareja las etapas de a dos, de
+modo que requiere $\log_2 N$ \emph{par}. En este trabajo:
+\begin{itemize}[nosep,leftmargin=*]
+  \item $N=1024=4^5$: potencia de cuatro, cadena radix-$2^2$ limpia de 5 unidades.
+  \item $N=512=2^9$: \textbf{no} es potencia de cuatro. Requiere una etapa radix-2 suelta
+        adicional (idéntica a las del R2SDF) al principio o al final de la cadena, con
+        $\lfloor\log_4 N\rfloor$ unidades radix-$2^2$.
+\end{itemize}
+Ambos tamaños son necesarios: $N=1024$ para la fase de readout y $N=512$ para la de
+phase-encode.
+
+\subsection{Latencia y orden de salida}
+
+La salida del pipeline SDF se entrega en orden de \textbf{bits invertidos}. Para la
+implementación segmentada (registros entre las dos mariposas de cada unidad y a la salida
+del multiplicador), la latencia hasta la primera muestra válida es
+\begin{equation}
+\mathcal{L} = N + 3\big(\log_4 N - 1\big),
+\end{equation}
+verificada en $70$, $265$ y $1036$ ciclos para $N=64$, $256$ y $1024$ respectivamente. El
+\emph{throughput} permanece en una muestra por ciclo.
+
+\section{Corner-turn por bloques}
+\label{sec:ct}
+
+La separabilidad~\eqref{eq:sep} exige acceder a la memoria por filas en la primera fase y
+por columnas en la segunda. En memoria externa el acceso por columnas rompe las ráfagas y
+desaproveche el ancho de banda. La solución es transponer por bloques (\emph{tiles}) de
+$T\times T$ muestras alojados en memoria interna.
+
+Escribiendo el bloque en orden de filas, la muestra $(r,c)$ ocupa la dirección
+$r\,T+c$. La lectura $k$-ésima en orden de columnas requiere $c=\lfloor k/T\rfloor$ y
+$r = k \bmod T$, es decir la dirección $(k \bmod T)\,T + \lfloor k/T\rfloor$. Si $T$ es
+potencia de dos, esto equivale a \textbf{intercambiar las dos mitades del contador}:
+\begin{equation}
+\boxed{\;
+\mathrm{addr}_{\mathrm{rd}} =
+\big\{\,k[\log_2 T-1:0]\;,\;k[2\log_2 T-1:\log_2 T]\,\big\} \;}
+\end{equation}
+operación que no consume lógica. Con doble buffer (\emph{ping-pong}) de $N_T$ bloques la
+eficiencia es $N_T/(N_T+1)$, limitada únicamente por la carga del primer bloque.
+
+Con $T=64$ y muestras complejas de 4 bytes, cada fila de bloque ocupa
+$64\times4 = 256$~B, exactamente una ráfaga AXI de longitud 16 con bus de 128 bits.
+
+\section{Aritmética de punto fijo}
+
+\subsection{Formato}
+
+Se emplea el formato $Q(N_B,N_{BF})$ con signo, esto es $N_B$ bits totales de los cuales
+$N_{BF}$ son fraccionarios. Para $Q1.15$ ($N_B=16$, $N_{BF}=15$):
+\begin{equation}
+x \in \big[-1,\; 1-2^{-15}\big], \qquad \Delta = 2^{-15} \approx 3{,}05\times10^{-5} .
+\end{equation}
+
+El error de cuantización con redondeo es uniforme en $[-\Delta/2,\Delta/2]$, de varianza
+$\sigma_q^2 = \Delta^2/12$, y la relación señal a ruido de cuantización es
+\begin{equation}
+\mathrm{SQNR}_{\mathrm{dB}} \approx 6{,}02\,N_B + 1{,}76 - \mathrm{PAR}_{\mathrm{dB}},
+\end{equation}
+donde $\mathrm{PAR}$ es la relación pico a valor eficaz de la señal.
+
+\subsection{Escalado y rango dinámico}
+\label{sec:escalado}
+
+Escalar por $\tfrac12$ en cada mariposa garantiza ausencia de desbordamiento, pues acota
+el crecimiento del peor caso:
+\begin{equation}
+\text{ganancia por transformada} = \prod_{i=1}^{\log_2 N}\tfrac12 = \frac{1}{N} .
+\end{equation}
+
+Sin embargo, el crecimiento \emph{real} depende de la señal. Para $k$-space de resonancia
+magnética, cuya energía está concentrada en el centro, el pico crece
+aproximadamente $1{,}5$~bits en una transformada bidimensional completa, frente a los
+$\log_2(\Nx\Ny) = 20$~bits que descuenta el escalado sistemático. La pérdida de rango
+resultante es severa y motiva alguna de las siguientes estrategias:
+
+\begin{enumerate}[nosep,leftmargin=*]
+  \item \textbf{Punto flotante por bloques}: escalar sólo ante desbordamiento inminente,
+        propagando un exponente común.
+  \item \textbf{Escalado selectivo}: aplicar el factor $\tfrac12$ únicamente en un
+        subconjunto de etapas, con saturación como red de seguridad.
+  \item \textbf{Crecimiento del ancho de palabra} hacia el interior del pipeline.
+  \item \textbf{Normalización de la entrada} para ocupar todo el rango disponible.
+\end{enumerate}
+
+La ganancia total de la cadena debe contabilizarse etapa por etapa:
+\begin{equation}
+G_{\mathrm{total}} =
+\underbrace{G_{\mathrm{FFT}_x}}_{\text{fase 1}}\cdot
+\underbrace{G_{\mathrm{FFT}_y}}_{\text{fase 2}}\cdot
+\underbrace{\|\mathbf{U}\|_2}_{\text{unfolding}} .
+\end{equation}
+
+\section{Presupuesto de recursos y tiempo}
+
+\subsection{Carga computacional}
+
+Para una imagen de $\Nx\times\Ny$ con aceleración $\Af$ y $L$ bobinas, expresada en
+ciclos-muestra (una muestra por ciclo y por instancia):
+\begin{equation}
+C_{\mathrm{frame}} = L\left(\underbrace{\tfrac{\Ny}{\Af}\,\Nx}_{\text{fase 1}}
+                     + \underbrace{\Nx\,\tfrac{\Ny}{\Af}}_{\text{fase 2}}\right)
+                   = \frac{2L\,\Nx\Ny}{\Af} .
+\end{equation}
+Con $P$ instancias en paralelo a frecuencia $f$, el tiempo por cuadro es
+\begin{equation}
+T_{\mathrm{frame}} = \frac{C_{\mathrm{frame}}}{P\,f}
+\qquad\text{y debe cumplirse}\qquad
+T_{\mathrm{frame}} \le \frac{1}{\mathrm{fps}} .
+\end{equation}
+
+\subsection{Ancho de banda de memoria}
+
+Con $B$ bytes por muestra compleja y cuatro accesos por bobina y cuadro (lectura de
+$k$-space, escritura de la fase 1, lectura para la fase 2, escritura del resultado):
+\begin{equation}
+\mathrm{BW} = \frac{4\,L\,\Nx\,(\Ny/\Af)\,B}{1/\mathrm{fps}} .
+\end{equation}
+El acceso por columnas sin transposición por bloques multiplica el término
+correspondiente por el factor de desaprovechamiento de ráfaga, típicamente entre $8$ y
+$16$.
+
+\subsection{Multiplicadores}
+
+\begin{equation}
+\mathrm{DSP}_{\mathrm{FFT}} = P\;(\log_4 N - 1)\;\mathrm{DSP}_{\mathrm{cmul}},
+\qquad
+\mathrm{DSP}_{\mathrm{cmul}} \in \{3\;(\text{Karatsuba}),\;4\;(\text{directo})\} .
+\end{equation}
+
+La multiplicación compleja directa requiere cuatro productos reales,
+\begin{equation}
+(a+jb)(c+jd) = (ac-bd) + j(ad+bc),
+\end{equation}
+mientras que la formulación de Karatsuba emplea tres, a costa de sumas adicionales:
+\begin{equation}
+\begin{aligned}
+k_1 &= c\,(a+b), & k_2 &= a\,(d-c), & k_3 &= b\,(c+d), \\
+\Re &= k_1 - k_3, & \Im &= k_1 + k_2 . &&
+\end{aligned}
+\end{equation}
+
+\section{Metodología de verificación}
+
+El desarrollo se apoya en una infraestructura de simulación propia (\texttt{rtlsim}: un
+simulador de RTL en C++ con semántica de registros y dominios de reloj) y un flujo de
+regresión dirigido por archivos JSON. Cada módulo atraviesa cuatro etapas:
+
+\begin{center}
+\begin{tabular}{@{}l l l@{}}
+\toprule
+Etapa & Compara & Detecta \\
+\midrule
+\texttt{run\_gtest}            & modelo C++ $\leftrightarrow$ referencia matemática & errores de algoritmo \\
+\texttt{run\_regression\_vm}   & RTL $\leftrightarrow$ modelo C++, bit a bit        & errores de implementación \\
+\texttt{run\_regression\_synth}& --- & recursos y camino crítico \\
+\texttt{run\_regression\_impl} & --- & recursos y temporizado tras ruteo \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+El modelo C++ se compila en dos modos: \texttt{double} (valida el algoritmo sin ruido de
+cuantización) y \texttt{fixed} (valida el formato de punto fijo). Un fallo sólo en modo
+\texttt{fixed} indica problema numérico; un fallo en \texttt{double} indica error
+estructural.
+
+\paragraph{Módulos comunes.} Se comparten entre arquitecturas para que las comparaciones
+de recursos sean atribuibles a la arquitectura y no al estilo de implementación:
+\texttt{cast} (cuantización con redondeo y saturación), \texttt{cmul} y
+\texttt{cmul\_karatsuba} (multiplicación compleja), \texttt{delay\_line},
+\texttt{btfly\_bf2i} y \texttt{btfly\_bf2ii}.
+
+\section{Estado del desarrollo}
+
+\begin{center}
+\begin{tabular}{@{}l l l@{}}
+\toprule
+Módulo & Estado & Observación \\
+\midrule
+\texttt{cast}, \texttt{cmul}, \texttt{cmul\_karatsuba} & verificado & módulos comunes \\
+\texttt{delay\_line}, \texttt{btfly\_bf2i/ii}          & verificado & módulos comunes \\
+\texttt{fft1d\_r2} (iterativo)     & descartado & no escala a $N=1024$ (ver §\ref{sec:abiertos}) \\
+\texttt{fft1d\_r2sdf}              & verificado & \texttt{gtest} y \texttt{vm} en verde \\
+\texttt{fft1d\_r22sdf}             & verificado & \texttt{gtest} y \texttt{vm} en verde, segmentado \\
+\texttt{tile\_transpose}           & funcional  & falta modelo C++ y \texttt{vm} \\
+Maestro AXI / recorrido de bloques & pendiente  & \\
+MAC de \emph{unfolding}            & pendiente  & \\
+CORDIC de magnitud                 & pendiente  & \\
+Cálculo de $\mathbf{U}$ en el PS   & pendiente  & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Resultados de implementación}
+
+Comparación en condiciones idénticas: $N=1024$, $Q1.15$, multiplicador complejo directo,
+\texttt{XCK26}, objetivo de reloj 5~ns, ambos diseños envueltos en el mismo arnés de
+registros de entrada/salida.
+
+\begin{center}
+\begin{tabular}{@{}l c c c@{}}
+\toprule
+Recurso (tras implementación) & R2SDF & R2$^2$SDF & Diferencia \\
+\midrule
+\textbf{DSP48E2}     & \textbf{32}   & \textbf{16}   & \textbf{$-50$\,\%} \\
+LUT como lógica      & 2174 & 1963 & $-10$\,\% \\
+LUT como RAM distr.  & 567  & 570  & $\approx$ igual \\
+Flip-flops           & 195  & 188  & $-4$\,\% \\
+CARRY8               & 288  & 264  & $-8$\,\% \\
+Block RAM            & 0    & 0    & igual \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La reducción a la mitad de multiplicadores confirma experimentalmente la predicción
+teórica $\log_4N-1$ frente a $\log_2N-2$. La memoria resulta idéntica, tal como
+anticipa la comparación de arquitecturas.
+
+\paragraph{Nota sobre el temporizado.} Las cifras de frecuencia máxima obtenidas en la
+versión \emph{no segmentada} ($\approx48$~MHz, con camino crítico de 58--61 niveles de
+lógica) no representan el límite de las arquitecturas, sino la ausencia de registros
+entre etapas. La versión segmentada del R2$^2$SDF acota el camino crítico a una mariposa
+o un multiplicador; su caracterización temporal está pendiente.
+
+\paragraph{Memoria distribuida.} Las líneas de retardo se implementaron como RAM
+distribuida en LUT ($\approx570$~LUT) y no como Block RAM, quedando los 144 bloques
+disponibles sin utilizar. Migrar las líneas más largas a Block RAM es una optimización
+pendiente con margen holgado.
+
+\section{Decisiones de diseño}
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{R2$^2$SDF sobre R2SDF.} Mitad de multiplicadores con memoria idéntica. Al
+      replicarse el núcleo en varias instancias, el consumo de DSP por instancia
+      determina cuántas caben en el dispositivo.
+
+\item \textbf{SDF sobre MDC.} El presupuesto temporal es holgado, de modo que no se
+      requiere el paralelismo interno de las arquitecturas multi-vía. El SDF ofrece
+      control más simple y mejor granularidad de asignación. El MDC pasaría a ser
+      preferible si el ancho de banda de memoria permitiera alimentar varias muestras por
+      ciclo de forma sostenida.
+
+\item \textbf{$\mathbf{U}$ calculada en el PS.} Evita implementar la inversión matricial
+      en hardware, que en arquitecturas comparables llega a ocupar más del 75\,\% del
+      área. Permite además emplear métodos numéricamente robustos (QR, SVD) y
+      regularización, sin costo en la lógica programable.
+
+\item \textbf{Transposición por bloques.} Reduce el ancho de banda requerido de
+      $\approx4$--$6$~GB/s (acceso por columnas directo) a $\approx1{,}4$~GB/s, con un
+      costo de 8 bloques de memoria interna sobre 144 disponibles.
+
+\item \textbf{Bloque de $64\times64$.} Cada fila del bloque ocupa exactamente 256~B, es
+      decir una ráfaga AXI de longitud 16 con bus de 128~bits: el tamaño coincide con el
+      óptimo recomendado por el fabricante.
+
+\item \textbf{Serialización de bobinas.} Las ocho reconstrucciones son independientes y el
+      presupuesto temporal permite procesarlas en secuencia; no se requiere una cadena por
+      bobina. Con $P$ instancias, $T_{\mathrm{frame}} = C_{\mathrm{frame}}/(P f)$; para
+      $P=2$ el margen es de $2{,}4\times$ y para $P=4$ de $4{,}8\times$.
+\end{enumerate}
+
+\section{Problemas abiertos}
+\label{sec:abiertos}
+
+\paragraph{Escalado del pipeline (crítico).} El escalado sistemático de $\tfrac12$ por
+mariposa descuenta 20~bits en una IFFT2D completa, mientras que el crecimiento real del
+$k$-space de resonancia es de $\approx1{,}5$~bits. La señal reconstruida queda reducida a
+unos pocos LSB del formato $Q1.15$. Debe resolverse mediante alguna de las estrategias de
+la Sección~\ref{sec:escalado}, validando la elección con datos reales.
+
+\paragraph{Arquitectura radix-2 iterativa.} La variante basada en memoria requiere, por
+ciclo, dos lecturas y dos escrituras más una lectura de descarga, con lectura asíncrona.
+Ninguna primitiva de memoria admite ese perfil de puertos, de modo que la síntesis la
+convierte en registros discretos: a $N=1024$ son 1024 registros de 32~bits con un
+multiplexor de $\approx32000$~bits, cuya optimización agota la memoria de la herramienta.
+Constituye un resultado en sí mismo: la arquitectura iterativa con acceso multipuerto
+asíncrono \textbf{no escala} a transformadas grandes en FPGA.
+
+\paragraph{Pendientes de verificación.} Modelo C++ y \texttt{vm} del módulo de
+transposición; caracterización temporal de la versión segmentada; validación de la cadena
+completa contra datos de resonancia reales.
+
+\section{Errores de implementación registrados}
+
+Se documentan por su valor diagnóstico en desarrollos análogos:
+
+\begin{enumerate}[leftmargin=*,nosep]
+\item \textbf{Truncamiento del índice de factor de giro.} El número de giro debe truncarse
+      a $\log_2N-2$ bits: los dos bits superiores del contador ya se consumen en la
+      selección de rama. Conservarlos desplaza la dirección en $N/2$ y, como
+      $W^{k+N/2}=-W^k$, invierte el signo del factor. Síntoma: bins con $k_1=k_2=1$
+      rotados exactamente $-j$.
+\item \textbf{Registros de control sin reinicialización.} Un registro de arranque sin
+      \emph{reset} propaga valores indefinidos a los contadores de etapa y de allí a toda
+      la salida. Síntoma: señales en estado \texttt{X} en la simulación.
+\item \textbf{Ausencia de enmascarado de salida.} Con la señal de validez en cero, el
+      pipeline sin cebar entrega valores indefinidos (las líneas de retardo arrancan sin
+      inicializar). Debe forzarse la salida a cero, tanto en el RTL como en el modelo.
+\item \textbf{Ventana de captura insuficiente.} Al segmentar el pipeline, la latencia
+      pasa de $N$ a $N+3(\log_4N-1)$; los bancos de prueba dimensionados para la latencia
+      anterior truncan el cuadro de salida.
+\end{enumerate}
+
+\section{Extensiones}
+
+\paragraph{TSENSE.} Variante adaptativa para imagen dinámica que combina el filtrado
+espacial de SENSE con el temporal de UNFOLD, entrelazando el patrón de submuestreo entre
+cuadros sucesivos y actualizando los mapas de sensibilidad a partir de los propios datos,
+sin exploración de calibración separada. La arquitectura aquí descrita la soporta con
+cambios acotados: recálculo periódico de $\mathbf{U}$ en el procesador y un filtro
+temporal de pocos coeficientes tras el \emph{unfolding}, a costa de almacenar los últimos
+cuadros.
+
+\paragraph{Otras direcciones.} Métodos $k$--$t$ (k-t~BLAST, k-t~SENSE) que explotan
+correlaciones espacio-temporales; autocalibración tipo GRAPPA/TGRAPPA; aceleraciones
+$\Af>2$, donde la robustez numérica del método de resolución cobra mayor importancia.
+
+\section*{Glosario}
+
+\begin{center}
+\begin{tabular}{@{}l l@{}}
+\toprule
+Sigla & Significado \\
+\midrule
+SENSE & \emph{Sensitivity Encoding}, reconstrucción paralela en dominio imagen \\
+FOV & \emph{Field of View}, campo de visión \\
+PE / RO & \emph{phase-encode} / \emph{readout}, direcciones de codificación \\
+SDF / SDC / MDC & \emph{single-path delay feedback} / \emph{delay commutator} / \emph{multi-path} \\
+DIF / DIT & \emph{decimation in frequency} / \emph{in time} \\
+BF2I / BF2II & mariposas del algoritmo radix-$2^2$ \\
+PS / PL & sistema de procesamiento / lógica programable \\
+HP / HPC & puertos AXI de alto rendimiento / coherentes \\
+AP / PSNR / SSIM & métricas de calidad de imagen \\
+TSVD & \emph{truncated SVD}, regularización por truncamiento \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Referencias}
+
+\begin{enumerate}[nosep,leftmargin=*]
+  \item K.\,P. Pruessmann, M. Weiger, M.\,B. Scheidegger, P. Boesiger,
+        \emph{SENSE: Sensitivity Encoding for Fast MRI},
+        Magnetic Resonance in Medicine 42(5), 1999, 952--962.
+  \item S. He, M. Torkelson, \emph{A New Approach to Pipeline FFT Processor},
+        Proc.\ IPPS, 1996.
+  \item M. Garrido, \emph{A Survey on Pipelined FFT Hardware Architectures},
+        Journal of Signal Processing Systems, 2022.
+  \item P. Kellman, F.\,H. Epstein, E.\,R. McVeigh, \emph{Adaptive Sensitivity Encoding
+        Incorporating Temporal Filtering (TSENSE)},
+        Magnetic Resonance in Medicine 45(6), 2001, 846--852.
+  \item A. Deshmane, V. Gulani, M.\,A. Griswold, N. Seiberlich, \emph{Parallel MR Imaging},
+        Journal of Magnetic Resonance Imaging 36(1), 2012, 55--72.
+  \item G.\,H. Golub, C.\,F. Van Loan, \emph{Matrix Computations}, 4.\textsuperscript{a}~ed.,
+        Johns Hopkins University Press, 2013.
+\end{enumerate}
+
+\end{document}
