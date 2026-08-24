@@ -3,8 +3,10 @@ __pycache__/
 .venv/
 raw_data/
 log/
+results/
 build/
 .Xil/
+work/
 amd/
 miscelaneas/
 output/
@@ -12,6 +14,8 @@ flist/
 track.*/
 ~$*
 *.pdf
+*.str
+*.logfile
 *.docx
 *.doc
 *.h5
@@ -23,6 +27,7 @@ track.*/
 *.npz
 *.rpt
 *.log
+*.xsa
 *.dat
 *.jou
 *.dcp

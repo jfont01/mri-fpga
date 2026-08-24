@@ -47,6 +47,7 @@ module fft1d_r22sdf #(
 );
 
   localparam int LOG2N   = $clog2(N);
+  if (LOG2N % 2 == 1) begin $fatal(1, "LOG2N odd, not supported yet"); end
   localparam int N_UNITS = LOG2N / 2;      // log4(N)
 
   wire [2*NB-1:0] w_data  [0:N_UNITS];

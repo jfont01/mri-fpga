@@ -1,96 +1,371 @@
-Estoy haciendo mi tesis de grado de Ingeniería Biomédica: un sistema de
-reconstrucción de imágenes de resonancia magnética en tiempo real (20 fps)
-usando el algoritmo SENSE, implementado en una FPGA Kria KV260 (SoM K26,
-chip XCK26, Zynq UltraScale+).
+# PROMPT DE CONTEXTO — Tesis: Reconstrucción SENSE en tiempo real sobre FPGA
 
-## Parámetros del sistema
-- Algoritmo: SENSE (Pruessmann et al. 1999)
-- L = 8 bobinas
-- Factor de aceleración Af = 2 (submuestreo en dirección phase-encode)
-- Imagen final: 512×512. K-space por bobina: 512 (readout, completo) × 256
-  (phase-encode, submuestreado)
-- Punto fijo S(16,15) = Q1.15
-- Datos: dataset offline / simulación (no escáner en vivo por ahora)
+---
 
-## Arquitectura acordada (split PS/PL)
+## ANTES DE EMPEZAR A CONVERSAR (instrucción prioritaria)
 
-PS (ARM), UNA VEZ POR SESIÓN:
-1. Prescan → estimar mapas de sensibilidad S (RSS o ESPIRiT)
-2. Calcular A = SᴴS (Hermitiana definida positiva)
-3. Factorizar A = LDLᴴ (variante sin raíces cuadradas)
-4. Resolver L veces para obtener el operador de desplegado:
-       U ≜ A⁻¹Sᴴ = (SᴴS)⁻¹Sᴴ  ∈ ℂ^(Af×L)
-   (coincide exactamente con la matriz de unfolding de Pruessmann)
-5. Transferir U a DDR4 (~8MB, dimensión Af × L × Nx × Ny/Af)
+**No respondas todavía con opiniones ni propuestas técnicas.** Primero necesito que
+analices el material del proyecto. Recién cuando lo hayas revisado empezamos a trabajar.
 
-PL (fabric), CADA FRAME (20 fps):
-1. Por cada bobina l (procesadas EN SERIE, reusando un solo core físico):
-   IFFT2D del k-space submuestreado → imagen aliased y_l
-   (pasada de fila N=512 → corner-turn → pasada de columna N=256)
-2. MAC de desplegado: m_hat = U · y  (una multiplicación matriz-vector
-   Af×L por cada posición aliased) — SIN Cholesky, SIN divisiones,
-   SIN sustituciones en tiempo real
-3. CORDIC para la magnitud → imagen clínica final |M|
+### ⚠ DÓNDE ESTOY TRABADO AHORA
 
-## Insight clave del diseño
-Como S no cambia frame a frame, A y su factorización LDLᴴ tampoco. Por eso
-todo el pipeline de Cholesky (que yo había diseñado originalmente para correr
-en tiempo real) se colapsa en U, precalculado offline. En tiempo real solo
-queda IFFT2D + un MAC complejo.
+El núcleo de cómputo (FFT) **ya está resuelto y verificado**. Donde estoy trabado es en la
+**implementación sobre la plataforma**: integración PS–PL, acceso a DDR4 por AXI, y el
+corner-turn. Nunca integré un acelerador completo contra memoria externa, así que ahí es
+donde más necesito ayuda concreta.
 
-## Decisiones tomadas
-- Core FFT: R2²SDF (radix-2², single-path delay feedback) — pipelined,
-  1 muestra/ciclo, ~mitad de multiplicadores que R2SDF puro porque una de
-  cada dos etapas multiplica solo por -j (gratis en hardware)
-- Multiplicador complejo: 4 multiplicadores (no Karatsuba) — más fácil de
-  verificar bit-exacto, y hay DSPs de sobra
-- Todo lo que sea "una imagen completa o más grande" (k-space, intermedios,
-  y, U, m_hat) va a DDR4. On-chip (BRAM/URAM) queda solo para estructuras
-  internas de los cores (ROM de twiddles, líneas de retardo, FIFOs)
-- FIFO en cada frontera donde un core de streaming toca DDR4/AXI
-- Presupuesto de tiempo validado: ~14ms de FFT + unos ms de MAC/CORDIC,
-  contra 50ms disponibles (20fps). Margen amplio, no hace falta paralelismo
-  agresivo en la v1.
+**Subí toda la documentación de Vivado/AMD al proyecto (los UG y PG). Usala.** Cuando me
+respondas algo sobre AXI, puertos HP, DDR, inferencia de memoria o el flujo de block
+design, **citá el documento y el capítulo/sección concretos** en vez de responder de
+memoria. Si algo no está en la documentación que subí, decímelo explícitamente.
 
-## Mi infraestructura
-- `rtlsim`: simulador RTL custom en C++ (headers propios: rtlsim_core.hpp,
-  rtlsim_trace.hpp). Modela Reg<T> con .i/.o + hold()/commit(), Module con
-  hooks connect_clocks/init/combinational/sequential, y Simulator con
-  ciclo hold→comb→seq→commit→comb. Usa ap_fixed (Vitis HLS) para el punto
-  fijo. Es el "golden model" bit-exacto.
-- Pipeline de regresión en 4 etapas, dirigido por JSON:
-  sim (corre el modelo C++, genera estímulos + esperados) →
-  vm (corre el RTL real en XSIM, compara bit a bit) →
-  synth (síntesis Vivado, chequea LUT/FF/DSP/BRAM/WNS) →
-  impl (place & route)
-- Scripts de generación de estímulos en Python (gen_smaps, gen_phantom,
-  gen_coils, gen_kspace, gen_aliased_kspace, gen_coil_aliased) — verificados,
-  reproducen exactamente la ecuación de plegado de Pruessmann
-- Los estímulos se inyectan desde el testbench (no desde rtlsim). A futuro,
-  Google Test para validar el modelo fixed-point contra la referencia float.
-- Todo la infraestructura esta preparada para ser utilizada tanto en Linux Ubuntu nativo
-  como en MSYS en Windows.
+Vas a encontrar (o te voy a adjuntar):
 
-## Estado actual
-Tengo un modelo rtlsim de una FFT1D radix-2 Cooley-Tukey de 64 puntos
-(arquitectura iterativa basada en memoria, la más simple posible) —
-verificado contra np.fft.fft(x)/N. El siguiente paso es escalar a R2²SDF
-y armar el resto del pipeline.
+1. **`sense_fpga_ecuaciones.tex` / `.pdf`** — documento de referencia con TODA la
+   formulación matemática del proyecto: notación, modelo de adquisición, aliasing,
+   IFFT2D, unfolding SENSE, métodos de resolución, arquitecturas de FFT, corner-turn,
+   aritmética de punto fijo, presupuesto de recursos, estado del desarrollo, decisiones
+   de diseño, problemas abiertos y errores registrados. **Leelo completo y primero.**
+   Es la fuente de verdad de la notación: usala tal cual, no inventes símbolos nuevos.
 
-## Cómo quiero que trabajemos
-- Priorizá rigor matemático y verificación numérica. Cuando me des una
-  fórmula o un algoritmo, verificalo contra NumPy antes de dármelo.
-- Cuidado con la notación: cuando leamos papers, pedime capturas en vez de
-  asumir símbolos de memoria.
-- No me des todo el código de una: desglosemos primero el problema teórico.
-- Explicame las cosas en detalle, con fórmulas, cuando sea relevante.
+2. **Código RTL** (`.v`, `.sv`): módulos comunes (`cast`, `cmul`, `cmul_karatsuba`,
+   `delay_line`, `btfly_bf2i`, `btfly_bf2ii`) y módulos FFT (`fft1d_r2`,
+   `fft1d_r2sdf`, `fft1d_r22sdf` con su `_unit`), más `tile_transpose`.
 
-## Bibliografía que estoy usando
-- VER LO SUBIDO EN EL PROYECTO
-- Eres libre de proponerme papers y bibliografia, de hecho te lo agradeceria. 
-Tanto en lo referente a arquitecturas eficientes para fft1d/2d en función de lo que 
-quiero hacer y la placa con la que estoy trabajando, asi como lo referente al algoritmo SENSE y el 
-problema de MRI en tiempo real que quiero resolver en la FPGA.
+3. **Modelos C++** (`.hpp`, `.cpp`): los golden models de cada módulo, escritos contra
+   mi simulador propio `rtlsim`.
 
+4. **Scripts de infraestructura** (`.py`, `.sh`, `.tcl`): el flujo de regresión
+   (`run_gtest`, `run_regression_vm`, `run_regression_synth`, `run_regression_impl`,
+   `flist_utils.sh`, `run_synth.tcl`, `run_impl.tcl`, `Makefile`).
 
+5. **Bibliografía** (`.pdf`): papers y libros de MRI, SENSE y arquitecturas FFT.
 
+**Cuando termines de revisar, decime qué encontraste y qué te quedó poco claro.**
+Si algo que menciono abajo no aparece entre los archivos, avisame antes de asumir nada.
+
+---
+
+## 1. Qué estoy construyendo
+
+Tesis de grado de **Ingeniería Biomédica**. Sistema de reconstrucción de imagen de
+resonancia magnética en **tiempo real (20 fps)** usando el algoritmo **SENSE**,
+implementado sobre **FPGA Kria KV260** (módulo K26, Zynq UltraScale+ MPSoC XCK26).
+
+La idea es hacer la reconstrucción dentro de la cadena de adquisición del escáner, sin
+mandar los datos crudos a una estación externa.
+
+### Parámetros fijos del sistema
+
+| Parámetro | Valor |
+|---|---|
+| Imagen reconstruida | 1024 × 1024 (Nx × Ny) |
+| Bobinas receptoras | L = 8 |
+| Factor de aceleración | Af = 2 (submuestreo en phase-encode) |
+| Datos por bobina tras submuestreo | 1024 × 512 |
+| Formato numérico | punto fijo Q1.15 (16 bits con signo) |
+| Tasa objetivo | 20 fps (50 ms por cuadro) |
+
+**Ojo con las dimensiones** (nos confundimos varias veces): la imagen completa es
+1024×1024; con Af=2 se adquiere la mitad de las líneas de phase-encode, así que el dato
+por bobina es 1024×512 y la IFFT2D se hace sobre eso. La fase 1 son 512 IFFT de 1024
+puntos (readout) y la fase 2 son 1024 IFFT de 512 puntos (phase-encode).
+
+### División PS / PL
+
+- **PS (una vez por sesión, punto flotante):** estimación de mapas de sensibilidad,
+  cálculo de la matriz de unfolding **U** para cada posición, configuración del acelerador.
+- **PL (cada cuadro, punto fijo):** IFFT2D por bobina → corner-turn → MAC del unfolding
+  → magnitud.
+
+---
+
+## 2. Estado del desarrollo
+
+| Módulo | Estado |
+|---|---|
+| `cast`, `cmul`, `cmul_karatsuba` | verificado (común) |
+| `delay_line`, `btfly_bf2i`, `btfly_bf2ii` | verificado (común) |
+| `fft1d_r2` (radix-2 iterativo) | **descartado** — no escala a N=1024 (ver §5) |
+| `fft1d_r2sdf` | verificado — gtest y vm en verde |
+| `fft1d_r22sdf` | verificado — gtest y vm en verde, **segmentado** |
+| `tile_transpose` | funcional, **falta modelo C++ y vm** |
+| Maestro AXI / recorrido de tiles | pendiente |
+| MAC del unfolding SENSE | pendiente |
+| CORDIC de magnitud | pendiente |
+| Cálculo de U en el PS | pendiente |
+
+### Resultados de implementación ya obtenidos (N=1024, Q1.15, cmul directo, XCK26)
+
+| Recurso | R2SDF | R2²SDF |
+|---|---|---|
+| **DSP48E2** | **32** | **16** |
+| LUT lógica | 2174 | 1963 |
+| LUT como RAM distribuida | 567 | 570 |
+| Flip-flops | 195 | 188 |
+| Block RAM | 0 | 0 |
+
+La mitad de DSP con memoria idéntica: confirma la predicción log₄N−1 vs log₂N−2.
+Las cifras de Fmax (~48 MHz) son de la versión **no segmentada** y no representan el
+límite de la arquitectura; falta caracterizar la segmentada.
+
+---
+
+## 3. Metodología de verificación (importante, es propia)
+
+Uso un simulador RTL en C++ propio llamado **`rtlsim`** (semántica de registros con
+`.i`/`.o`, dominios de reloj, `Module` con hooks `init`/`combinational`/`sequential`,
+puertos `InPort`/`OutPort`, tipos `ap_fixed` de Vitis HLS).
+
+El flujo de regresión está dirigido por JSON y tiene cuatro etapas:
+
+| Etapa | Compara | Detecta |
+|---|---|---|
+| `run_gtest` | modelo C++ ↔ referencia matemática | errores de algoritmo |
+| `run_regression_vm` | RTL ↔ modelo C++, **bit a bit** | errores de implementación |
+| `run_regression_synth` | — | recursos y camino crítico |
+| `run_regression_impl` | — | recursos y timing tras ruteo |
+
+El modelo C++ se compila en **dos modos**: `double` (valida el algoritmo sin ruido de
+cuantización) y `fixed` (valida el formato). Un fallo solo en `fixed` = problema
+numérico; un fallo en `double` = error estructural.
+
+### Convenciones de la estructura de módulos
+
+```
+modules/<nombre>/
+  ├── rtl/            <nombre>.v  (+ submódulos, + twiddles/)
+  ├── cpp/            <nombre>.hpp, <nombre>.cpp   (modelo rtlsim)
+  ├── testbench/      <nombre>_tb.sv, _tb.cpp, _tb.hpp, _gtest.cpp, *_regression.json
+  ├── synthesis/      <nombre>_wrapper_synth.v, <nombre>_synth_regression.json
+  ├── implementation/ <nombre>_wrapper_impl.v, <nombre>_impl_regression.json
+  ├── flist/          (autogenerado por update_flist desde los `include del RTL)
+  └── <nombre>_vars.sh
+```
+
+- Convención: **nombre del módulo = nombre del archivo**.
+- `auto_defines`: las claves en MAYÚSCULAS del JSON se convierten en
+  `-D<MODULO>_<KEY>`.
+- El backend de simulación real es **iverilog** (no XSIM), con `cwd = module_dir`.
+- Trabajo en **Linux Ubuntu y en MSYS/MinGW sobre Windows** — cuidado con rutas.
+- Los wrappers de synth/impl registran entrada y salida para aislar los caminos
+  IBUF→FF y FF→OBUF del WNS, así la comparación entre arquitecturas es justa.
+
+---
+
+## 4. Decisiones ya tomadas (no hace falta re-discutirlas)
+
+1. **R2²SDF sobre R2SDF** — mitad de multiplicadores, misma memoria. **Y, más
+   importante: +12,7 dB de SNR de cuantización** (verificado en simulación), porque
+   hace la mitad de multiplicaciones no triviales y además las hace en etapas más
+   tardías, donde su ruido pasa por menos escalados posteriores. Es un argumento de
+   **calidad de imagen**, no de área — que es lo que vale en una tesis de Biomédica.
+2. **SDF sobre MDC** — el presupuesto temporal sobra; SDF tiene control más simple.
+   (MDC sería preferible si el ancho de banda permitiera varias muestras por ciclo).
+3. **U se calcula en el PS**, no en hardware — evita la inversión matricial en PL, que
+   en arquitecturas comparables ocupa >75 % del área.
+4. **Corner-turn por tiles de 64×64 en BRAM** — baja el ancho de banda de ~4–6 GB/s a
+   ~1,4 GB/s. Cada fila del tile son 256 B = una ráfaga AXI de BL16 con bus de 128 bits.
+5. **Serializar las bobinas** — son 8 reconstrucciones independientes y sobra tiempo.
+   Con P=2 instancias el margen es 2,4×; con P=4, 4,8×. **No hacen falta 64 instancias**
+   (eso fue un sobredimensionamiento que ya corregimos).
+
+6. **Objetivo de paralelismo: P = 4 a 200 MHz.** Da 10,5 ms de los 50 disponibles,
+   consume 6,4 GB/s (la mitad del presupuesto de DDR), usa 2 de los 4 puertos HP y
+   solo 48 DSP con Karatsuba. El margen del 50 % en ancho de banda es deliberado:
+   absorbe la ineficiencia real del acceso a DDR, que todavía **no está medida**.
+
+### Techo de paralelismo (calculado)
+
+Cada instancia SDF consume 1 muestra/ciclo y produce otra: **8 B/ciclo** (4 leídos +
+4 escritos). A 200 MHz son 1,6 GB/s por instancia. Con ~13,4 GB/s efectivos de DDR4:
+
+| f_FFT | BW/instancia | P_max |
+|---|---|---|
+| 150 MHz | 1,20 GB/s | 11 |
+| **200 MHz** | **1,60 GB/s** | **8** |
+| 250 MHz | 2,00 GB/s | 6 |
+| 300 MHz | 2,40 GB/s | 5 |
+
+Da consistente por los dos lados: 8 instancias necesitan 16 muestras/ciclo y cada
+puerto HP de 128 bits mueve 4 → exactamente los 4 puertos HP.
+
+**El cuello de botella es la memoria, no el cómputo.** Con 1248 DSP se podrían poner
+100 instancias y la DDR frenaría en 8.
+
+---
+
+## 5. Problemas abiertos
+
+### CRÍTICO — Escalado del pipeline
+
+El escalado sistemático de ½ por mariposa descuenta 20 bits en una IFFT2D completa,
+pero el crecimiento real del k-space de MRI es de **~1,5 bits**. Estoy tirando ~14,5
+bits y la señal queda en pocos LSB de Q1.15. Hay que resolverlo con alguna de estas:
+punto flotante por bloques, escalado selectivo (solo algunas etapas), crecimiento del
+ancho de palabra, o normalización de entrada. **Falta validar la elección con datos
+reales de MRI, no con phantoms sintéticos.**
+
+### La arquitectura radix-2 iterativa no escala
+
+Su memoria requiere 2 lecturas + 2 escrituras + 1 lectura de descarga por ciclo, con
+lectura asíncrona. Ninguna primitiva de memoria admite ese perfil, así que la síntesis
+la convierte en 1024 registros de 32 bits con un mux de ~32000 bits, y Vivado agota la
+RAM de la máquina. **Lo documentamos como resultado**, no como fracaso: refuerza la
+elección de SDF.
+
+### DECISIÓN PENDIENTE — ¿retener el resultado intermedio on-chip?
+
+Hoy cada bobina toca la DDR **4 veces** (leer k-space, escribir fase 1, leer para fase 2,
+escribir resultado). Si los pasos 2 y 3 quedaran **on-chip**, el tráfico bajaría a la
+mitad y el techo de paralelismo se **duplicaría** (de P≈8 a P≈16).
+
+La imagen intermedia de una bobina son **2 MiB** y hay **2,25 MiB de URAM**: entra al
+89 %, una bobina por vez, **sin doble buffer**. Hay que evaluar si el margen alcanza.
+
+Aclaración conceptual importante: un buffer **no aumenta** el ancho de banda sostenido
+de la DDR (como FIFO solo promedia ráfagas). Sirve para dos cosas distintas: (a) hacer
+**eficiente** el acceso —es lo que ya hace el tiling, que sube el BW *útil* sin tocar el
+físico— y (b) **eliminar tráfico**, que es el caso de arriba.
+
+### Pendientes de verificación
+
+Modelo C++ y vm de `tile_transpose`; caracterización temporal del R2²SDF segmentado;
+validación de la cadena completa contra datos de MRI reales.
+
+---
+
+## 6. Bugs ya encontrados (valor diagnóstico, no repetirlos)
+
+1. **Truncamiento del índice de twiddle.** `tw_num` debe truncarse a log₂N−2 bits; los
+   dos bits altos ya se consumen en `tw_sel`. Conservarlos corre la dirección en N/2 y,
+   como W^(k+N/2) = −W^k, invierte el signo. *Síntoma: bins con k₁=k₂=1 rotados −j.*
+2. **Registros de control sin reset.** `r_bf2_start` sin `if (i_rst)` propaga X a los
+   contadores y a toda la salida. *Síntoma: X en simulación.*
+3. **Falta de gating de salida.** Con `o_valid=0` el pipeline sin cebar entrega basura
+   (las delay_line arrancan sin inicializar). Hay que forzar 0 en RTL **y** en el modelo.
+4. **Ventana de captura insuficiente.** Al segmentar, la latencia pasó de N a
+   N+3(log₄N−1) = 70/265/1036 ciclos para N=64/256/1024. Los testbench dimensionados
+   para la latencia vieja truncan el frame.
+
+---
+
+## 7. Cómo prefiero trabajar (importante)
+
+- **Verificá numéricamente antes de darme código.** No me des RTL ni fórmulas "a ojo".
+  Si vas a darme una ecuación, comprobala contra NumPy primero. Si vas a darme RTL,
+  compilalo y probalo. Ya nos pasó de perder tiempo con cosas que parecían bien y no lo
+  estaban.
+- **Sé honesto sobre las limitaciones.** Si algo no lo podés verificar en tu entorno,
+  decímelo explícitamente en vez de entregarlo como si estuviera comprobado. Valoro más
+  "esto no lo pude probar" que una entrega que falla después.
+- **Desglosá la teoría antes del código.** Primero la matemática verificada, después la
+  implementación.
+- **Si te doy un paper, leelo de verdad** (rasterizá las páginas si hace falta) en vez de
+  responder de memoria.
+- **Tono:** español argentino informal, pero con rigor técnico.
+- **No me des la razón por darme la razón.** Si algo que digo está mal, corregime con
+  los números en la mano.
+
+---
+
+## 8. Bibliografía disponible en el proyecto
+
+- **He & Torkelson 1996**, *A New Approach to Pipeline FFT Processor* — fuente primaria
+  del R2²SDF (ecuaciones 1–6, Figuras 3–5, Tabla 1).
+- **Pruessmann et al. 1999**, *SENSE: Sensitivity Encoding for Fast MRI* — el algoritmo.
+- **Deshmane et al. 2012**, *Parallel MR Imaging* — review de imagen paralela.
+- **Akçakaya et al.**, *MR Image Reconstruction: Theory, Methods and Applications*.
+- **Shoab Khan**, *Digital Design of Signal Processing Systems* — CORDIC, retiming,
+  punto fijo.
+- **Garrido 2022**, *A Survey on Pipelined FFT Hardware Architectures*.
+- Papers de FPGA para SENSE (Siddiqui 2017), ASIC para SENSE (Qazi 2019), FFT2D en FPGA
+  (Li & Wyrwicz), y varios más de MRI paralela.
+
+**Nota sobre el paper de Qazi (ASIC SENSE):** sus tiempos reportados (0,01 ms) no cierran
+con el hardware que describe — parecen ser por iteración, no por imagen, mientras que los
+compara contra tiempos de CPU por imagen completa. Además escribe A = S⁻¹P siendo S de
+8×2 (no invertible) y usa transpuesta sin conjugar. Tenerlo en cuenta si se lo cita.
+
+---
+
+## 8-bis. Documentación de AMD disponible
+
+Tengo descargada la documentación de AMD. **Núcleo para el trabajo actual (corner-turn
+y acceso a DDR4):**
+
+- **UG1037** — AXI Reference Guide. El protocolo: canales, handshake, ráfagas, la regla
+  de no cruzar 4 KB.
+- **UG1085** — Zynq US+ TRM. Los capítulos que importan son el **17** (DDR Memory
+  Controller, con *SDRAM Address Mapping*: cómo la dirección AXI se traduce a
+  banco/fila/columna), el **35** (PS-PL AXI Interfaces, puertos HP) y el **15** (QoS,
+  Performance Monitor). **No hace falta el documento completo, son ~1800 páginas.**
+- **PG022** — AXI Datamover. El camino elegido para mover los tiles (da la interfaz
+  AXI-MM resuelta y se le mandan comandos por stream).
+- **PG201** — Zynq US+ Processing System. Configuración de los puertos HP en el block design.
+- **UG573** — UltraScale Memory Resources. BRAM y URAM: modos e inferencia. Aplica
+  directo al `tile_transpose` y a la optimización LUTRAM→BRAM pendiente.
+- **PG125** (AXI Traffic Generator) y **PG037** (AXI Performance Monitor) — para medir.
+- **DS987** (K26 SOM), **UG579** (DSP48E2), **PG247** (SmartConnect), **UG1118**
+  (empaquetar IP custom), **UG994/UG995** (IP subsystems + tutorial).
+
+**Si el contexto se satura, priorizá:** el `.tex`, el código del proyecto, y de la
+documentación solo UG1037 + PG022 + los tres capítulos de UG1085. El resto, bajo demanda.
+
+### Cómo quiero que uses esta documentación
+
+- **Citá documento + capítulo/sección** cuando respondas algo de implementación. No
+  quiero "según la documentación de Xilinx", quiero "UG1085, cap. 17, sección SDRAM
+  Address Mapping".
+- Si te pregunto algo y **no está** en la documentación disponible, decilo en vez de
+  improvisar. Prefiero "esto no lo encuentro" a una respuesta plausible pero inventada.
+- Cuando propongas conectar bloques, **especificá el protocolo de cada enlace**
+  (AXI4-MM, AXI4-Stream, AXI4-Lite) y qué documento cubre cada bloque.
+
+## 9. Próximos pasos previstos
+
+**ORDEN ACORDADO** (importante, se discutió y este es el correcto):
+
+0-bis. **Resolver el escalado de la FFT PRIMERO.** Es rápido (se hace con el modelo que ya
+   existe) y hasta que no esté, cualquier imagen reconstruida está degradada por una razón
+   ya conocida. **Antes de comprometerse con block floating point, medir cuánto crece
+   realmente el pico con datos de MRI reales**: puede que alcance con escalado selectivo
+   (escalar solo algunas etapas), que es un parámetro en el RTL actual y no un rediseño.
+   *Meyer-Baese cap. 2 y cap. de Fourier; PG109 documenta las tres estrategias
+   (unscaled / scaled / block floating point).*
+
+0. **MEDIR el ancho de banda real del patrón de tiles** (antes de construir nada).
+   Armar un block design con **AXI Traffic Generator** programado con el patrón de acceso
+   de tiles 64×64, y medirlo con **AXI Performance Monitor**. Ese número —el BW efectivo
+   del patrón real— es el único dato que falta para cerrar el presupuesto del sistema, y
+   ninguna lectura lo reemplaza. Si sale holgado, se sigue; si sale ajustado, se
+   replantea el patrón **antes** de haber escrito el maestro AXI.
+
+1. **Modelo de la cadena completa EN SOFTWARE** (no RTL) con precisión parametrizable
+   **por etapa**, y barrido para encontrar los anchos óptimos. Es un programa en C++ que
+   compone los modelos existentes: sin `always`, sin relojes, sin señales. El barrido
+   **especifica** los anchos del RTL que falta escribir (MAC, CORDIC), no valida uno ya
+   hecho — por eso va ANTES de construirlos.
+
+   Dos desacoples importantes que se acordaron:
+   - El experimento de memoria se hace barriendo **tamaños de ráfaga** (128/256/512/1024 B),
+     no tamaños de tile. Así el resultado vale para cualquier ancho de muestra.
+   - El **ancho interno** del datapath y el **ancho de almacenamiento** en DDR son
+     variables **independientes**: el datapath puede ser más ancho y truncarse con `cast`
+     al escribir. Eso rompe el acoplamiento entre el barrido y la arquitectura de memoria.
+   - Si hace falta más precisión, subir a **32 bits por componente** (8 B/muestra, tile
+     32×32) y no a anchos raros como 18 o 20, que rompen la alineación de direcciones.
+2. **Modelo C++ y vm de `tile_transpose`.**
+3. **Maestro AXI + FSM de recorrido de tiles** (o AXI Datamover) para el corner-turn
+   contra DDR4.
+4. **Re-sintetizar el R2²SDF segmentado** y cerrar la tabla comparativa con Fmax real.
+5. **MAC del unfolding** y **CORDIC de magnitud**.
+6. **Optimización LUTRAM → BRAM** de las delay lines largas.
+7. Lado PS: estimación de sensibilidades y cálculo de U.
+
+---
+
+## 10. Para arrancar
+
+Revisá todo el material (empezando por el `.tex`), decime qué encontraste, qué te llamó
+la atención y qué te falta para trabajar. **Recién ahí seguimos.**

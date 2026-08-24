@@ -688,6 +688,127 @@ k_1 &= c\,(a+b), & k_2 &= a\,(d-c), & k_3 &= b\,(c+d), \\
 \end{aligned}
 \end{equation}
 
+\section{Arquitectura del sistema}
+\label{sec:arquitectura}
+
+\subsection{Flujo de datos y protocolos}
+
+La reconstrucción se organiza en tres fases sobre la lógica programable. Los datos residen
+en DDR4 (las ocho bobinas suman $16$~MiB por cuadro, muy por encima de la memoria interna
+disponible), de modo que cada fase implica tráfico con memoria externa.
+
+\paragraph{Fase 1 --- transformada sobre readout ($N=1024$, 512 filas).}
+\begin{center}
+\small
+DDR4 $\to$ [AXI4-MM] $\to$ Datamover $\to$ [Stream] $\to$ conv.\ $128{\to}32$ $\to$
+FFT $\to$ conv.\ $32{\to}128$ $\to$ Datamover $\to$ [AXI4-MM] $\to$ DDR4
+\end{center}
+
+\paragraph{Fase 2 --- transformada sobre phase-encode ($N=512$, 1024 columnas).}
+\begin{center}
+\small
+DDR4 (por bloques) $\to$ [AXI4-MM] $\to$ Datamover $\to$ [Stream] $\to$ conv.\ $128{\to}32$
+$\to$ \textbf{transposición} $\to$ FFT $\to$ conv.\ $32{\to}128$ $\to$ [AXI4-MM] $\to$ DDR4
+\end{center}
+
+El bloque de transposición se ubica \textbf{antes} de la transformada de la segunda fase,
+no después de la primera: su función es convertir el orden de filas (como llega de memoria
+en ráfagas eficientes) al orden de columnas que la segunda transformada requiere. En la
+primera fase no hace falta transponer, ya que se leen y procesan filas.
+
+\paragraph{Fase 3 --- combinación de bobinas.}
+\begin{center}
+\small
+DDR4 (8 imágenes) $\to$ [AXI4-MM] $\to$ Datamover $\to$ [Stream] $\to$
+MAC ($\mathbf{U}\mathbf{\tilde y}$) $\to$ CORDIC $\to$ [AXI4-MM] $\to$ DDR4
+\end{center}
+
+\subsection{Protocolos empleados}
+
+\begin{center}
+\begin{tabular}{@{}l l l@{}}
+\toprule
+Protocolo & Dónde & Por qué \\
+\midrule
+AXI4 memory-mapped & frontera con DDR4 & la memoria requiere direcciones \\
+AXI4-Stream & todo el datapath interno & flujo continuo sin direcciones \\
+AXI4-Lite & control desde el procesador & configuración y estado \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+El puerto de alto rendimiento transporta 128 bits por transferencia, equivalentes a cuatro
+muestras complejas de 32 bits, mientras que el núcleo de transformada consume una muestra
+por ciclo. Entre ambos es necesario un adaptador de ancho. De esta relación $4{:}1$ se
+sigue que una única instancia de transformada aprovecharía sólo la cuarta parte del ancho
+de banda de un puerto.
+
+\subsection{Adaptación de la interfaz del núcleo}
+
+El núcleo de transformada no admite contrapresión: su contador avanza incondicionalmente y
+un frenado a mitad de cuadro lo desincroniza. En lugar de volverlo elástico ---lo que
+exigiría propagar una habilitación global a cientos de registros, con el consiguiente
+problema de \emph{fanout}--- se lo envuelve sin modificarlo:
+
+\begin{center}
+\begin{tabular}{@{}l l@{}}
+\toprule
+Elemento del envoltorio & Función \\
+\midrule
+inversor de reinicialización & el protocolo emplea reinicio activo bajo \\
+núcleo de transformada & se conserva intacto y verificado \\
+memoria intermedia de salida ($\ge N$) & absorbe la contrapresión \\
+lógica de disponibilidad & sólo admite un cuadro si hay espacio para el resultado \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Así el núcleo verificado no se altera y la verificación existente sigue siendo válida.
+
+\subsection{Presupuesto de paralelismo}
+
+Cada instancia consume una muestra por ciclo y produce otra, esto es $8$~B por ciclo
+($4$ leídos y $4$ escritos). El techo de paralelismo queda fijado por el ancho de banda
+efectivo de memoria:
+\begin{equation}
+P_{\max} = \frac{\mathrm{BW}_{\mathrm{efectivo}}}{8\,f} .
+\end{equation}
+
+\begin{center}
+\begin{tabular}{@{}c c c@{}}
+\toprule
+$f$ & Ancho de banda por instancia & $P_{\max}$ ($\approx13{,}4$~GB/s efectivos) \\
+\midrule
+150~MHz & 1,20~GB/s & 11 \\
+\textbf{200~MHz} & \textbf{1,60~GB/s} & \textbf{8} \\
+250~MHz & 2,00~GB/s & 6 \\
+300~MHz & 2,40~GB/s & 5 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+El resultado es consistente por dos vías: ocho instancias requieren dieciséis muestras por
+ciclo, y cada puerto de alto rendimiento de 128 bits entrega cuatro, de modo que se
+necesitan exactamente los cuatro puertos disponibles.
+
+\textbf{El límite del sistema es el ancho de banda de memoria, no la capacidad de
+cómputo.} El dispositivo admitiría más de cien instancias por recursos aritméticos, pero
+la memoria las limita a ocho.
+
+\subsection{Decisión pendiente: ubicación del resultado intermedio}
+
+Cada bobina accede actualmente a memoria externa cuatro veces por cuadro. Si el resultado
+intermedio se retuviera en memoria interna, el tráfico se reduciría a la mitad y el techo
+de paralelismo se duplicaría, además de eliminar por completo la necesidad de transponer
+por bloques.
+
+El resultado intermedio de una bobina ocupa $2{,}0$~MiB frente a $2{,}25$~MiB de UltraRAM
+disponible: entra al $89$\,\%, sin margen para doble almacenamiento y obligando a procesar
+las bobinas estrictamente en secuencia. Considerando además que la UltraRAM tiene ancho
+fijo de 72 bits ---lo que exige empaquetar dos muestras por palabra para aprovecharla---,
+la ocupación real se aproxima al total disponible. La decisión debe tomarse con la
+medición de ancho de banda en la mano.
+
 \section{Metodología de verificación}
 
 El desarrollo se apoya en una infraestructura de simulación propia (\texttt{rtlsim}: un
