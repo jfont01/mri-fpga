@@ -11,6 +11,10 @@ amd/
 miscelaneas/
 output/
 flist/
+.rigel_lopper/
+*_application/
+*_platform/
+_ide/
 track.*/
 ~$*
 *.pdf
