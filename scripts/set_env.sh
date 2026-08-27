@@ -14,6 +14,26 @@ source_project_script() {
     source "$script_path"
 }
 
+load_settings()
+{
+    local name="$1"
+    local settings_file="$2"
+
+    if [[ -z "$settings_file" ]]; then
+        log "$name settings not configured"
+        return 0
+    fi
+
+    if [[ ! -f "$settings_file" ]]; then
+        echo "[set_env.sh] ERROR: $name settings file not found:" >&2
+        echo "[set_env.sh]        $settings_file" >&2
+        return 1
+    fi
+
+    source "$settings_file" || return 1
+
+    log "$name environment loaded"
+}
 # ============================== Variables Checks ==============================
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "[set_env.sh] ERROR: use: source set_env.sh" >&2
@@ -76,14 +96,18 @@ if [[ "$PLATFORM" == "linux" ]]; then
 else
     log "using MSYS Python packages installed with"
 fi 
+# ============================== AMD/Xilinx Tools ==============================
+
 if platform_has_vivado; then
-    export VIVADO_ROOT="/tools/Xilinx/Vivado"
-    export VIVADO_VERSION="2024.2"
-    export VIVADO_BIN="$VIVADO_ROOT/$VIVADO_VERSION/bin/vivado"
-    export VIVADO_SETTINGS_64_SH="$VIVADO_ROOT/$VIVADO_VERSION/settings64.sh"
-    source "$VIVADO_SETTINGS_64_SH"
+
+    load_settings "Vivado" "${VIVADO_SETTINGS_64_SH:-}" || return 1
+    load_settings "Vitis"  "${VITIS_SETTINGS_64_SH:-}"  || return 1
+
 else
-    log "Vivado no disponible en plataforma '$PLATFORM' -- se usará $SIM_BACKEND para simulación"
+
+    log "AMD/Xilinx tools unavailable on platform '$PLATFORM'"
+    log "simulation backend: $SIM_BACKEND"
+
 fi
 
 # ============================== Platform detect ==============================
