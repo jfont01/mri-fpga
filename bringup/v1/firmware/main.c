@@ -17,7 +17,11 @@
 #include "xil_cache.h"
 #include "xil_printf.h"
 #include "xstatus.h"
-#include "xtime_l.h"
+#ifdef SDT
+    #include "xiltimer.h"
+#else
+    #include "xtime_l.h"
+#endif
 
 /* ------------------------------------------------------------------------- */
 /* Configuracion                                                              */

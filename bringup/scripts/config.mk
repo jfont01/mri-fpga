@@ -68,7 +68,7 @@ MINICOM       ?= minicom
 # UART / debug
 # -----------------------------------------------------------------------------
 
-UART ?= /dev/ttyUSB1
+UART ?= /dev/ttyUSB0
 
 BAUD ?= 115200
 

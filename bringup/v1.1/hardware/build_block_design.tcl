@@ -1,6 +1,6 @@
 
 ################################################################
-# This is a generated script based on design: v0
+# This is a generated script based on design: v1_1
 #
 # Though there are limitations about the generated script,
 # the main purpose of this utility is to make learning
@@ -41,7 +41,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 ################################################################
 
 # To test this script, run the following commands from Vivado Tcl console:
-# source v0_script.tcl
+# source v1_1_script.tcl
 
 # If there is no project opened, this script will create a
 # project, but make sure you do not have an existing project
@@ -57,7 +57,7 @@ if { $list_projs eq "" } {
 
 # CHANGE DESIGN NAME HERE
 variable design_name
-set design_name v0
+set design_name v1_1
 
 # If you do not already have an existing IP Integrator design open,
 # you can create a design using the following command:
@@ -663,18 +663,18 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   # Create instance: clk_wiz_0, and set properties
   set clk_wiz_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:6.0 clk_wiz_0 ]
   set_property -dict [list \
-    CONFIG.CLKOUT1_JITTER {90.381} \
-    CONFIG.CLKOUT1_PHASE_ERROR {78.394} \
-    CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {100} \
+    CONFIG.CLKOUT1_JITTER {78.874} \
+    CONFIG.CLKOUT1_PHASE_ERROR {74.581} \
+    CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {250} \
     CONFIG.CLKOUT2_JITTER {114.831} \
     CONFIG.CLKOUT2_PHASE_ERROR {98.576} \
     CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {100.000} \
     CONFIG.CLKOUT2_USED {false} \
     CONFIG.JITTER_SEL {Min_O_Jitter} \
     CONFIG.MMCM_BANDWIDTH {HIGH} \
-    CONFIG.MMCM_CLKFBOUT_MULT_F {16.000} \
-    CONFIG.MMCM_CLKIN2_PERIOD {10.0} \
-    CONFIG.MMCM_CLKOUT0_DIVIDE_F {16.000} \
+    CONFIG.MMCM_CLKFBOUT_MULT_F {15.625} \
+    CONFIG.MMCM_CLKIN2_PERIOD {10.000} \
+    CONFIG.MMCM_CLKOUT0_DIVIDE_F {6.250} \
     CONFIG.MMCM_CLKOUT1_DIVIDE {1} \
     CONFIG.NUM_OUT_CLKS {1} \
     CONFIG.OPTIMIZE_CLOCKING_STRUCTURE_EN {true} \
