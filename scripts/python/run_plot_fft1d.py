@@ -2,10 +2,15 @@
 """
 run_plot_fft1d.py
 
-Runner de ploteo para el modulo fft1d_r2. Se ejecuta SIN argumentos desde el
-directorio de un modulo (igual que run_gtest.py / run_regression_sim.py):
-descubre solo el modulo, lee su JSON de regresion, ubica los .dat de cada caso
-y genera una figura (entrada + FFT magnitud/fase) por caso.
+Runner de ploteo para los modulos fft1d_* (r2, r2sdf, r22sdf). Se ejecuta SIN
+argumentos desde el directorio de un modulo (igual que run_gtest.py /
+run_regression_sim.py): descubre solo el modulo, lee su JSON de regresion,
+ubica los .dat de cada caso y genera una figura por caso con:
+
+  1. entrada x[n]
+  2. |X[k]|
+  3. fase de X[k]
+  4. error contra la FFT ideal, en LSB de salida (SQNR, sesgo y maximo)
 
 Descubrimiento automatico
 --------------------------
@@ -22,11 +27,26 @@ Descubrimiento automatico
 
 Parametros por caso (auto)
 --------------------------
-  N    : del JSON (clave "N"); si falta, se infiere de la cantidad de muestras.
-  NBF  : del JSON (clave "NBF"); default 15.
-  K0   : en este orden -> del sufijo "_k<N>" en el nombre del caso;
-         si no, del sim_summary.rpt ("complex sine k0=..."); si no, None.
-         Con K0 conocido, la deteccion natural/bitrev es exacta.
+  N          : del JSON (clave "N"); si falta, se infiere de la cantidad de muestras.
+  Formatos   : NB/NBF del datapath (default 16/15) y, si el caso los define,
+               NB_IN/NBF_IN (puerto de entrada) y NB_OUT/NBF_OUT (puerto de
+               salida). Misma regla de defaults que el RTL y el modelo: el ancho
+               por defecto es NB y los bits fraccionales por defecto heredan los
+               bits enteros del datapath, NBF_x = NB_x - (NB - NBF).
+               Los .dat de entrada estan en Q(NB_IN, NBF_IN) y los de salida en
+               Q(NB_OUT, NBF_OUT), NO en el formato del datapath.
+  SCALE_MASK : (default: todas las etapas escalan). La salida es la FFT por
+               2^-S, con S = popcount(SCALE_MASK & (N-1)).
+  K0         : solo para marcar el bin esperado. En este orden: sufijo "_k<N>"
+               del nombre del caso; "k0=..." del sim_summary.rpt; STIM_K0 del
+               JSON si STIM_TYPE == 0 (tono/multitono); si no, None.
+
+Orden de la salida
+------------------
+  Con la referencia ideal disponible, el orden (natural o bit-reversed) se
+  detecta comparando la salida contra la FFT ideal en los dos ordenes: anda
+  con cualquier estimulo, no solo con tonos. PLOT_REORDER del JSON (o
+  --reorder) sigue pudiendo forzarlo.
 
 Uso
 ---
@@ -94,6 +114,46 @@ def filter_valid(x, valid_path: Path):
 
 
 # ----------------------------------------------------------------------
+# Formatos y escalado del caso
+# ----------------------------------------------------------------------
+def as_int(value, default):
+    """Acepta enteros o strings ("784", "0x310")."""
+    if value is None:
+        return default
+    if isinstance(value, str):
+        return int(value, 0)
+    return int(value)
+
+
+def port_formats(params):
+    """
+    (NB, NBF), (NB_IN, NBF_IN), (NB_OUT, NBF_OUT) del caso, con la misma regla
+    de defaults que fft1d_r22sdf.v / fft1d_r22sdf.hpp.
+    """
+    nb  = as_int(params.get("NB"), 16)
+    nbf = as_int(params.get("NBF"), 15)
+    nbi = nb - nbf                                   # bits enteros del datapath
+
+    nb_in   = as_int(params.get("NB_IN"), nb)
+    nbf_in  = as_int(params.get("NBF_IN"), nb_in - nbi)
+    nb_out  = as_int(params.get("NB_OUT"), nb)
+    nbf_out = as_int(params.get("NBF_OUT"), nb_out - nbi)
+
+    return (nb, nbf), (nb_in, nbf_in), (nb_out, nbf_out)
+
+
+def scale_stages(params, n):
+    """S = cantidad de etapas que escalan x1/2. Default: todas (escala 1/N)."""
+    log2n = int(round(np.log2(n)))
+    mask = as_int(params.get("SCALE_MASK"), (1 << 32) - 1)
+    return bin(mask & ((1 << log2n) - 1)).count("1"), mask
+
+
+def qfmt(nb, nbf):
+    return f"Q{nb - nbf}.{nbf}"
+
+
+# ----------------------------------------------------------------------
 # Bit-reversal y deteccion de orden
 # ----------------------------------------------------------------------
 def bitrev_index(i: int, log2n: int) -> int:
@@ -111,25 +171,36 @@ def bitrev_permute(x):
     return x[idx]
 
 
-def detect_order(X, k0=None):
-    n = len(X)
-    log2n = int(round(np.log2(n)))
+def peak_info(X):
     mag = np.abs(X)
     peak = int(np.argmax(mag))
     purity = (mag[peak] ** 2) / (np.sum(mag ** 2) + 1e-30)
-    info = {"peak_index": peak, "purity": purity}
-    if k0 is not None:
-        k0 %= n
-        if peak == k0:
-            return "natural", info
-        if peak == bitrev_index(k0, log2n):
-            return "bitrev", info
-        return "desconocido", info
-    return "desconocido", info
+    return {"peak_index": peak, "purity": purity}
+
+
+def detect_order_by_reference(X_raw, X_ref):
+    """
+    Compara la salida cruda contra la FFT ideal en orden natural y en orden
+    bit-reversed. Devuelve el orden con menor error; "indistinguible" si el
+    espectro ideal es invariante a la permutacion; "desconocido" si ninguno de
+    los dos es claramente mejor.
+    """
+    X_br = bitrev_permute(X_ref)
+    scale = np.max(np.abs(X_ref)) + 1e-30
+    if np.max(np.abs(X_ref - X_br)) <= 1e-9 * scale:
+        # Espectro invariante a la permutacion (p. ej. impulso en n=0, DC):
+        # los dos ordenes dan lo mismo y el error se puede medir igual.
+        return "indistinguible"
+    e_nat = np.sum(np.abs(X_raw - X_ref) ** 2)
+    e_br  = np.sum(np.abs(X_raw - X_br) ** 2)
+    lo, hi = min(e_nat, e_br), max(e_nat, e_br)
+    if lo > 0.5 * hi:
+        return "desconocido"
+    return "natural" if e_nat < e_br else "bitrev"
 
 
 # ----------------------------------------------------------------------
-# Extraccion automatica de K0
+# Extraccion automatica de K0 (solo para marcar el bin esperado)
 # ----------------------------------------------------------------------
 def k0_from_case_name(name: str):
     m = re.search(r"_k(\d+)\b", name)
@@ -148,7 +219,14 @@ def k0_from_report(case_dir: Path):
         return None
 
 
-def resolve_k0(case_name: str, case_dir: Path, override):
+def k0_from_params(params):
+    # Solo tono/multitono (STIM_TYPE 0): STIM_K0 es el tono principal.
+    if as_int(params.get("STIM_TYPE"), -1) == 0 and "STIM_K0" in params:
+        return as_int(params.get("STIM_K0"), None)
+    return None
+
+
+def resolve_k0(case_name: str, case_dir: Path, params, override):
     if override is not None:
         return override, "cli"
     k = k0_from_case_name(case_name)
@@ -157,14 +235,41 @@ def resolve_k0(case_name: str, case_dir: Path, override):
     k = k0_from_report(case_dir)
     if k is not None:
         return k, "sim_summary.rpt"
+    k = k0_from_params(params)
+    if k is not None:
+        return k, "STIM_K0"
     return None, "no_encontrado"
 
 
 # ----------------------------------------------------------------------
-# Plot (identico a plot_fft.py, condensado)
+# Error contra la referencia
 # ----------------------------------------------------------------------
-def make_figure(x_in, X_out, N, order, info, title, out_png, k0=None):
-    fig, axes = plt.subplots(3, 1, figsize=(11, 10), constrained_layout=True)
+def error_stats(X_out, X_ref, lsb):
+    """Error en LSB de salida, SQNR (dB), sesgo por componente y maximo."""
+    e = (X_out - X_ref) / lsb
+    p_sig = np.sum(np.abs(X_ref) ** 2)
+    p_err = np.sum(np.abs(X_out - X_ref) ** 2)
+    if p_err == 0.0:
+        sqnr = np.inf
+    elif p_sig == 0.0:
+        sqnr = -np.inf
+    else:
+        sqnr = 10.0 * np.log10(p_sig / p_err)
+    return {
+        "e": e,
+        "sqnr_db": sqnr,
+        "bias_re": float(np.mean(e.real)),
+        "bias_im": float(np.mean(e.imag)),
+        "rms": float(np.sqrt(np.mean(np.abs(e) ** 2))),
+        "max": float(np.max(np.abs(e))),
+    }
+
+
+# ----------------------------------------------------------------------
+# Plot
+# ----------------------------------------------------------------------
+def make_figure(x_in, X_out, N, order, info, title, out_png, k0=None, err=None):
+    fig, axes = plt.subplots(4, 1, figsize=(11, 13), constrained_layout=True)
 
     ax = axes[0]
     ni = np.arange(len(x_in))
@@ -198,6 +303,28 @@ def make_figure(x_in, X_out, N, order, info, title, out_png, k0=None):
     ax.set_ylim(-np.pi - 0.2, np.pi + 0.2)
     ax.grid(True, alpha=0.3); ax.legend(loc="upper right", fontsize=9)
 
+    ax = axes[3]
+    if err is None:
+        ax.text(0.5, 0.5, f"sin panel de error: la salida ploteada esta en orden '{order}' "
+                          "(el error se mide en orden natural)",
+                ha="center", va="center", transform=ax.transAxes, color="0.4")
+        ax.set_axis_off()
+    else:
+        e = err["e"]
+        ax.plot(k, e.real, ".", ms=3, label="Re e[k]")
+        ax.plot(k, e.imag, ".", ms=3, label="Im e[k]", alpha=0.7)
+        ax.axhline(0.0, color="k", lw=0.8)
+        ax.axhline(err["bias_re"], color="tab:blue", ls="--", lw=1,
+                   label=f"media Re = {err['bias_re']:+.3f}")
+        ax.axhline(err["bias_im"], color="tab:orange", ls="--", lw=1,
+                   label=f"media Im = {err['bias_im']:+.3f}")
+        sq = err["sqnr_db"]
+        sq_txt = "inf" if np.isinf(sq) and sq > 0 else f"{sq:.1f}"
+        ax.set_title(f"Error vs FFT ideal  (X_ideal = FFT(x)·2^-S, misma entrada)   "
+                     f"SQNR = {sq_txt} dB   rms = {err['rms']:.3f}   max = {err['max']:.3f} LSB")
+        ax.set_xlabel("indice de frecuencia  k"); ax.set_ylabel("error [LSB de salida]")
+        ax.grid(True, alpha=0.3); ax.legend(loc="best", fontsize=8, framealpha=0.9)
+
     fig.suptitle(title, fontsize=13, fontweight="bold")
     fig.savefig(out_png, dpi=130)
     plt.close(fig)
@@ -206,7 +333,7 @@ def make_figure(x_in, X_out, N, order, info, title, out_png, k0=None):
 # ----------------------------------------------------------------------
 # Procesar un caso para una fuente (expected|actual)
 # ----------------------------------------------------------------------
-def plot_one(case_name, case_dir, params, src, k0_override, reorder_override):
+def plot_one(module_name, case_name, case_dir, params, src, k0_override, reorder_override):
     vroot = case_dir / "simulation" / "vectors"
     in_dir = vroot / "stimuli" / "in_ports"
     out_dir = vroot / src / "out_ports"
@@ -216,11 +343,14 @@ def plot_one(case_name, case_dir, params, src, k0_override, reorder_override):
             print(f"  [SKIP] {case_name} ({src}): no existe {d}")
             return False
 
-    nbf = int(params.get("NBF", 15))
+    (nb, nbf), (nb_in, nbf_in), (nb_out, nbf_out) = port_formats(params)
 
     try:
-        x_in = load_complex(in_dir, "i_re.dat", "i_im.dat", nbf)
-        X_raw = load_complex(out_dir, "o_re.dat", "o_im.dat", nbf)
+        # Cada puerto en SU formato: la entrada en Q(NB_IN,NBF_IN), la salida
+        # en Q(NB_OUT,NBF_OUT). Con NB=20/NBF=19 y puertos de 16 bits, usar el
+        # NBF del datapath achicaba todo 16 veces.
+        x_in = load_complex(in_dir, "i_re.dat", "i_im.dat", nbf_in)
+        X_raw = load_complex(out_dir, "o_re.dat", "o_im.dat", nbf_out)
     except FileNotFoundError as e:
         print(f"  [SKIP] {case_name} ({src}): {e}")
         return False
@@ -247,51 +377,71 @@ def plot_one(case_name, case_dir, params, src, k0_override, reorder_override):
         print(f"  [WARN] {case_name} ({src}): salida valida={len(X_raw)} < N={N} "
               f"(frame incompleto: subir N_CYCLES?)")
 
-    k0, k0_src = resolve_k0(case_name, case_dir, k0_override)
-    order, info = detect_order(X_raw, k0=k0)
+    # Referencia ideal: FFT de la entrada TAL COMO LA VIO EL DUT (ya cuantizada,
+    # leida del .dat) escalada por 2^-S. Mide solo el error de la FFT.
+    S, mask = scale_stages(params, N)
+    complete = (len(x_in) == N and len(X_raw) == N)
+    X_ref = np.fft.fft(x_in) * 2.0 ** (-S) if complete else None
 
-    # Modo de reorden: prioridad CLI > PLOT_REORDER del JSON > 'auto'.
+    k0, k0_src = resolve_k0(case_name, case_dir, params, k0_override)
+
+    # Orden de la salida. Prioridad: CLI > PLOT_REORDER del JSON > 'auto'.
+    # En 'auto' se detecta contra la referencia (anda con cualquier estimulo).
     reorder = reorder_override or str(params.get("PLOT_REORDER", "auto")).lower()
+    detected = detect_order_by_reference(X_raw, X_ref) if X_ref is not None else "desconocido"
 
     X_out, applied = X_raw, "none"
     if reorder == "bitrev":
-        # Forzado: la salida del R2SDF siempre es bit-reversed. Util para
-        # multitono/chirp/ruido, donde no hay pico unico que detectar.
         X_out = bitrev_permute(X_raw)
-        order, info = detect_order(X_out, k0=k0)
         applied = "bitrev(forzado)"
     elif reorder == "none":
         applied = "none(forzado)"
-    else:  # auto
-        if order == "bitrev":
-            X_out = bitrev_permute(X_raw)
-            order, info = detect_order(X_out, k0=k0)
-            applied = "bitrev(auto)"
+    elif detected == "bitrev":
+        X_out = bitrev_permute(X_raw)
+        applied = "bitrev(auto)"
+
+    # Orden de lo que se plotea, segun la referencia
+    order = detect_order_by_reference(X_out, X_ref) if X_ref is not None else "desconocido"
+    measurable = order in ("natural", "indistinguible")
+    if order == "desconocido" and applied == "bitrev(forzado)" and X_ref is not None:
+        # Salida muy degradada (p. ej. saturada): la referencia no alcanza para
+        # confirmar el orden, pero PLOT_REORDER=bitrev lo fija. Se mide igual.
+        order = "natural (forzado, sin confirmar)"
+        measurable = True
+    info = peak_info(X_out)
+
+    err = None
+    if X_ref is not None and measurable:
+        err = error_stats(X_out, X_ref, 2.0 ** (-nbf_out))
 
     plots_dir = case_dir / "plots"
     plots_dir.mkdir(parents=True, exist_ok=True)
     out_png = plots_dir / f"{case_name}_{src}.png"
 
-    title = f"fft1d_r2  |  {case_name}  |  N={N}  Q1.{nbf}  src={src}"
+    title = (f"{module_name}  |  {case_name}  |  src={src}\n"
+             f"N={N}   datapath {qfmt(nb, nbf)}   in {qfmt(nb_in, nbf_in)}   "
+             f"out {qfmt(nb_out, nbf_out)}   SCALE_MASK={mask & ((1 << int(round(np.log2(N)))) - 1)} (S={S})")
     if k0 is not None:
-        title += f"  k0={k0}"
-    make_figure(x_in, X_out, N, order, info, title, str(out_png), k0=k0)
+        title += f"   k0={k0}"
+    make_figure(x_in, X_out, N, order, info, title, str(out_png), k0=k0, err=err)
 
-    print(f"  [OK]   {case_name} ({src}): N={N} nbf={nbf} k0={k0}({k0_src}) "
-          f"orden={order} reorden={applied} -> {out_png}")
+    err_txt = (f" SQNR={err['sqnr_db']:.1f}dB sesgo=({err['bias_re']:+.3f},{err['bias_im']:+.3f}) "
+               f"max={err['max']:.3f}LSB") if err else f" (sin panel de error: orden {order})"
+    print(f"  [OK]   {case_name} ({src}): N={N} in={qfmt(nb_in, nbf_in)} out={qfmt(nb_out, nbf_out)} "
+          f"S={S} k0={k0}({k0_src}) orden={order} reorden={applied}{err_txt} -> {out_png}")
     return True
 
 
 # ----------------------------------------------------------------------
 def main():
-    ap = argparse.ArgumentParser(description="Plotea entrada+FFT de cada caso de fft1d_r2.")
+    ap = argparse.ArgumentParser(description="Plotea entrada+FFT+error de cada caso de un modulo fft1d_*.")
     ap.add_argument("--src", choices=["expected", "actual", "both"], default="expected",
                     help="fuente de la salida FFT (default expected = modelo C++)")
     ap.add_argument("--only", type=str, default=None, help="plotear solo este caso")
     ap.add_argument("--k0", type=int, default=None, help="forzar k0 (sobreescribe autodeteccion)")
     ap.add_argument("--json", type=Path, default=None, help="ruta al JSON de regresion (override)")
     ap.add_argument("--reorder", choices=["auto", "none", "bitrev"], default=None,
-                    help="reordenamiento de la salida: auto (detecta por el pico), "
+                    help="reordenamiento de la salida: auto (detecta contra la FFT ideal), "
                          "bitrev (fuerza bit-reversed->natural), none (grafica cruda). "
                          "Si se omite, usa PLOT_REORDER del caso en el JSON, o 'auto'.")
     args = ap.parse_args()
@@ -342,7 +492,7 @@ def main():
 
         for src in srcs:
             total += 1
-            if plot_one(name, case_dir, params, src, args.k0, args.reorder):
+            if plot_one(module_name, name, case_dir, params, src, args.k0, args.reorder):
                 done += 1
 
     print(f"\n[run_plot_fft1d] figuras generadas: {done}/{total}")

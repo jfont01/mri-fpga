@@ -94,6 +94,22 @@ foreach arg [lrange $argv 2 end] {
     } elseif {$key eq "WAVES"} {
         set waves $value
     } else {
+
+        # Los paths del JSON son relativos al directorio del módulo.
+        # XSIM se ejecuta desde build/<case>/simulation/xsim, por lo que
+        # deben convertirse a absolutos antes de pasarlos como defines.
+        if {[string match "*_TW_DIR" $key] && [file pathtype $value] ne "absolute"} {
+            set value [file normalize [file join $module_dir $value]]
+
+            if {![file exists [file join $value "tw_re.mem"]]} {
+                fail "twiddle file not found: [file join $value tw_re.mem]"
+            }
+
+            if {![file exists [file join $value "tw_im.mem"]]} {
+                fail "twiddle file not found: [file join $value tw_im.mem]"
+            }
+        }
+
         lappend define_args "-d"
         lappend define_args "${key}=${value}"
     }

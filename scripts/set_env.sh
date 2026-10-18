@@ -91,7 +91,7 @@ export PLATFORM="$(detect_platform)"
 export SIM_BACKEND="$(select_sim_backend)"
 
 if [[ "$PLATFORM" == "linux" ]]; then
-    source "$PROJECT_ROOT/.venv/bin/activate"
+    source "$PYTHON_SCRIPTS_DIR/venv/bin/activate"
     log "venv activated in Linux"
 else
     log "using MSYS Python packages installed with"
