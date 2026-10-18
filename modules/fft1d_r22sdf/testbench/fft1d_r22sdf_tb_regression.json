@@ -70,6 +70,106 @@
       "TW_DIR": "rtl/twiddles/n1024",
       "N_CYCLES": 2200,
       "STIM_TYPE": 3, "STIM_NOISE_SEED": 777, "STIM_NOISE_AMP": 700
+    },
+
+    {
+      "name": "n1024_q1_15_m784_impulse",
+      "N": 1024, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n1024",
+      "SCALE_MASK": 784,
+      "N_CYCLES": 2200,
+      "STIM_TYPE": 2, "STIM_IMP_POS": 5, "STIM_IMP_AMP": 900
+    },
+    {
+      "name": "n1024_nb20_tw18_io16_noise",
+      "N": 1024, "NB": 20, "NBF": 19, "NB_TW": 18, "NB_IN": 16, "NB_OUT": 16,
+      "TW_DIR": "rtl/twiddles/n1024_tw18",
+      "N_CYCLES": 2200,
+      "STIM_TYPE": 3, "STIM_NOISE_SEED": 777, "STIM_NOISE_AMP": 700
+    },
+    {
+      "name": "n1024_nb20_tw18_io16_m784_multitone",
+      "N": 1024, "NB": 20, "NBF": 19, "NB_TW": 18, "NB_IN": 16, "NB_OUT": 16,
+      "TW_DIR": "rtl/twiddles/n1024_tw18",
+      "SCALE_MASK": 784,
+      "N_CYCLES": 2200,
+      "STIM_TYPE": 0, "STIM_NTONES": 3,
+      "STIM_K0": 7,   "STIM_A0": 4, "STIM_PH0": 0,
+      "STIM_K1": 128, "STIM_A1": 2, "STIM_PH1": 45,
+      "STIM_K2": 511, "STIM_A2": 1, "STIM_PH2": 90
+    },
+    {
+      "name": "n1024_nb20_tw18_io16_m784_impulse",
+      "N": 1024, "NB": 20, "NBF": 19, "NB_TW": 18, "NB_IN": 16, "NB_OUT": 16,
+      "TW_DIR": "rtl/twiddles/n1024_tw18",
+      "SCALE_MASK": 784,
+      "N_CYCLES": 2200,
+      "STIM_TYPE": 2, "STIM_IMP_POS": 5, "STIM_IMP_AMP": 900
+    },
+    {
+      "name": "n1024_nb20_tw18_io16_m784_sat",
+      "N": 1024, "NB": 20, "NBF": 19, "NB_TW": 18, "NB_IN": 16, "NB_OUT": 16,
+      "TW_DIR": "rtl/twiddles/n1024_tw18",
+      "SCALE_MASK": 784,
+      "N_CYCLES": 2200,
+      "STIM_TYPE": 3, "STIM_NOISE_SEED": 777, "STIM_NOISE_AMP": 700
+    },
+    {
+      "name": "n1024_nb20_tw18_io16_m0_impulse",
+      "N": 1024, "NB": 20, "NBF": 19, "NB_TW": 18, "NB_IN": 16, "NB_OUT": 16,
+      "TW_DIR": "rtl/twiddles/n1024_tw18",
+      "SCALE_MASK": 0,
+      "N_CYCLES": 2200,
+      "STIM_TYPE": 2, "STIM_IMP_POS": 5, "STIM_IMP_AMP": 900
+    },
+    {
+      "name": "n64_q1_15_nopipe_noise",
+      "N": 64, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n64",
+      "CMUL_PIPE": 0,
+      "N_CYCLES": 160,
+      "STIM_TYPE": 3, "STIM_NOISE_SEED": 12345, "STIM_NOISE_AMP": 700
+    },
+    {
+      "name": "n256_q1_15_nopipe_multitone",
+      "N": 256, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n256",
+      "CMUL_PIPE": 0,
+      "N_CYCLES": 560,
+      "STIM_TYPE": 0, "STIM_NTONES": 3,
+      "STIM_K0": 5,   "STIM_A0": 400, "STIM_PH0": 0,
+      "STIM_K1": 33,  "STIM_A1": 300, "STIM_PH1": 30,
+      "STIM_K2": 100, "STIM_A2": 200, "STIM_PH2": 60
+    },
+    {
+      "name": "n1024_nb20_tw18_io16_m784_nopipe_multitone",
+      "N": 1024, "NB": 20, "NBF": 19, "NB_TW": 18, "NB_IN": 16, "NB_OUT": 16,
+      "TW_DIR": "rtl/twiddles/n1024_tw18",
+      "SCALE_MASK": 784,
+      "CMUL_PIPE": 0,
+      "N_CYCLES": 2200,
+      "STIM_TYPE": 0, "STIM_NTONES": 3,
+      "STIM_K0": 7,   "STIM_A0": 4, "STIM_PH0": 0,
+      "STIM_K1": 128, "STIM_A1": 2, "STIM_PH1": 45,
+      "STIM_K2": 511, "STIM_A2": 1, "STIM_PH2": 90
+    },
+    {
+      "name": "n1024_nb20_tw18_io16_m784_nopipe_impulse",
+      "N": 1024, "NB": 20, "NBF": 19, "NB_TW": 18, "NB_IN": 16, "NB_OUT": 16,
+      "TW_DIR": "rtl/twiddles/n1024_tw18",
+      "SCALE_MASK": 784,
+      "CMUL_PIPE": 0,
+      "N_CYCLES": 2200,
+      "STIM_TYPE": 2, "STIM_IMP_POS": 5, "STIM_IMP_AMP": 900
+    },
+    {
+      "name": "n1024_nb20_tw18_io16_m784_nopipe_sat",
+      "N": 1024, "NB": 20, "NBF": 19, "NB_TW": 18, "NB_IN": 16, "NB_OUT": 16,
+      "TW_DIR": "rtl/twiddles/n1024_tw18",
+      "SCALE_MASK": 784,
+      "CMUL_PIPE": 0,
+      "N_CYCLES": 2200,
+      "STIM_TYPE": 3, "STIM_NOISE_SEED": 777, "STIM_NOISE_AMP": 700
     }
   ]
 }

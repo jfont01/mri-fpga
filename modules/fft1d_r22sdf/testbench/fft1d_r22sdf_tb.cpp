@@ -307,6 +307,12 @@ void run_tb(const tb_args& args)
     report_file << "NBF         : " << fft1d_r22sdf::NBF     << "\n";
     report_file << "LOG_N       : " << fft1d_r22sdf::LOG_N   << "\n";
     report_file << "N_UNITS     : " << fft1d_r22sdf::N_UNITS << " (log4(N))\n";
+    report_file << "NB_TW/NBF_TW: " << fft1d_r22sdf::NB_TW  << " / " << fft1d_r22sdf::NBF_TW  << "\n";
+    report_file << "NB_IN/NBF_IN: " << fft1d_r22sdf::NB_IN  << " / " << fft1d_r22sdf::NBF_IN  << "\n";
+    report_file << "NB_OUT/NBF_OUT: " << fft1d_r22sdf::NB_OUT << " / " << fft1d_r22sdf::NBF_OUT << "\n";
+    report_file << "SCALE_MASK  : " << fft1d_r22sdf::SCALE_MASK << "\n";
+    report_file << "CMUL_PIPE   : " << fft1d_r22sdf::CMUL_PIPE  << "\n";
+    report_file << "LATENCY     : " << fft1d_r22sdf::LATENCY    << "\n";
     report_file << "\n";
     report_file << "stimulus    : " << fft1d_stimulus::type_name() << "\n";
     report_file << "\n";

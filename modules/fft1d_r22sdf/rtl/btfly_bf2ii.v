@@ -40,7 +40,8 @@ module btfly_bf2ii #(
   parameter int NB     = 16,
   parameter int NBF    = 15,
   parameter int DEPTH  = 32,
-  parameter int ADDR_W = 5
+  parameter int ADDR_W = 5,
+  parameter bit SCALE  = 1'b1
 )(
   input  wire                i_clock,
   input  wire                i_rst,     // sincrono, activo alto
@@ -53,7 +54,7 @@ module btfly_bf2ii #(
   localparam int RE_LSB  = 0;
   localparam int IM_LSB  = NB;
   localparam int NB_SUM  = NB + 1;
-  localparam int NBF_SUM = NBF + 1;
+  localparam int NBF_SUM = NBF + SCALE;
 
   // ------------------------------------------- direccion de la linea
   reg [ADDR_W-1:0] r_addr;

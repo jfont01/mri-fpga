@@ -15,6 +15,47 @@
 `endif
 
 /*
+ * Formatos independientes del datapath. Mismos defaults que el RTL y el modelo
+ * (fft1d_r22sdf.hpp): si no se fija el ancho, es el del datapath; si no se fijan
+ * los bits fraccionales, se heredan los bits enteros del datapath. Asi un caso
+ * del JSON que no los menciona se comporta exactamente como antes.
+ */
+`ifndef FFT1D_R22SDF_NB_TW
+`define FFT1D_R22SDF_NB_TW `FFT1D_R22SDF_NB
+`endif
+`ifndef FFT1D_R22SDF_NBF_TW
+`define FFT1D_R22SDF_NBF_TW (`FFT1D_R22SDF_NB_TW - (`FFT1D_R22SDF_NB - `FFT1D_R22SDF_NBF))
+`endif
+`ifndef FFT1D_R22SDF_NB_IN
+`define FFT1D_R22SDF_NB_IN `FFT1D_R22SDF_NB
+`endif
+`ifndef FFT1D_R22SDF_NBF_IN
+`define FFT1D_R22SDF_NBF_IN (`FFT1D_R22SDF_NB_IN - (`FFT1D_R22SDF_NB - `FFT1D_R22SDF_NBF))
+`endif
+`ifndef FFT1D_R22SDF_NB_OUT
+`define FFT1D_R22SDF_NB_OUT `FFT1D_R22SDF_NB
+`endif
+`ifndef FFT1D_R22SDF_NBF_OUT
+`define FFT1D_R22SDF_NBF_OUT (`FFT1D_R22SDF_NB_OUT - (`FFT1D_R22SDF_NB - `FFT1D_R22SDF_NBF))
+`endif
+
+/*
+ * Mascara de escalado. En el JSON va en DECIMAL (784, no 0x310): el mismo
+ * literal tiene que valer en C++ y en Verilog.
+ */
+`ifndef FFT1D_R22SDF_SCALE_MASK
+`define FFT1D_R22SDF_SCALE_MASK 32'hFFFF_FFFF
+`endif
+
+/*
+ * Registro antes del cast de cada cmul (PREG). Mismo default que el RTL y el
+ * modelo: 1. Con 1 la latencia sube un ciclo por unidad con multiplicador.
+ */
+`ifndef FFT1D_R22SDF_CMUL_PIPE
+`define FFT1D_R22SDF_CMUL_PIPE 1
+`endif
+
+/*
  * STRINGIFY: convierte un token del preprocesador en un string literal.
  * Permite pasar TW_DIR por -d SIN comillas, que se rompen al viajar por el
  * shell y por el exec de Tcl (bash, MSYS y cmd las escapan distinto). Con esto
@@ -38,8 +79,8 @@
 //
 //   2. LATENCIA MAYOR. El pipeline esta segmentado (registros entre las dos
 //      mariposas de cada unidad y a la salida del multiplicador). El primer
-//      o_valid aparece en el ciclo 70 (N=64), 265 (N=256) o 1036 (N=1024).
-//      N_CYCLES debe ser >= latencia + N.
+//      o_valid aparece en el ciclo 70 (N=64), 265 (N=256) o 1036 (N=1024);
+//      con CMUL_PIPE=1, en 72, 268 o 1040. N_CYCLES debe ser >= latencia + N.
 //
 //   3. REGISTROS TRAZADOS. El control es POR ETAPA: cada unidad lleva sus
 //      propios contadores. Se trazan r_out_count del top y los tres contadores
@@ -48,12 +89,26 @@
 //
 //   4. o_last NO SE COMPARA como .dat (el modelo no lo vuelca en expected/ y un
 //      .dat sin par haria fallar al vm). Se escribe solo al CSV.
+//
+//   5. FORMATOS Y ESCALADO POR CASO. NB_TW, NB_IN, NB_OUT (y sus NBF_*) y
+//      SCALE_MASK llegan por define desde el JSON, igual que al modelo. Los
+//      .dat son enteros crudos en decimal: i_* en NB_IN bits, o_* en NB_OUT.
 // -----------------------------------------------------------------------------
 module fft1d_r22sdf_tb;
 
     localparam int N   = `FFT1D_R22SDF_N;
     localparam int NB  = `FFT1D_R22SDF_NB;
     localparam int NBF = `FFT1D_R22SDF_NBF;
+
+    localparam int NB_TW   = `FFT1D_R22SDF_NB_TW;
+    localparam int NBF_TW  = `FFT1D_R22SDF_NBF_TW;
+    localparam int NB_IN   = `FFT1D_R22SDF_NB_IN;
+    localparam int NBF_IN  = `FFT1D_R22SDF_NBF_IN;
+    localparam int NB_OUT  = `FFT1D_R22SDF_NB_OUT;
+    localparam int NBF_OUT = `FFT1D_R22SDF_NBF_OUT;
+
+    localparam logic [31:0] SCALE_MASK = `FFT1D_R22SDF_SCALE_MASK;
+    localparam bit          CMUL_PIPE  = `FFT1D_R22SDF_CMUL_PIPE;
 
     localparam string TW_DIR = `STRINGIFY(`FFT1D_R22SDF_TW_DIR);
 
@@ -62,24 +117,27 @@ module fft1d_r22sdf_tb;
      * El DUT usa puertos complejos empaquetados ({imag, real}); los vectores se
      * manejan por COMPONENTE (i_re/i_im, o_re/o_im). El empaquetado queda
      * confinado a estas asignaciones.
+     *
+     * Los puertos tienen su propio ancho: NB_IN a la entrada y NB_OUT a la
+     * salida. NB es solo el datapath interno del DUT.
      */
-    logic                 i_clock;
-    logic                 i_rst;
-    logic                 i_valid;
-    logic signed [NB-1:0] i_re;
-    logic signed [NB-1:0] i_im;
+    logic                     i_clock;
+    logic                     i_rst;
+    logic                     i_valid;
+    logic signed [NB_IN-1:0]  i_re;
+    logic signed [NB_IN-1:0]  i_im;
 
-    wire  [2*NB-1:0]      i_cplx_sample;
-    wire  [2*NB-1:0]      o_cplx_sample;
+    wire  [2*NB_IN-1:0]       i_cplx_sample;
+    wire  [2*NB_OUT-1:0]      o_cplx_sample;
 
-    logic                 o_valid;
-    logic                 o_last;
-    wire  signed [NB-1:0] o_re;
-    wire  signed [NB-1:0] o_im;
+    logic                     o_valid;
+    logic                     o_last;
+    wire  signed [NB_OUT-1:0] o_re;
+    wire  signed [NB_OUT-1:0] o_im;
 
     assign i_cplx_sample = {i_im, i_re};
-    assign o_re          = $signed(o_cplx_sample[0  +: NB]);
-    assign o_im          = $signed(o_cplx_sample[NB +: NB]);
+    assign o_re          = $signed(o_cplx_sample[0      +: NB_OUT]);
+    assign o_im          = $signed(o_cplx_sample[NB_OUT +: NB_OUT]);
 
     string case_dir;
     int    n_cycles;
@@ -102,7 +160,15 @@ module fft1d_r22sdf_tb;
         .NB           (NB),
         .NBF          (NBF),
         .TW_DIR       (TW_DIR),
-        .TW_FROM_FILE (1'b1)
+        .TW_FROM_FILE (1'b1),
+        .SCALE_MASK   (SCALE_MASK),
+        .NB_TW        (NB_TW),
+        .NBF_TW       (NBF_TW),
+        .NB_IN        (NB_IN),
+        .NBF_IN       (NBF_IN),
+        .NB_OUT       (NB_OUT),
+        .NBF_OUT      (NBF_OUT),
+        .CMUL_PIPE    (CMUL_PIPE)
     ) u_fft (
         .i_clock       (i_clock),
         .i_rst         (i_rst),
@@ -117,8 +183,9 @@ module fft1d_r22sdf_tb;
     initial i_clock = 1'b0;
     always #5 i_clock = ~i_clock;
 
-    function real fixed_to_real(input logic signed [NB-1:0] raw);
-        fixed_to_real = $itor($signed(raw)) / (2.0 ** NBF);
+    // Solo para el CSV de inspeccion: la salida esta en Q(NB_OUT, NBF_OUT).
+    function real fixed_to_real(input logic signed [NB_OUT-1:0] raw);
+        fixed_to_real = $itor($signed(raw)) / (2.0 ** NBF_OUT);
     endfunction
 
     initial begin
@@ -180,6 +247,10 @@ module fft1d_r22sdf_tb;
 
         $display("[fft1d_r22sdf_tb] CASE_DIR = %s", case_dir);
         $display("[fft1d_r22sdf_tb] N_CYCLES = %0d  N=%0d NB=%0d NBF=%0d", n_cycles, N, NB, NBF);
+        $display("[fft1d_r22sdf_tb] formatos: in Q(%0d,%0d)  tw Q(%0d,%0d)  out Q(%0d,%0d)",
+                 NB_IN, NBF_IN, NB_TW, NBF_TW, NB_OUT, NBF_OUT);
+        $display("[fft1d_r22sdf_tb] SCALE_MASK = %0d (0x%h)", SCALE_MASK, SCALE_MASK);
+        $display("[fft1d_r22sdf_tb] CMUL_PIPE  = %0d", CMUL_PIPE);
         $display("[fft1d_r22sdf_tb] TW_DIR   = %s", TW_DIR);
 
         // o_last en el CSV para inspeccion; NO se compara como .dat
@@ -212,8 +283,8 @@ module fft1d_r22sdf_tb;
                 $fatal(1, "[fft1d_r22sdf_tb] i_im: faltan muestras en cycle=%0d", cycle);
 
             i_valid = s__i_valid[0];
-            i_re    = s__i_re[NB-1:0];
-            i_im    = s__i_im[NB-1:0];
+            i_re    = s__i_re[NB_IN-1:0];
+            i_im    = s__i_im[NB_IN-1:0];
 
             @(posedge i_clock);
             #1;

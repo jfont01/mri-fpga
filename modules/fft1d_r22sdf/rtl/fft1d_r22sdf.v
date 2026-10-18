@@ -12,10 +12,12 @@
 //
 //   x(n) -> [unidad M=N] -> [unidad M=N/4] -> ... -> [unidad M=4] -> X(k)
 //
-//   multiplicadores : log4(N) - 1     (contra log2(N)-1 del R2SDF)
+//   multiplicadores : log4(N) - 1     (contra log2(N)-2 del R2SDF)
 //   memoria         : N - 1           (identica al R2SDF)
 //   orden de salida : BIT-REVERSED
-//   escala          : 1/N (cada mariposa divide por 2)
+//   escala          : 1/2^s, con s = cantidad de bits en 1 de SCALE_MASK[LOG2N-1:0]
+//                     (bit k = 1: la etapa radix-2 k divide por 2; bit k = 0: no divide
+//                     y el cast satura). Con la mascara por defecto, s = log2(N): 1/N.
 //
 // PRECONDICION: N potencia de 4 (log2(N) par). Para N = 2^impar (p.ej. 512) hace
 // falta una etapa radix-2 suelta adicional, no cubierta por este modulo.
@@ -26,34 +28,104 @@
 // cadena entera. El precio es latencia (varios ciclos por unidad), no throughput:
 // se sigue aceptando una muestra por ciclo.
 //
+// Con CMUL_PIPE = 1 cada multiplicador registra ademas la suma completa antes de
+// su cast (PREG del DSP48E2, ver cmul.v): el camino DSP -> cast queda partido en
+// dos y cada unidad con multiplicador suma un ciclo. Latencia hasta el primer
+// o_valid, contando desde la primera muestra:
+//
+//   LATENCY = N + (3 + CMUL_PIPE) * (log4(N) - 1)
+//           = 1036 (CMUL_PIPE = 0) o 1040 (CMUL_PIPE = 1) para N = 1024
+//
+// Los valores de salida no cambian; solo llegan mas tarde.
+//
+// Default CMUL_PIPE = 1 desde el 2026-10-18: sin el registro, el camino DSP ->
+// cast dejaba 50 ps de margen a 200 MHz despues del ruteo; con el registro,
+// 0,903 ns (xck26-2LV, Vivado 2024.2). CMUL_PIPE = 0 queda como referencia.
+//
+// FORMATOS: el puerto de entrada, el datapath interno, el puerto de salida y los
+// twiddles tienen cada uno su formato:
+//
+//   entrada  Q(NB_IN,  NBF_IN)  --ensancha-->  datapath Q(NB, NBF)  --cast-->  salida Q(NB_OUT, NBF_OUT)
+//
+//   * Entrada -> datapath: SOLO ensancha (NBF >= NBF_IN y no pierde bits enteros).
+//     Es cableado: ceros en los LSB y extension de signo. No pierde informacion.
+//   * Datapath -> salida: cast con redondeo y saturacion. Es el UNICO redondeo que
+//     no es interno a una etapa: el pipeline calcula con NB bits y recien aca se
+//     reduce al ancho que va a la memoria. Combinacional: no agrega latencia.
+//   * Si no se fijan los bits fraccionales de un formato, hereda la cantidad de
+//     bits enteros del datapath. Por defecto los tres formatos son el del datapath.
+//
 // TWIDDLES: todas las unidades leen la MISMA tabla de N entradas (W_N^k,
 // k = 0..N-1); cada una la direcciona distinto segun su resolucion M. Por eso
 // hace falta un unico par de archivos, tw_re.mem y tw_im.mem, en TW_DIR.
+//
+// Los twiddles tienen formato propio, Q(NB_TW, NBF_TW), independiente del de los
+// datos: los .mem tienen que tener valores de NB_TW bits. Por defecto NB_TW = NB y
+// NBF_TW = NBF. En el DSP48E2 (27 x 18), twiddle de hasta 18 bits y dato de hasta 27
+// mantienen un DSP por producto real.
 // -----------------------------------------------------------------------------
 module fft1d_r22sdf #(
   parameter int    N   = 64,
   parameter int    NB  = 16,
   parameter int    NBF = 15,
   parameter        TW_DIR = "twiddles",
-  parameter bit    TW_FROM_FILE = 1'b1
+  parameter bit    TW_FROM_FILE = 1'b1,
+  parameter logic [31:0] SCALE_MASK = 32'hFFFF_FFFF,
+  parameter int    NB_TW   = NB,                 // formato de los twiddles
+  parameter int    NBF_TW  = NB_TW  - (NB - NBF),
+  parameter int    NB_IN   = NB,                 // formato del puerto de entrada
+  parameter int    NBF_IN  = NB_IN  - (NB - NBF),
+  parameter int    NB_OUT  = NB,                 // formato del puerto de salida
+  parameter int    NBF_OUT = NB_OUT - (NB - NBF),
+  parameter bit    CMUL_PIPE = 1'b1              // 1: registro antes del cast de cada cmul
 )(
   input  wire                 i_clock,
   input  wire                 i_rst,          // sincrono, activo alto
   input  wire                 i_valid,
-  input  wire [2*NB-1:0]      i_cplx_sample,
+  input  wire [2*NB_IN-1:0]   i_cplx_sample,
   output wire                 o_valid,
   output wire                 o_last,
-  output wire [2*NB-1:0]      o_cplx_sample
+  output wire [2*NB_OUT-1:0]  o_cplx_sample
 );
 
   localparam int LOG2N   = $clog2(N);
-  if (LOG2N % 2 == 1) begin $fatal(1, "LOG2N odd, not supported yet"); end
   localparam int N_UNITS = LOG2N / 2;      // log4(N)
+
+  // ------------------------------------------------- chequeo de parametros
+  // Doble $fatal: el de elaboracion lo respetan Vivado y XSim; iverilog lo ignora
+  // en silencio, asi que el del initial lo hace cortar en tiempo 0.
+  `ifndef __SYNTHESIS__
+    generate
+      if ((LOG2N % 2) != 0 || N != (1 << LOG2N)) begin : g_err_n
+        $fatal(1, "fft1d_r22sdf: N=%0d tiene que ser potencia de 4 (log2(N) par)", N);
+        initial $fatal(1, "fft1d_r22sdf: N=%0d tiene que ser potencia de 4 (log2(N) par)", N);
+      end
+      if (NBF < NBF_IN || (NB - NBF) < (NB_IN - NBF_IN)) begin : g_err_in
+        $fatal(1, "fft1d_r22sdf: la entrada Q(%0d,%0d) no entra sin perdida en el datapath Q(%0d,%0d)", NB_IN, NBF_IN, NB, NBF);
+        initial $fatal(1, "fft1d_r22sdf: la entrada Q(%0d,%0d) no entra sin perdida en el datapath Q(%0d,%0d)", NB_IN, NBF_IN, NB, NBF);
+      end
+      if (NBF < NBF_OUT) begin : g_err_out
+        $fatal(1, "fft1d_r22sdf: la salida (NBF_OUT=%0d) no puede tener mas bits fraccionales que el datapath (NBF=%0d)", NBF_OUT, NBF);
+        initial $fatal(1, "fft1d_r22sdf: la salida (NBF_OUT=%0d) no puede tener mas bits fraccionales que el datapath (NBF=%0d)", NBF_OUT, NBF);
+      end
+    endgenerate
+  `endif // __SYNTHESIS__
+
+  // ------------------------------------------- entrada: Q(NB_IN) -> Q(NB)
+  // Solo ensancha: el desplazamiento agrega NBF-NBF_IN ceros abajo y la
+  // extension de signo (contexto de NB bits) completa arriba. No usa cast,
+  // porque cast no admite agregar bits fraccionales.
+  localparam int SH_IN = NBF - NBF_IN;
+
+  wire signed [NB_IN-1:0] w_in_re = i_cplx_sample[0     +: NB_IN];
+  wire signed [NB_IN-1:0] w_in_im = i_cplx_sample[NB_IN +: NB_IN];
+  wire signed [NB-1:0]    w_din_re = NB'(w_in_re) <<< SH_IN;
+  wire signed [NB-1:0]    w_din_im = NB'(w_in_im) <<< SH_IN;
 
   wire [2*NB-1:0] w_data  [0:N_UNITS];
   wire            w_valid [0:N_UNITS];
 
-  assign w_data[0]  = i_cplx_sample;
+  assign w_data[0]  = {w_din_im, w_din_re};
   assign w_valid[0] = i_valid;
 
   genvar u;
@@ -66,9 +138,14 @@ module fft1d_r22sdf #(
         .M            (M_U),
         .NB           (NB),
         .NBF          (NBF),
+        .SCALE_BF2II  (SCALE_MASK[2*u]),
+        .SCALE_BF2I   (SCALE_MASK[2*u+1]),
+        .NB_TW        (NB_TW),
+        .NBF_TW       (NBF_TW),
         .TW_RE_FILE   ({TW_DIR, "/tw_re.mem"}),
         .TW_IM_FILE   ({TW_DIR, "/tw_im.mem"}),
-        .TW_FROM_FILE (TW_FROM_FILE)
+        .TW_FROM_FILE (TW_FROM_FILE),
+        .CMUL_PIPE    (CMUL_PIPE)
       ) u_unit (
         .i_clock (i_clock),
         .i_rst   (i_rst),
@@ -94,8 +171,16 @@ module fft1d_r22sdf #(
    * el vm no compare muestras invalidas. Es solo un mux; la muestra valida no
    * se altera.
    */
+  // -------------------------------------------- salida: Q(NB) -> Q(NB_OUT)
+  wire signed [NB_OUT-1:0] w_out_re, w_out_im;
+
+  cast #(.NB_IN(NB), .NBF_IN(NBF), .NB_OUT(NB_OUT), .NBF_OUT(NBF_OUT), .ROUND_MODE(1'b1))
+    u_out_re (.i_word($signed(w_data[N_UNITS][0  +: NB])), .o_word(w_out_re));
+  cast #(.NB_IN(NB), .NBF_IN(NBF), .NB_OUT(NB_OUT), .NBF_OUT(NBF_OUT), .ROUND_MODE(1'b1))
+    u_out_im (.i_word($signed(w_data[N_UNITS][NB +: NB])), .o_word(w_out_im));
+
   assign o_valid       = w_valid[N_UNITS];
-  assign o_cplx_sample = w_valid[N_UNITS] ? w_data[N_UNITS] : {(2*NB){1'b0}};
+  assign o_cplx_sample = w_valid[N_UNITS] ? {w_out_im, w_out_re} : {(2*NB_OUT){1'b0}};
   assign o_last        = w_valid[N_UNITS] && (r_out_count == LOG2N'(N - 1));
 
 endmodule

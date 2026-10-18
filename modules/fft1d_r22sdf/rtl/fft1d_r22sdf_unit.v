@@ -46,15 +46,30 @@
 // La multiplicacion tw_num * tw_sel implementa las cuatro rotaciones del nivel
 // radix-4: sel=0 -> W^0 = 1 (se puentea el multiplicador), sel=1 -> W^n,
 // sel=2 -> W^2n, sel=3 -> W^3n.
+//
+// SEGMENTACION DEL MULTIPLICADOR (CMUL_PIPE)
+// ------------------------------------------
+// Con CMUL_PIPE = 1 el cmul registra la suma completa antes de su cast (PREG
+// del DSP48E2, ver cmul.v) y su salida llega un ciclo despues. Para que todo
+// siga alineado, el bypass de W^0 (r_bf2_do), su seleccion (r_mu_en) y el
+// valid (r_bf2_do_en) se atrasan el mismo ciclo. La unidad pasa de 3 a 4
+// ciclos de latencia; la ultima (sin multiplicador) no cambia. El control de
+// la unidad siguiente arranca con el valid que le llega, asi que no hay que
+// tocar nada mas. Los valores de salida son los mismos bit a bit.
 // -----------------------------------------------------------------------------
 module fft1d_r22sdf_unit #(
   parameter int    N   = 64,          // tamano total de la FFT
   parameter int    M   = 64,          // resolucion de twiddle de esta unidad
   parameter int    NB  = 16,
   parameter int    NBF = 15,
+  parameter bit    SCALE_BF2II = 1'b1,
+  parameter bit    SCALE_BF2I  = 1'b1,
+  parameter int    NB_TW  = NB,              // formato de los twiddles; por defecto, el de los datos
+  parameter int    NBF_TW = NB_TW - (NB - NBF), // mismos bits enteros que el datapath
   parameter        TW_RE_FILE = "tw_re.mem",
   parameter        TW_IM_FILE = "tw_im.mem",
-  parameter bit    TW_FROM_FILE = 1'b1
+  parameter bit    TW_FROM_FILE = 1'b1,
+  parameter bit    CMUL_PIPE = 1'b1          // 1: registro antes del cast del cmul (+1 ciclo)
 )(
   input  wire                i_clock,
   input  wire                i_rst,
@@ -94,7 +109,8 @@ module fft1d_r22sdf_unit #(
     .NB      (NB),
     .NBF     (NBF),
     .DEPTH   (DEPTH1),
-    .ADDR_W  (ADDR_W1)
+    .ADDR_W  (ADDR_W1),
+    .SCALE   (SCALE_BF2II)
   ) u_bf2ii (
     .i_clock (i_clock),
     .i_rst   (i_rst),
@@ -135,7 +151,8 @@ module fft1d_r22sdf_unit #(
     .NB      (NB),
     .NBF     (NBF),
     .DEPTH   (DEPTH2),
-    .ADDR_W  (ADDR_W2)
+    .ADDR_W  (ADDR_W2),
+    .SCALE   (SCALE_BF2I)
   ) u_bf2i (
     .i_clock (i_clock),
     .i_rst   (i_rst),
@@ -192,8 +209,10 @@ module fft1d_r22sdf_unit #(
       wire [LOG_N-3:0] w_tw_num  = r_bf2_count << (LOG_N - LOG_M);
       wire [LOG_N-1:0] w_tw_addr = w_tw_num * w_tw_sel;
 
-      reg signed [NB-1:0] tw_re_rom [0:N-1];
-      reg signed [NB-1:0] tw_im_rom [0:N-1];
+      // La ROM guarda los twiddles en Q(NB_TW, NBF_TW): los .mem tienen que
+      // tener valores de NB_TW bits.
+      reg signed [NB_TW-1:0] tw_re_rom [0:N-1];
+      reg signed [NB_TW-1:0] tw_im_rom [0:N-1];
 
       if (TW_FROM_FILE) begin : gen_tw_init
         initial begin
@@ -203,11 +222,11 @@ module fft1d_r22sdf_unit #(
       end
 
       // ROM con lectura registrada (alineada con r_bf2_do)
-      reg signed [NB-1:0] r_tw_re, r_tw_im;
+      reg signed [NB_TW-1:0] r_tw_re, r_tw_im;
       always @(posedge i_clock) begin
         if (i_rst) begin
-          r_tw_re <= {NB{1'b0}};
-          r_tw_im <= {NB{1'b0}};
+          r_tw_re <= {NB_TW{1'b0}};
+          r_tw_im <= {NB_TW{1'b0}};
         end
         else begin
           r_tw_re <= tw_re_rom[w_tw_addr];
@@ -224,29 +243,67 @@ module fft1d_r22sdf_unit #(
 
       wire signed [NB-1:0] w_mu_re, w_mu_im;
 
+      // operando 1 = twiddle, operando 2 = dato
       cmul #(
-        .NB_IN   (NB),
-        .NBF_IN  (NBF),
+        .NB_IN1  (NB_TW),
+        .NBF_IN1 (NBF_TW),
+        .NB_IN2  (NB),
+        .NBF_IN2 (NBF),
         .NB_OUT  (NB),
-        .NBF_OUT (NBF)
+        .NBF_OUT (NBF),
+        .PIPE    (CMUL_PIPE ? 1 : 0)
       ) u_cmul (
         .i_1_re  (r_tw_re),
         .i_1_im  (r_tw_im),
         .i_2_re  ($signed(r_bf2_do[0    +: NB])),
         .i_2_im  ($signed(r_bf2_do[NB   +: NB])),
         .o_re    (w_mu_re),
-        .o_im    (w_mu_im)
+        .o_im    (w_mu_im),
+        .i_clock (i_clock),
+        .i_rst   (i_rst)
       );
+
+      // Bypass de W^0, su seleccion y el valid, alineados con la salida del
+      // cmul: directos (CMUL_PIPE = 0) o atrasados un ciclo (CMUL_PIPE = 1).
+      wire [2*NB-1:0] w_byp_do;
+      wire            w_byp_mu_en;
+      wire            w_byp_do_en;
+
+      if (CMUL_PIPE) begin : gen_pipe
+        reg [2*NB-1:0] r_bf2_do_d;
+        reg            r_mu_en_d;
+        reg            r_bf2_do_en_d;
+        always @(posedge i_clock) begin
+          if (i_rst) begin
+            r_bf2_do_d    <= {(2*NB){1'b0}};
+            r_mu_en_d     <= 1'b0;
+            r_bf2_do_en_d <= 1'b0;
+          end
+          else begin
+            r_bf2_do_d    <= r_bf2_do;
+            r_mu_en_d     <= r_mu_en;
+            r_bf2_do_en_d <= r_bf2_do_en;
+          end
+        end
+        assign w_byp_do    = r_bf2_do_d;
+        assign w_byp_mu_en = r_mu_en_d;
+        assign w_byp_do_en = r_bf2_do_en_d;
+      end
+      else begin : gen_no_pipe
+        assign w_byp_do    = r_bf2_do;
+        assign w_byp_mu_en = r_mu_en;
+        assign w_byp_do_en = r_bf2_do_en;
+      end
 
       reg [2*NB-1:0] r_mu_do;
       reg            r_mu_do_en;
       always @(posedge i_clock) begin
         if (i_rst) r_mu_do <= {(2*NB){1'b0}};
-        else       r_mu_do <= r_mu_en ? {w_mu_im, w_mu_re} : r_bf2_do;
+        else       r_mu_do <= w_byp_mu_en ? {w_mu_im, w_mu_re} : w_byp_do;
       end
       always @(posedge i_clock) begin
         if (i_rst) r_mu_do_en <= 1'b0;
-        else       r_mu_do_en <= r_bf2_do_en;
+        else       r_mu_do_en <= w_byp_do_en;
       end
 
       assign o_dout  = r_mu_do;
