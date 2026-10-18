@@ -1,6 +1,7 @@
 __pycache__/
 .vscode/
 .venv/
+venv/
 raw_data/
 log/
 results/
