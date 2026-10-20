@@ -40,6 +40,9 @@ Parametros por caso (auto)
   K0         : solo para marcar el bin esperado. En este orden: sufijo "_k<N>"
                del nombre del caso; "k0=..." del sim_summary.rpt; STIM_K0 del
                JSON si STIM_TYPE == 0 (tono/multitono); si no, None.
+  INVERSE    : (default 0). Con 1 la referencia es la IDFT sin normalizar,
+               sum X[k] e^{+j2pi kn/N} por 2^-S, y un tono en +k0 se marca en
+               el bin N - k0.
 
 Orden de la salida
 ------------------
@@ -268,7 +271,8 @@ def error_stats(X_out, X_ref, lsb):
 # ----------------------------------------------------------------------
 # Plot
 # ----------------------------------------------------------------------
-def make_figure(x_in, X_out, N, order, info, title, out_png, k0=None, err=None):
+def make_figure(x_in, X_out, N, order, info, title, out_png, k0=None, err=None, inverse=False):
+    tname = "IFFT" if inverse else "FFT"
     fig, axes = plt.subplots(4, 1, figsize=(11, 13), constrained_layout=True)
 
     ax = axes[0]
@@ -287,7 +291,7 @@ def make_figure(x_in, X_out, N, order, info, title, out_png, k0=None, err=None):
     if k0 is not None:
         ax.axvline(k0 % N, color="green", ls="--", lw=1, alpha=0.7,
                    label=f"k0={k0 % N} (esperado)")
-    ax.set_title(f"FFT  |X[k]|   —   orden: {order}   (pureza pico={info['purity']:.3f})")
+    ax.set_title(f"{tname}  |X[k]|   —   orden: {order}   (pureza pico={info['purity']:.3f})")
     ax.set_xlabel("indice de frecuencia  k"); ax.set_ylabel("|X[k]|")
     ax.grid(True, alpha=0.3); ax.legend(loc="upper right", fontsize=9)
 
@@ -298,7 +302,7 @@ def make_figure(x_in, X_out, N, order, info, title, out_png, k0=None, err=None):
     ax.plot(k, phase, color="0.8", lw=1, zorder=1)
     ax.plot(k[m], phase[m], "o", ms=5, color="tab:purple", zorder=2,
             label=f"fase donde |X|>{thr:.3g}")
-    ax.set_title("FFT  fase  ∠X[k]  (rad)")
+    ax.set_title(f"{tname}  fase  ∠X[k]  (rad)")
     ax.set_xlabel("indice de frecuencia  k"); ax.set_ylabel("fase [rad]")
     ax.set_ylim(-np.pi - 0.2, np.pi + 0.2)
     ax.grid(True, alpha=0.3); ax.legend(loc="upper right", fontsize=9)
@@ -320,7 +324,8 @@ def make_figure(x_in, X_out, N, order, info, title, out_png, k0=None, err=None):
                    label=f"media Im = {err['bias_im']:+.3f}")
         sq = err["sqnr_db"]
         sq_txt = "inf" if np.isinf(sq) and sq > 0 else f"{sq:.1f}"
-        ax.set_title(f"Error vs FFT ideal  (X_ideal = FFT(x)·2^-S, misma entrada)   "
+        ideal = "N·IFFT(x)" if inverse else "FFT(x)"
+        ax.set_title(f"Error vs {tname} ideal  (X_ideal = {ideal}·2^-S, misma entrada)   "
                      f"SQNR = {sq_txt} dB   rms = {err['rms']:.3f}   max = {err['max']:.3f} LSB")
         ax.set_xlabel("indice de frecuencia  k"); ax.set_ylabel("error [LSB de salida]")
         ax.grid(True, alpha=0.3); ax.legend(loc="best", fontsize=8, framealpha=0.9)
@@ -380,10 +385,16 @@ def plot_one(module_name, case_name, case_dir, params, src, k0_override, reorder
     # Referencia ideal: FFT de la entrada TAL COMO LA VIO EL DUT (ya cuantizada,
     # leida del .dat) escalada por 2^-S. Mide solo el error de la FFT.
     S, mask = scale_stages(params, N)
+    inverse = as_int(params.get("INVERSE"), 0) == 1
     complete = (len(x_in) == N and len(X_raw) == N)
-    X_ref = np.fft.fft(x_in) * 2.0 ** (-S) if complete else None
+    X_ref = None
+    if complete:
+        # IDFT sin normalizar (como el nucleo con INVERSE = 1) o FFT directa
+        X_ref = (np.fft.ifft(x_in) * N if inverse else np.fft.fft(x_in)) * 2.0 ** (-S)
 
     k0, k0_src = resolve_k0(case_name, case_dir, params, k0_override)
+    if inverse and k0 is not None:
+        k0 = (-k0) % N   # con e^{+j...} un tono en +k0 cae en el bin N - k0
 
     # Orden de la salida. Prioridad: CLI > PLOT_REORDER del JSON > 'auto'.
     # En 'auto' se detecta contra la referencia (anda con cualquier estimulo).
@@ -420,10 +431,11 @@ def plot_one(module_name, case_name, case_dir, params, src, k0_override, reorder
 
     title = (f"{module_name}  |  {case_name}  |  src={src}\n"
              f"N={N}   datapath {qfmt(nb, nbf)}   in {qfmt(nb_in, nbf_in)}   "
-             f"out {qfmt(nb_out, nbf_out)}   SCALE_MASK={mask & ((1 << int(round(np.log2(N)))) - 1)} (S={S})")
+             f"out {qfmt(nb_out, nbf_out)}   SCALE_MASK={mask & ((1 << int(round(np.log2(N)))) - 1)} (S={S})"
+             f"{'   INVERSA' if inverse else ''}")
     if k0 is not None:
         title += f"   k0={k0}"
-    make_figure(x_in, X_out, N, order, info, title, str(out_png), k0=k0, err=err)
+    make_figure(x_in, X_out, N, order, info, title, str(out_png), k0=k0, err=err, inverse=inverse)
 
     err_txt = (f" SQNR={err['sqnr_db']:.1f}dB sesgo=({err['bias_re']:+.3f},{err['bias_im']:+.3f}) "
                f"max={err['max']:.3f}LSB") if err else f" (sin panel de error: orden {order})"
