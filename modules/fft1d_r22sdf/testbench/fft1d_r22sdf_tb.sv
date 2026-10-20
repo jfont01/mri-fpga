@@ -55,6 +55,11 @@
 `define FFT1D_R22SDF_CMUL_PIPE 1
 `endif
 
+// Transformada inversa (swap real/imag a la entrada y a la salida). Default 0.
+`ifndef FFT1D_R22SDF_INVERSE
+`define FFT1D_R22SDF_INVERSE 0
+`endif
+
 /*
  * STRINGIFY: convierte un token del preprocesador en un string literal.
  * Permite pasar TW_DIR por -d SIN comillas, que se rompen al viajar por el
@@ -109,6 +114,7 @@ module fft1d_r22sdf_tb;
 
     localparam logic [31:0] SCALE_MASK = `FFT1D_R22SDF_SCALE_MASK;
     localparam bit          CMUL_PIPE  = `FFT1D_R22SDF_CMUL_PIPE;
+    localparam bit          INVERSE    = `FFT1D_R22SDF_INVERSE;
 
     localparam string TW_DIR = `STRINGIFY(`FFT1D_R22SDF_TW_DIR);
 
@@ -168,7 +174,8 @@ module fft1d_r22sdf_tb;
         .NBF_IN       (NBF_IN),
         .NB_OUT       (NB_OUT),
         .NBF_OUT      (NBF_OUT),
-        .CMUL_PIPE    (CMUL_PIPE)
+        .CMUL_PIPE    (CMUL_PIPE),
+        .INVERSE      (INVERSE)
     ) u_fft (
         .i_clock       (i_clock),
         .i_rst         (i_rst),
@@ -251,6 +258,7 @@ module fft1d_r22sdf_tb;
                  NB_IN, NBF_IN, NB_TW, NBF_TW, NB_OUT, NBF_OUT);
         $display("[fft1d_r22sdf_tb] SCALE_MASK = %0d (0x%h)", SCALE_MASK, SCALE_MASK);
         $display("[fft1d_r22sdf_tb] CMUL_PIPE  = %0d", CMUL_PIPE);
+        $display("[fft1d_r22sdf_tb] INVERSE    = %0d", INVERSE);
         $display("[fft1d_r22sdf_tb] TW_DIR   = %s", TW_DIR);
 
         // o_last en el CSV para inspeccion; NO se compara como .dat

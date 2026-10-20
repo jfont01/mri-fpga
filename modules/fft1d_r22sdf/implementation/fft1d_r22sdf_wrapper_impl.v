@@ -52,6 +52,10 @@
 `ifndef FFT1D_R22SDF_CMUL_PIPE
 `define FFT1D_R22SDF_CMUL_PIPE 1
 `endif
+// Transformada inversa (solo cableado: no cambia area ni timing). Default 0.
+`ifndef FFT1D_R22SDF_INVERSE
+`define FFT1D_R22SDF_INVERSE 0
+`endif
 // -----------------------------------------------------------------------------
 // fft1d_r22sdf_wrapper_impl
 //
@@ -90,7 +94,8 @@ module fft1d_r22sdf_wrapper_impl #(
     parameter int          NBF_IN     = `FFT1D_R22SDF_NBF_IN,
     parameter int          NB_OUT     = `FFT1D_R22SDF_NB_OUT,
     parameter int          NBF_OUT    = `FFT1D_R22SDF_NBF_OUT,
-    parameter bit          CMUL_PIPE  = `FFT1D_R22SDF_CMUL_PIPE
+    parameter bit          CMUL_PIPE  = `FFT1D_R22SDF_CMUL_PIPE,
+    parameter bit          INVERSE    = `FFT1D_R22SDF_INVERSE
 )(
     input  wire                  i_clock,
     input  wire                  i_rst,
@@ -125,7 +130,8 @@ module fft1d_r22sdf_wrapper_impl #(
         .NBF_IN       (NBF_IN),
         .NB_OUT       (NB_OUT),
         .NBF_OUT      (NBF_OUT),
-        .CMUL_PIPE    (CMUL_PIPE)
+        .CMUL_PIPE    (CMUL_PIPE),
+        .INVERSE      (INVERSE)
     ) u_dut (
         .i_clock       (i_clock),
         .i_rst         (r_rst),

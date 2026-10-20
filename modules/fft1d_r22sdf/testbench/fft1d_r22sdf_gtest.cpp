@@ -19,6 +19,10 @@
 // apply_headroom). Con la mascara completa S = log2 N e INPUT_GAIN = 1: los
 // estimulos son los mismos de siempre.
 //
+// INVERSA (INVERSE = 1). El modelo calcula sum_k X[k] e^{+j 2 pi k n / N} por
+// 2^-S (sin el 1/N de numpy): la referencia cambia solo el signo del exponente.
+// Los mismos tests valen para las dos direcciones.
+//
 // La referencia se calcula sobre la entrada YA cuantizada al formato del
 // puerto (quantize_input): el test mide el error de la FFT, no el de
 // representar el estimulo en NB_IN bits.
@@ -44,6 +48,7 @@ using fft1d_r22sdf::N;
 using fft1d_r22sdf::LOG2N;
 using fft1d_r22sdf::LATENCY;
 using fft1d_r22sdf::SCALE_MASK;
+using fft1d_r22sdf::INVERSE;
 using fft1d_r22sdf::in_t;
 using fft1d_r22sdf::out_t;
 using fft1d_r22sdf::fft1d_r22sdf_model;
@@ -100,7 +105,8 @@ std::vector<std::complex<double>> dft_golden(const std::vector<std::complex<doub
              * precision, que pasaria a ser el error dominante del modo double.
              */
             const long long ki = (static_cast<long long>(k) * i) % n;
-            const double angle = -2.0 * PI * static_cast<double>(ki)
+            const double sign  = INVERSE ? +1.0 : -1.0;   // IDFT: e^{+j...}
+            const double angle = sign * 2.0 * PI * static_cast<double>(ki)
                                  / static_cast<double>(n);
             acc += x[i] * std::complex<double>(std::cos(angle), std::sin(angle));
         }

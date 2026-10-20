@@ -32,6 +32,8 @@
 //   * El conmutador -j actua solo en la fase de carga (bf = 0).
 //   * bf2_bf y bf2_start estan REGISTRADOS, para alinearse con el registro de
 //     pipeline que separa las dos mariposas.
+//   * INVERSE = 1: swap(a + jb) = b + ja a la entrada y a la salida, igual que
+//     el RTL. Asi el mismo nucleo calcula sum X[k] e^{+j2pi kn/N} (por 2^-S).
 //   * CMUL_PIPE = 1: el cmul registra la suma completa ANTES del cast (mp_re,
 //     mp_im) y el bypass de W^0, su seleccion y el valid se atrasan un ciclo
 //     para seguir alineados. Los valores no cambian; la latencia sube un ciclo
@@ -107,11 +109,20 @@ namespace fft1d_r22sdf {
 #define FFT1D_R22SDF_CMUL_PIPE 1
 #endif
 
+/*
+ * Transformada inversa con el mismo nucleo: swap real/imaginaria a la entrada y
+ * a la salida. Mismo default que el RTL: 0 (FFT directa).
+ */
+#ifndef FFT1D_R22SDF_INVERSE
+#define FFT1D_R22SDF_INVERSE 0
+#endif
+
 #define FFT1D_R22SDF_STRINGIFY_IMPL(x) #x
 #define FFT1D_R22SDF_STRINGIFY(x) FFT1D_R22SDF_STRINGIFY_IMPL(x)
 
 constexpr std::uint32_t SCALE_MASK = FFT1D_R22SDF_SCALE_MASK;
 constexpr int           CMUL_PIPE  = FFT1D_R22SDF_CMUL_PIPE;
+constexpr int           INVERSE    = FFT1D_R22SDF_INVERSE;
 constexpr bool stage_scales(int s) { return ((SCALE_MASK >> s) & 1u) != 0u; }
 
 enum parameters : int {
@@ -185,6 +196,8 @@ static_assert(NBF >= NBF_OUT,
               "fft1d_r22sdf: la salida no puede tener mas bits fraccionales que el datapath");
 static_assert(CMUL_PIPE == 0 || CMUL_PIPE == 1,
               "fft1d_r22sdf: CMUL_PIPE tiene que ser 0 o 1");
+static_assert(INVERSE == 0 || INVERSE == 1,
+              "fft1d_r22sdf: INVERSE tiene que ser 0 o 1");
 
 using bit_t = rtl::bit_t;
 
@@ -313,13 +326,13 @@ public:
             o_re = out_t(0);
             o_im = out_t(0);
         }
-        else if (last.has_mult) {
-            o_re = out_t(last.mu_do_re.o);
-            o_im = out_t(last.mu_do_im.o);
-        }
         else {
-            o_re = out_t(last.bf2_do_re.o);
-            o_im = out_t(last.bf2_do_im.o);
+            const data_t& y_re = last.has_mult ? last.mu_do_re.o : last.bf2_do_re.o;
+            const data_t& y_im = last.has_mult ? last.mu_do_im.o : last.bf2_do_im.o;
+
+            // INVERSE: swap a la salida (como en el RTL, despues del cast)
+            o_re = out_t(INVERSE ? y_im : y_re);
+            o_im = out_t(INVERSE ? y_re : y_im);
         }
     }
 
@@ -582,8 +595,9 @@ private:
      */
     void evaluate()
     {
-        data_t din_re = data_t(i_re.value());   // in_t -> data_t: exacto
-        data_t din_im = data_t(i_im.value());
+        // in_t -> data_t: exacto. INVERSE: swap a la entrada.
+        data_t din_re = data_t(INVERSE ? i_im.value() : i_re.value());
+        data_t din_im = data_t(INVERSE ? i_re.value() : i_im.value());
 
         for (int u = 0; u < N_UNITS; ++u) {
             Unit&  q = unit_[u];

@@ -59,6 +59,14 @@
 // k = 0..N-1); cada una la direcciona distinto segun su resolucion M. Por eso
 // hace falta un unico par de archivos, tw_re.mem y tw_im.mem, en TW_DIR.
 //
+// INVERSA (INVERSE = 1): el mismo nucleo calcula la IDFT sin normalizar,
+//
+//   sum_k X[k] e^{+j 2 pi k n / N}  =  swap( FFT( swap(X) ) ),   swap(a + jb) = b + ja
+//
+// (por 2^-s, igual que la directa). El swap es cruzar real e imaginaria a la
+// entrada y a la salida: no niega nada, no agrega logica ni latencia, y el error
+// numerico es exactamente el de la FFT directa sobre la entrada cruzada.
+//
 // Los twiddles tienen formato propio, Q(NB_TW, NBF_TW), independiente del de los
 // datos: los .mem tienen que tener valores de NB_TW bits. Por defecto NB_TW = NB y
 // NBF_TW = NBF. En el DSP48E2 (27 x 18), twiddle de hasta 18 bits y dato de hasta 27
@@ -77,7 +85,8 @@ module fft1d_r22sdf #(
   parameter int    NBF_IN  = NB_IN  - (NB - NBF),
   parameter int    NB_OUT  = NB,                 // formato del puerto de salida
   parameter int    NBF_OUT = NB_OUT - (NB - NBF),
-  parameter bit    CMUL_PIPE = 1'b1              // 1: registro antes del cast de cada cmul
+  parameter bit    CMUL_PIPE = 1'b1,             // 1: registro antes del cast de cada cmul
+  parameter bit    INVERSE   = 1'b0              // 1: IDFT (swap real/imag a la entrada y a la salida)
 )(
   input  wire                 i_clock,
   input  wire                 i_rst,          // sincrono, activo alto
@@ -117,8 +126,11 @@ module fft1d_r22sdf #(
   // porque cast no admite agregar bits fraccionales.
   localparam int SH_IN = NBF - NBF_IN;
 
-  wire signed [NB_IN-1:0] w_in_re = i_cplx_sample[0     +: NB_IN];
-  wire signed [NB_IN-1:0] w_in_im = i_cplx_sample[NB_IN +: NB_IN];
+  // INVERSE: swap a la entrada (cableado; INVERSE es constante).
+  wire signed [NB_IN-1:0] w_port_re = i_cplx_sample[0     +: NB_IN];
+  wire signed [NB_IN-1:0] w_port_im = i_cplx_sample[NB_IN +: NB_IN];
+  wire signed [NB_IN-1:0] w_in_re   = INVERSE ? w_port_im : w_port_re;
+  wire signed [NB_IN-1:0] w_in_im   = INVERSE ? w_port_re : w_port_im;
   wire signed [NB-1:0]    w_din_re = NB'(w_in_re) <<< SH_IN;
   wire signed [NB-1:0]    w_din_im = NB'(w_in_im) <<< SH_IN;
 
@@ -180,7 +192,11 @@ module fft1d_r22sdf #(
     u_out_im (.i_word($signed(w_data[N_UNITS][NB +: NB])), .o_word(w_out_im));
 
   assign o_valid       = w_valid[N_UNITS];
-  assign o_cplx_sample = w_valid[N_UNITS] ? {w_out_im, w_out_re} : {(2*NB_OUT){1'b0}};
+  // INVERSE: swap a la salida. El cast es el mismo para las dos componentes, asi
+  // que cruzar antes o despues de el da lo mismo.
+  wire [2*NB_OUT-1:0] w_out_cplx = INVERSE ? {w_out_re, w_out_im} : {w_out_im, w_out_re};
+
+  assign o_cplx_sample = w_valid[N_UNITS] ? w_out_cplx : {(2*NB_OUT){1'b0}};
   assign o_last        = w_valid[N_UNITS] && (r_out_count == LOG2N'(N - 1));
 
 endmodule
