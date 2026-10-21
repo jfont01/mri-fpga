@@ -1,0 +1,65 @@
+{
+  "regression_dir": "build",
+  "defaults": {
+    "modes": ["fixed", "double"],
+    "auto_defines": true,
+    "N_COILS": 3,
+    "N_CYCLES": 0
+  },
+  "cases": [
+    {
+      "name": "n64x32_full",
+      "N1": 64, "N2": 32, "SCALE_MASK1": 63, "SCALE_MASK2": 31,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n32_tw18"
+    },
+    {
+      "name": "n64x32_m41_24",
+      "N1": 64, "N2": 32, "SCALE_MASK1": 41, "SCALE_MASK2": 24,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n32_tw18",
+      "STIM_AMP_MILLI": 30
+    },
+    {
+      "name": "n64x32_nopipe",
+      "N1": 64, "N2": 32, "SCALE_MASK1": 63, "SCALE_MASK2": 31,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n32_tw18",
+      "CMUL_PIPE": 0
+    },
+    {
+      "name": "n32x8_full",
+      "N1": 32, "N2": 8, "SCALE_MASK1": 31, "SCALE_MASK2": 7,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n32_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n8_tw18"
+    },
+    {
+      "name": "n16x64_full",
+      "N1": 16, "N2": 64, "SCALE_MASK1": 15, "SCALE_MASK2": 63,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n16_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n64_tw18"
+    },
+    {
+      "name": "n64x32_impulse_m0",
+      "N1": 64, "N2": 32, "SCALE_MASK1": 0, "SCALE_MASK2": 0,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n32_tw18",
+      "STIM_TYPE": 1, "STIM_K0": 5, "STIM_R0": 3, "STIM_AMP_MILLI": 900
+    },
+    {
+      "name": "n64x32_tone",
+      "N1": 64, "N2": 32, "SCALE_MASK1": 63, "SCALE_MASK2": 31,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n32_tw18",
+      "STIM_TYPE": 2, "STIM_P0": 7, "STIM_X0": 20, "STIM_AMP_MILLI": 500
+    },
+    {
+      "name": "n64x32_phantom",
+      "N1": 64, "N2": 32, "SCALE_MASK1": 25, "SCALE_MASK2": 4,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n32_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/phantom_n64_l8.bin",
+      "N_COILS": 8
+    }
+  ]
+}
