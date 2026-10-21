@@ -105,3 +105,17 @@ run_plot_fft1d () {
 
     python3 "$RUN_PLOT_FFT1D_PY" "$@"
 }
+
+run_plot_fft2d () {
+    if [[ -z "${PROJECT_ROOT:-}" ]]; then
+        echo "[regression_utils.sh] ERROR: PROJECT_ROOT is not defined." >&2
+        return 1
+    fi
+
+    if [[ ! -f "$RUN_PLOT_FFT2D_PY" ]]; then
+        echo "[regression_utils.sh] ERROR: missing run_plot_fft2d.py: $RUN_PLOT_FFT2D_PY" >&2
+        return 1
+    fi
+
+    python3 "$RUN_PLOT_FFT2D_PY" "$@"
+}
