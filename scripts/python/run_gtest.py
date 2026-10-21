@@ -500,6 +500,12 @@ def run_case(
     if result.total == 0 and proc.returncode != 0:
         result.failures = 1
         result.message = "gtest falló y no se pudo parsear el XML"
+    elif proc.returncode != 0 and result.failures == 0 and result.errors == 0:
+        result.failures = 1
+        result.message = (
+            f"gtest devolvió {proc.returncode} sin fallas en el XML "
+            "(falla fuera de un test: SetUpTestSuite, entorno o crash)"
+        )
 
     output = proc.stdout or ""
 
