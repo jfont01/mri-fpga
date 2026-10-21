@@ -3,24 +3,33 @@
 `ifndef FFT1D_R22SDF_V
 `define FFT1D_R22SDF_V
 `include "fft1d_r22sdf_unit.v"
+`include "fft1d_r22sdf_tail.v"
 // -----------------------------------------------------------------------------
 // fft1d_r22sdf -- FFT radix-2^2 Single-path Delay Feedback, N puntos.
 //
-// Cadena de log4(N) unidades radix-2^2. Cada unidad procesa un nivel radix-4
-// (dos etapas radix-2: BF2II con el twiddle trivial -j, y BF2I) mas el
-// multiplicador que cierra el par. La ultima unidad no multiplica.
+// Cadena de floor(log2(N)/2) unidades radix-2^2. Cada unidad procesa un nivel
+// radix-4 (dos etapas radix-2: BF2II con el twiddle trivial -j, y BF2I) mas el
+// multiplicador que cierra el par. Si log2(N) es par, la ultima unidad (M = 4)
+// no multiplica:
 //
 //   x(n) -> [unidad M=N] -> [unidad M=N/4] -> ... -> [unidad M=4] -> X(k)
 //
-//   multiplicadores : log4(N) - 1     (contra log2(N)-2 del R2SDF)
+// Si log2(N) es impar (p. ej. 512), las unidades llegan hasta M = 8, todas con
+// multiplicador, y se agrega una etapa radix-2 final de span 1 sin twiddle
+// (fft1d_r22sdf_tail):
+//
+//   x(n) -> [unidad M=N] -> ... -> [unidad M=8] -> [tail] -> X(k)
+//
+//   multiplicadores : log4(N) - 1 si log2(N) es par; floor(log2(N)/2) si es impar
+//                     (N = 1024 y N = 512: 4 multiplicadores, 16 DSP)
 //   memoria         : N - 1           (identica al R2SDF)
 //   orden de salida : BIT-REVERSED
 //   escala          : 1/2^s, con s = cantidad de bits en 1 de SCALE_MASK[LOG2N-1:0]
 //                     (bit k = 1: la etapa radix-2 k divide por 2; bit k = 0: no divide
 //                     y el cast satura). Con la mascara por defecto, s = log2(N): 1/N.
 //
-// PRECONDICION: N potencia de 4 (log2(N) par). Para N = 2^impar (p.ej. 512) hace
-// falta una etapa radix-2 suelta adicional, no cubierta por este modulo.
+// PRECONDICION: N potencia de 2, N >= 4. El bit log2(N)-1 de SCALE_MASK es, con
+// log2(N) impar, el de la etapa final.
 //
 // SEGMENTACION: a diferencia de una cadena puramente combinacional, cada unidad
 // registra entre sus dos mariposas y a la salida del multiplicador. El camino
@@ -31,10 +40,12 @@
 // Con CMUL_PIPE = 1 cada multiplicador registra ademas la suma completa antes de
 // su cast (PREG del DSP48E2, ver cmul.v): el camino DSP -> cast queda partido en
 // dos y cada unidad con multiplicador suma un ciclo. Latencia hasta el primer
-// o_valid, contando desde la primera muestra:
+// o_valid, contando desde la primera muestra (U = floor(log2(N)/2)):
 //
-//   LATENCY = N + (3 + CMUL_PIPE) * (log4(N) - 1)
-//           = 1036 (CMUL_PIPE = 0) o 1040 (CMUL_PIPE = 1) para N = 1024
+//   log2(N) par   : LATENCY = N + (3 + CMUL_PIPE) * (U - 1)
+//                 = 1036 (CMUL_PIPE = 0) o 1040 (CMUL_PIPE = 1) para N = 1024
+//   log2(N) impar : LATENCY = N + (3 + CMUL_PIPE) * U - 1
+//                 = 523  (CMUL_PIPE = 0) o 527  (CMUL_PIPE = 1) para N = 512
 //
 // Los valores de salida no cambian; solo llegan mas tarde.
 //
@@ -98,16 +109,17 @@ module fft1d_r22sdf #(
 );
 
   localparam int LOG2N   = $clog2(N);
-  localparam int N_UNITS = LOG2N / 2;      // log4(N)
+  localparam int N_UNITS  = LOG2N / 2;            // floor(log2(N)/2) unidades radix-2^2
+  localparam bit HAS_TAIL = (LOG2N % 2) != 0;     // log2(N) impar: etapa radix-2 final
 
   // ------------------------------------------------- chequeo de parametros
   // Doble $fatal: el de elaboracion lo respetan Vivado y XSim; iverilog lo ignora
   // en silencio, asi que el del initial lo hace cortar en tiempo 0.
   `ifndef __SYNTHESIS__
     generate
-      if ((LOG2N % 2) != 0 || N != (1 << LOG2N)) begin : g_err_n
-        $fatal(1, "fft1d_r22sdf: N=%0d tiene que ser potencia de 4 (log2(N) par)", N);
-        initial $fatal(1, "fft1d_r22sdf: N=%0d tiene que ser potencia de 4 (log2(N) par)", N);
+      if (N != (1 << LOG2N) || LOG2N < 2) begin : g_err_n
+        $fatal(1, "fft1d_r22sdf: N=%0d tiene que ser potencia de 2 y >= 4", N);
+        initial $fatal(1, "fft1d_r22sdf: N=%0d tiene que ser potencia de 2 y >= 4", N);
       end
       if (NBF < NBF_IN || (NB - NBF) < (NB_IN - NBF_IN)) begin : g_err_in
         $fatal(1, "fft1d_r22sdf: la entrada Q(%0d,%0d) no entra sin perdida en el datapath Q(%0d,%0d)", NB_IN, NBF_IN, NB, NBF);
@@ -169,11 +181,37 @@ module fft1d_r22sdf #(
     end
   endgenerate
 
+  // ------------------------------------- etapa radix-2 final (log2 N impar)
+  wire [2*NB-1:0] w_fin_data;
+  wire            w_fin_valid;
+
+  generate
+    if (HAS_TAIL) begin : gen_tail
+      fft1d_r22sdf_tail #(
+        .N       (N),
+        .NB      (NB),
+        .NBF     (NBF),
+        .SCALE   (SCALE_MASK[LOG2N-1])
+      ) u_tail (
+        .i_clock (i_clock),
+        .i_rst   (i_rst),
+        .i_valid (w_valid[N_UNITS]),
+        .i_din   (w_data[N_UNITS]),
+        .o_valid (w_fin_valid),
+        .o_dout  (w_fin_data)
+      );
+    end
+    else begin : gen_no_tail
+      assign w_fin_data  = w_data[N_UNITS];
+      assign w_fin_valid = w_valid[N_UNITS];
+    end
+  endgenerate
+
   // ------------------------------------------------------------ o_last
   reg [LOG2N-1:0] r_out_count;
   always @(posedge i_clock) begin
-    if (i_rst)                  r_out_count <= {LOG2N{1'b0}};
-    else if (w_valid[N_UNITS])  r_out_count <= r_out_count + 1'b1;
+    if (i_rst)             r_out_count <= {LOG2N{1'b0}};
+    else if (w_fin_valid)  r_out_count <= r_out_count + 1'b1;
   end
 
   /*
@@ -187,17 +225,17 @@ module fft1d_r22sdf #(
   wire signed [NB_OUT-1:0] w_out_re, w_out_im;
 
   cast #(.NB_IN(NB), .NBF_IN(NBF), .NB_OUT(NB_OUT), .NBF_OUT(NBF_OUT), .ROUND_MODE(1'b1))
-    u_out_re (.i_word($signed(w_data[N_UNITS][0  +: NB])), .o_word(w_out_re));
+    u_out_re (.i_word($signed(w_fin_data[0  +: NB])), .o_word(w_out_re));
   cast #(.NB_IN(NB), .NBF_IN(NBF), .NB_OUT(NB_OUT), .NBF_OUT(NBF_OUT), .ROUND_MODE(1'b1))
-    u_out_im (.i_word($signed(w_data[N_UNITS][NB +: NB])), .o_word(w_out_im));
+    u_out_im (.i_word($signed(w_fin_data[NB +: NB])), .o_word(w_out_im));
 
-  assign o_valid       = w_valid[N_UNITS];
+  assign o_valid       = w_fin_valid;
   // INVERSE: swap a la salida. El cast es el mismo para las dos componentes, asi
   // que cruzar antes o despues de el da lo mismo.
   wire [2*NB_OUT-1:0] w_out_cplx = INVERSE ? {w_out_re, w_out_im} : {w_out_im, w_out_re};
 
-  assign o_cplx_sample = w_valid[N_UNITS] ? w_out_cplx : {(2*NB_OUT){1'b0}};
-  assign o_last        = w_valid[N_UNITS] && (r_out_count == LOG2N'(N - 1));
+  assign o_cplx_sample = w_fin_valid ? w_out_cplx : {(2*NB_OUT){1'b0}};
+  assign o_last        = w_fin_valid && (r_out_count == LOG2N'(N - 1));
 
 endmodule
 `endif

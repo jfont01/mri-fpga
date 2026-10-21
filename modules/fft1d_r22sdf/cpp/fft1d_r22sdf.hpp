@@ -15,14 +15,17 @@
 // -----------------------------------------------------------------------------
 // fft1d_r22sdf.hpp -- modelo bit-exacto del RTL fft1d_r22sdf.v (radix-2^2 SDF).
 //
-// Espeja la estructura del RTL: una cadena de log4(N) unidades, cada una con
+// Espeja la estructura del RTL: una cadena de floor(log2(N)/2) unidades, cada una con
 //
 //   i_din -> BF2II (linea M/2, conmutador -j) -> reg
 //         -> BF2I  (linea M/4)                -> reg
 //         -> multiplicador de twiddle          -> reg -> o_dout
 //
 // y el control por etapa (cada etapa lleva su propio contador, que arranca
-// cuando los datos efectivamente le llegan). La ultima unidad no multiplica.
+// cuando los datos efectivamente le llegan). Con log2(N) par la ultima unidad
+// (M = 4) no multiplica. Con log2(N) impar (p. ej. 512) todas multiplican y se
+// agrega una etapa radix-2 final de span 1 sin twiddle (Tail), como
+// fft1d_r22sdf_tail.v.
 //
 // Puntos sensibles replicados del RTL (los que costaron encontrar):
 //
@@ -47,6 +50,18 @@
 // (se calculan, no se leen de TW_DIR). No hay ninguna cuantizacion, asi que
 // separa los errores estructurales de los numericos. No es bit-exacto con el
 // RTL: para eso esta el modo fixed.
+//
+// Parametros de compilacion y de elaboracion (desde el 2026-10-20):
+//
+//   * Los FORMATOS (NB, NBF, NB_TW, NBF_TW, NB_IN, NBF_IN, NB_OUT, NBF_OUT) son
+//     de compilacion: definen los tipos ap_fixed y son comunes a todas las
+//     instancias de un binario.
+//   * N, SCALE_MASK, INVERSE, CMUL_PIPE y TW_DIR son de ELABORACION: cada
+//     instancia los recibe en un Params, como los parameter de un modulo
+//     Verilog. Asi un mismo binario puede tener una FFT de 1024 y otra de 512
+//     (la FFT2D). Params{} toma los valores de los macros FFT1D_R22SDF_*, y las
+//     constantes del namespace (N, LATENCY, SCALE_MASK, ...) siguen
+//     describiendo esa configuracion por defecto, para el tb y el gtest.
 // -----------------------------------------------------------------------------
 
 namespace fft1d_r22sdf {
@@ -141,10 +156,22 @@ enum parameters : int {
 
 constexpr int ct_log2(int n) { return (n <= 1) ? 0 : 1 + ct_log2(n / 2); }
 
+/*
+ * Latencia hasta el primer o_valid en funcion de log2(N) y CMUL_PIPE (ver el
+ * comentario de LATENCY). La usan la configuracion por defecto y Params.
+ */
+constexpr int latency_of(int log_n, int cmul_pipe)
+{
+    return (log_n % 2 != 0)
+        ? (1 << log_n) + (3 + cmul_pipe) * (log_n / 2) - 1
+        : (1 << log_n) + (3 + cmul_pipe) * (log_n / 2 - 1);
+}
+
 enum localparameters : int {
     LOG_N   = ct_log2(N),
     LOG2N   = LOG_N,             // alias (nomenclatura de los otros modulos)
-    N_UNITS = LOG_N / 2,         // log4(N)
+    N_UNITS  = LOG_N / 2,        // floor(log2(N)/2) unidades radix-2^2
+    HAS_TAIL = LOG_N % 2,        // log2(N) impar: etapa radix-2 final
 
     /*
      * Latencia hasta el primer o_valid, contando desde la primera muestra de
@@ -152,9 +179,12 @@ enum localparameters : int {
      * de cada unidad y a la salida del multiplicador), asi que es bastante
      * mayor que la del R2SDF: 70 para N=64, 265 para N=256, 1036 para N=1024.
      * Con CMUL_PIPE = 1 cada unidad con multiplicador suma un ciclo: 72, 268 y
-     * 1040. Verificada contra el RTL.
+     * 1040. Con log2(N) impar todas las unidades multiplican y la etapa final
+     * agrega su linea de 1 y su registro: N + (3 + CMUL_PIPE) * N_UNITS - 1,
+     * o sea 527 para N = 512 con CMUL_PIPE = 1. Verificada contra el RTL.
      */
-    LATENCY = N + (3 + CMUL_PIPE) * (N_UNITS - 1)
+    LATENCY = HAS_TAIL ? N + (3 + CMUL_PIPE) * N_UNITS - 1
+                       : N + (3 + CMUL_PIPE) * (N_UNITS - 1)
 };
 
 /*
@@ -188,8 +218,8 @@ static_assert(NB + NB_TW <= 52,
 #endif
 
 // Las mismas restricciones que chequea el RTL.
-static_assert(LOG_N % 2 == 0 && N == (1 << LOG_N),
-              "fft1d_r22sdf: N tiene que ser potencia de 4 (log2(N) par)");
+static_assert(N == (1 << LOG_N) && LOG_N >= 2,
+              "fft1d_r22sdf: N tiene que ser potencia de 2 y >= 4");
 static_assert(NBF >= NBF_IN && (NB - NBF) >= (NB_IN - NBF_IN),
               "fft1d_r22sdf: la entrada no entra sin perdida en el datapath");
 static_assert(NBF >= NBF_OUT,
@@ -199,10 +229,82 @@ static_assert(CMUL_PIPE == 0 || CMUL_PIPE == 1,
 static_assert(INVERSE == 0 || INVERSE == 1,
               "fft1d_r22sdf: INVERSE tiene que ser 0 o 1");
 
+static_assert(LATENCY == latency_of(LOG_N, CMUL_PIPE),
+              "fft1d_r22sdf: latency_of no coincide con LATENCY");
+
+/*
+ * Parametros de elaboracion de una instancia (ver cabecera). Los defaults son
+ * los de los macros, asi que fft1d_r22sdf_model dut; es exactamente el modelo
+ * de siempre.
+ *
+ * Las mismas restricciones que el RTL se chequean en validate(), que tira
+ * std::invalid_argument (el RTL corta la elaboracion con $fatal). Los bits de
+ * scale_mask por encima de log2(N)-1 se ignoran, como en el RTL.
+ */
+struct Params {
+    int           n          = N;
+    std::uint32_t scale_mask = SCALE_MASK;
+    bool          inverse    = (INVERSE != 0);
+    bool          cmul_pipe  = (CMUL_PIPE != 0);
+    std::string   tw_dir     = FFT1D_R22SDF_STRINGIFY(FFT1D_R22SDF_TW_DIR);
+
+    int  log_n()    const { return ct_log2(n); }
+    int  n_units()  const { return log_n() / 2; }
+    bool has_tail() const { return (log_n() % 2) != 0; }
+    int  latency()  const { return latency_of(log_n(), cmul_pipe ? 1 : 0); }
+
+    bool stage_scales(int s) const { return ((scale_mask >> s) & 1u) != 0u; }
+
+    // Cantidad de etapas que escalan: la salida es X[k] * 2^-scale_shift().
+    int scale_shift() const
+    {
+        int s = 0;
+        for (int k = 0; k < log_n(); ++k) {
+            s += stage_scales(k) ? 1 : 0;
+        }
+        return s;
+    }
+
+    void validate() const
+    {
+        // 2^30 como techo: contadores, direcciones y tw_num * sel son int
+        if (n < 4 || n > (1 << 30) || n != (1 << log_n())) {
+            throw std::invalid_argument(
+                "fft1d_r22sdf: N tiene que ser potencia de 2 y >= 4 (N = "
+                + std::to_string(n) + ")");
+        }
+    }
+};
+
 using bit_t = rtl::bit_t;
 
 class fft1d_r22sdf_model final : public rtl::Module {
 public:
+    /*
+     * Elaboracion. Sin argumentos usa Params{} (los macros). La configuracion
+     * queda fija: Simulator::add() llama a connect_clocks() con los vectores de
+     * unidades ya dimensionados, y no se redimensionan nunca (ClockDomain
+     * guarda punteros a los registros).
+     */
+    explicit fft1d_r22sdf_model(const Params& p = Params{})
+        : p_(p)
+    {
+        p_.validate();
+
+        n_         = p_.n;
+        log_n_     = p_.log_n();
+        n_units_   = p_.n_units();
+        has_tail_  = p_.has_tail();
+        inverse_   = p_.inverse;
+        cmul_pipe_ = p_.cmul_pipe;
+
+        unit_.resize(n_units_);
+        wire_.resize(n_units_);
+    }
+
+    const Params& params()  const { return p_; }
+    int           latency() const { return p_.latency(); }
+
     /*
      * Ports
      */
@@ -217,7 +319,7 @@ public:
 
     void connect_clocks(rtl::ClockDomain& clk) override
     {
-        for (int u = 0; u < N_UNITS; ++u) {
+        for (int u = 0; u < n_units_; ++u) {
             Unit& q = unit_[u];
             clk.add(q.di_count);
             clk.add(q.addr1);
@@ -236,7 +338,7 @@ public:
             clk.add(q.tw_re);
             clk.add(q.tw_im);
             clk.add(q.mu_en);
-            if (CMUL_PIPE) {
+            if (cmul_pipe_) {
                 clk.add(q.mp_re);
                 clk.add(q.mp_im);
                 clk.add(q.bf2_do_d_re);
@@ -248,6 +350,16 @@ public:
             clk.add(q.mu_do_im);
             clk.add(q.mu_do_en);
         }
+        if (has_tail_) {
+            clk.add(tail_.di_count);
+            clk.add(tail_.sp_en);
+            clk.add(tail_.count);
+            clk.add(tail_.dl_re);
+            clk.add(tail_.dl_im);
+            clk.add(tail_.do_re);
+            clk.add(tail_.do_im);
+            clk.add(tail_.do_en);
+        }
         clk.add(r_out_count);
     }
 
@@ -255,16 +367,16 @@ public:
     {
         build_twiddle_rom();
 
-        for (int u = 0; u < N_UNITS; ++u) {
+        for (int u = 0; u < n_units_; ++u) {
             Unit& q = unit_[u];
 
-            q.log_m    = LOG_N - 2 * u;
+            q.log_m    = log_n_ - 2 * u;
             q.depth1   = 1 << (q.log_m - 1);
             q.depth2   = 1 << (q.log_m - 2);
             q.has_mult = (q.log_m != 2);
 
-            q.scale_bf2ii = ((SCALE_MASK >> (2*u))     & 1u) != 0;
-            q.scale_bf2i  = ((SCALE_MASK >> (2*u + 1)) & 1u) != 0;
+            q.scale_bf2ii = p_.stage_scales(2*u);
+            q.scale_bf2i  = p_.stage_scales(2*u + 1);
 
             q.dl1_re.assign(q.depth1, data_t(0));
             q.dl1_im.assign(q.depth1, data_t(0));
@@ -299,6 +411,16 @@ public:
             q.mu_do_en.set_initial_value(false);
         }
 
+        tail_.scale = p_.stage_scales(log_n_ - 1);   // ultima etapa
+        tail_.di_count.set_initial_value(0);
+        tail_.sp_en.set_initial_value(false);
+        tail_.count.set_initial_value(0);
+        tail_.dl_re.set_initial_value(data_t(0));
+        tail_.dl_im.set_initial_value(data_t(0));
+        tail_.do_re.set_initial_value(data_t(0));
+        tail_.do_im.set_initial_value(data_t(0));
+        tail_.do_en.set_initial_value(false);
+
         r_out_count.set_initial_value(0);
 
         o_valid = bit_t(false);
@@ -311,11 +433,10 @@ public:
     {
         evaluate();
 
-        const Unit& last = unit_[N_UNITS - 1];
-        const bool  v    = last.has_mult ? last.mu_do_en.o : last.bf2_do_en.o;
+        const bool v = fin_valid();
 
         o_valid = bit_t(v);
-        o_last  = bit_t(v && (r_out_count.o == N - 1));
+        o_last  = bit_t(v && (r_out_count.o == n_ - 1));
 
         /*
          * Gating de salida: con o_valid=0 el RTL entrega basura del pipeline sin
@@ -327,12 +448,12 @@ public:
             o_im = out_t(0);
         }
         else {
-            const data_t& y_re = last.has_mult ? last.mu_do_re.o : last.bf2_do_re.o;
-            const data_t& y_im = last.has_mult ? last.mu_do_im.o : last.bf2_do_im.o;
+            const data_t y_re = fin_re();
+            const data_t y_im = fin_im();
 
             // INVERSE: swap a la salida (como en el RTL, despues del cast)
-            o_re = out_t(INVERSE ? y_im : y_re);
-            o_im = out_t(INVERSE ? y_re : y_im);
+            o_re = out_t(inverse_ ? y_im : y_re);
+            o_im = out_t(inverse_ ? y_re : y_im);
         }
     }
 
@@ -342,7 +463,7 @@ public:
 
         bool  chain_valid = i_valid.value().to_bool();
 
-        for (int u = 0; u < N_UNITS; ++u) {
+        for (int u = 0; u < n_units_; ++u) {
             Unit& q = unit_[u];
             const Wires& w = wire_[u];
 
@@ -357,13 +478,13 @@ public:
             q.addr2.i = (q.addr2.o + 1) % q.depth2;
 
             // --- contador de entrada ---
-            q.di_count.i = chain_valid ? ((q.di_count.o + 1) % N) : 0;
+            q.di_count.i = chain_valid ? ((q.di_count.o + 1) % n_) : 0;
 
             // --- control de la 1ra etapa ---
             const bool bf1_start = (q.di_count.o == q.depth1 - 1);
-            const bool bf1_end   = (q.bf1_count.o == N - 1);
+            const bool bf1_end   = (q.bf1_count.o == n_ - 1);
             q.bf1_sp_en.i = bf1_start ? true : (bf1_end ? false : q.bf1_sp_en.o);
-            q.bf1_count.i = q.bf1_sp_en.o ? ((q.bf1_count.o + 1) % N) : 0;
+            q.bf1_count.i = q.bf1_sp_en.o ? ((q.bf1_count.o + 1) % n_) : 0;
 
             q.bf1_do_re.i = w.bf1_sp_re;
             q.bf1_do_im.i = w.bf1_sp_im;
@@ -372,9 +493,9 @@ public:
             q.bf2_bf.i    = bit_of(q.bf1_count.o, q.log_m - 2);
             q.bf2_start.i = (q.bf1_count.o == q.depth2 - 1) && q.bf1_sp_en.o;
 
-            const bool bf2_end = (q.bf2_count.o == N - 1);
+            const bool bf2_end = (q.bf2_count.o == n_ - 1);
             q.bf2_sp_en.i = q.bf2_start.o ? true : (bf2_end ? false : q.bf2_sp_en.o);
-            q.bf2_count.i = q.bf2_sp_en.o ? ((q.bf2_count.o + 1) % N) : 0;
+            q.bf2_count.i = q.bf2_sp_en.o ? ((q.bf2_count.o + 1) % n_) : 0;
 
             q.bf2_do_re.i = w.bf2_sp_re;
             q.bf2_do_im.i = w.bf2_sp_im;
@@ -386,7 +507,7 @@ public:
                 q.tw_im.i = tw_rom_im_[w.tw_addr];
                 q.mu_en.i = (w.tw_addr != 0);
 
-                if (CMUL_PIPE) {
+                if (cmul_pipe_) {
                     // registro interno del cmul: suma completa, antes del cast
                     q.mp_re.i = w.mp_re;
                     q.mp_im.i = w.mp_im;
@@ -412,10 +533,26 @@ public:
             chain_valid = q.has_mult ? q.mu_do_en.o : q.bf2_do_en.o;
         }
 
+        // --- etapa radix-2 final (log2 N impar), mismo control que fft1d_r22sdf_tail.v ---
+        if (has_tail_) {
+            Tail& t = tail_;
+            const bool start = chain_valid && (t.di_count.o == 0);   // con DEPTH = 1 exige valid
+            const bool end   = (t.count.o == n_ - 1);
+
+            t.di_count.i = chain_valid ? ((t.di_count.o + 1) % n_) : 0;
+            t.sp_en.i    = start ? true : (end ? false : t.sp_en.o);
+            t.count.i    = t.sp_en.o ? ((t.count.o + 1) % n_) : 0;
+
+            t.dl_re.i = tail_wire_.db_di_re;   // linea de 1 = registro
+            t.dl_im.i = tail_wire_.db_di_im;
+            t.do_re.i = tail_wire_.sp_re;
+            t.do_im.i = tail_wire_.sp_im;
+            t.do_en.i = t.sp_en.o;
+        }
+
         // --- contador de salida (para o_last) ---
-        const Unit& last = unit_[N_UNITS - 1];
-        const bool  v    = last.has_mult ? last.mu_do_en.o : last.bf2_do_en.o;
-        r_out_count.i = v ? ((r_out_count.o + 1) % N) : r_out_count.o;
+        const bool v = fin_valid();
+        r_out_count.i = v ? ((r_out_count.o + 1) % n_) : r_out_count.o;
     }
 
     // --- estado expuesto para trazado del vm ---
@@ -461,6 +598,22 @@ public:
         rtl::Reg<bool> mu_do_en;
     };
 
+    // Etapa radix-2 final (solo con log2(N) impar): fft1d_r22sdf_tail.v
+    struct Tail {
+        bool scale{true};
+        rtl::Reg<int>    di_count;
+        rtl::Reg<bool>   sp_en;
+        rtl::Reg<int>    count;
+        rtl::Reg<data_t> dl_re, dl_im;     // delay_line con DEPTH = 1 (un registro)
+        rtl::Reg<data_t> do_re, do_im;     // registro de salida
+        rtl::Reg<bool>   do_en;
+    };
+
+    struct TailWires {
+        data_t sp_re{0}, sp_im{0};
+        data_t db_di_re{0}, db_di_im{0};
+    };
+
     // valores combinacionales de cada unidad, recalculados por evaluate()
     struct Wires {
         data_t bf1_sp_re{0}, bf1_sp_im{0};
@@ -472,6 +625,26 @@ public:
     };
 
 private:
+    // Salida de la cadena: la etapa final si existe, si no la ultima unidad.
+    bool fin_valid() const
+    {
+        if (has_tail_) return tail_.do_en.o;
+        const Unit& last = unit_[n_units_ - 1];
+        return last.has_mult ? last.mu_do_en.o : last.bf2_do_en.o;
+    }
+    data_t fin_re() const
+    {
+        if (has_tail_) return tail_.do_re.o;
+        const Unit& last = unit_[n_units_ - 1];
+        return last.has_mult ? last.mu_do_re.o : last.bf2_do_re.o;
+    }
+    data_t fin_im() const
+    {
+        if (has_tail_) return tail_.do_im.o;
+        const Unit& last = unit_[n_units_ - 1];
+        return last.has_mult ? last.mu_do_im.o : last.bf2_do_im.o;
+    }
+
     static bool bit_of(int value, int pos)
     {
         return ((value >> pos) & 1) != 0;
@@ -512,11 +685,11 @@ private:
     {
         constexpr double PI = 3.14159265358979323846;   // M_PI no es estandar (MSYS)
 
-        tw_rom_re_.resize(N);
-        tw_rom_im_.resize(N);
+        tw_rom_re_.resize(n_);
+        tw_rom_im_.resize(n_);
 
-        for (int k = 0; k < N; ++k) {
-            const double angle = -2.0 * PI * static_cast<double>(k) / static_cast<double>(N);
+        for (int k = 0; k < n_; ++k) {
+            const double angle = -2.0 * PI * static_cast<double>(k) / static_cast<double>(n_);
             tw_rom_re_[k] = std::cos(angle);
             tw_rom_im_[k] = std::sin(angle);
         }
@@ -536,6 +709,7 @@ private:
 
     static void load_twiddle_file(
         const std::string& filename,
+        int n,
         std::vector<tw_t>& rom)
     {
         std::ifstream file(filename);
@@ -546,7 +720,7 @@ private:
         }
 
         rom.clear();
-        rom.reserve(N);
+        rom.reserve(n);
 
         std::string token;
 
@@ -562,28 +736,28 @@ private:
 
             rom.push_back(raw_to_fixed<tw_t, NB_TW, NBF_TW>(raw));
 
-            if (rom.size() == N)
+            if (static_cast<int>(rom.size()) == n)
                 break;
         }
 
-        if (rom.size() != N) {
+        if (static_cast<int>(rom.size()) != n) {
             throw std::runtime_error(
                 "Twiddle file " + filename +
                 " contains " + std::to_string(rom.size()) +
-                " entries; expected " + std::to_string(N));
+                " entries; expected " + std::to_string(n));
         }
     }
 
     void build_twiddle_rom()
     {
-        const std::string tw_dir = FFT1D_R22SDF_STRINGIFY(FFT1D_R22SDF_TW_DIR);
-
         load_twiddle_file(
-            tw_dir + "/tw_re.mem",
+            p_.tw_dir + "/tw_re.mem",
+            n_,
             tw_rom_re_);
 
         load_twiddle_file(
-            tw_dir + "/tw_im.mem",
+            p_.tw_dir + "/tw_im.mem",
+            n_,
             tw_rom_im_);
     }
 #endif
@@ -596,10 +770,10 @@ private:
     void evaluate()
     {
         // in_t -> data_t: exacto. INVERSE: swap a la entrada.
-        data_t din_re = data_t(INVERSE ? i_im.value() : i_re.value());
-        data_t din_im = data_t(INVERSE ? i_re.value() : i_im.value());
+        data_t din_re = data_t(inverse_ ? i_im.value() : i_re.value());
+        data_t din_im = data_t(inverse_ ? i_re.value() : i_im.value());
 
-        for (int u = 0; u < N_UNITS; ++u) {
+        for (int u = 0; u < n_units_; ++u) {
             Unit&  q = unit_[u];
             Wires& w = wire_[u];
 
@@ -666,10 +840,10 @@ private:
                               | (bit_of(q.bf2_count.o, q.log_m - 1) ? 1 : 0);
 
                 // tw_num truncado a LOG_N-2 bits (ver nota de cabecera)
-                const int num_mask = (1 << (LOG_N - 2)) - 1;
-                const int tw_num   = (q.bf2_count.o << (LOG_N - q.log_m)) & num_mask;
+                const int num_mask = (1 << (log_n_ - 2)) - 1;
+                const int tw_num   = (q.bf2_count.o << (log_n_ - q.log_m)) & num_mask;
 
-                w.tw_addr = (tw_num * sel) & ((1 << LOG_N) - 1);
+                w.tw_addr = (tw_num * sel) & ((1 << log_n_) - 1);
 
                 const double ar = double(q.bf2_do_re.o);
                 const double ai = double(q.bf2_do_im.o);
@@ -691,15 +865,48 @@ private:
                 din_im = q.bf2_do_im.o;
             }
         }
+
+        // ------------------------------- etapa radix-2 final (log2 N impar)
+        if (has_tail_) {
+            const Tail& t  = tail_;
+            TailWires&  tw = tail_wire_;
+            const bool  bf = bit_of(t.di_count.o, 0);
+            const data_t d_re = t.dl_re.o;
+            const data_t d_im = t.dl_im.o;
+
+            if (bf) {
+                tw.sp_re    = butterfly_op(d_re, din_re, true,  t.scale);
+                tw.sp_im    = butterfly_op(d_im, din_im, true,  t.scale);
+                tw.db_di_re = butterfly_op(d_re, din_re, false, t.scale);
+                tw.db_di_im = butterfly_op(d_im, din_im, false, t.scale);
+            }
+            else {
+                tw.sp_re    = d_re;
+                tw.sp_im    = d_im;
+                tw.db_di_re = din_re;
+                tw.db_di_im = din_im;
+            }
+        }
     }
 
     std::vector<tw_t>          tw_rom_re_;
     std::vector<tw_t>          tw_rom_im_;
 
+    // Configuracion de elaboracion (fija desde el constructor)
+    Params p_;
+    int    n_{0};
+    int    log_n_{0};
+    int    n_units_{0};
+    bool   has_tail_{false};
+    bool   inverse_{false};
+    bool   cmul_pipe_{false};
+
 public:
-    // Estado observable por el testbench del vm.
-    std::array<Unit, N_UNITS>  unit_;
-    std::array<Wires, N_UNITS> wire_;
+    // Estado observable por el testbench del vm (n_units_ elementos).
+    std::vector<Unit>          unit_;
+    std::vector<Wires>         wire_;
+    Tail                       tail_;
+    TailWires                  tail_wire_;
     rtl::Reg<int>              r_out_count;
 };
 

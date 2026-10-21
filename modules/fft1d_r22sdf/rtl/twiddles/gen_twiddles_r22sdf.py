@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-gen_twiddles.py -- genera tw_re.mem / tw_im.mem para fft1d_r22sdf.
+gen_twiddles_r22sdf.py -- genera tw_re.mem / tw_im.mem para fft1d_r22sdf.
 
     W_N^k = exp(-j*2*pi*k/N),  k = 0 .. N-1,  en Q(NB_TW, NBF_TW)
 
@@ -15,7 +15,7 @@ Detalles:
     son 0 y +-1), asi que el modo de desempate no cambia el resultado.
 
 Uso:
-    python3 gen_twiddles.py --n 1024 --nb 18 --out twiddles/n1024_tw18
+    python3 gen_twiddles_r22sdf.py --n 1024 --nb 18 --out twiddles/n1024_tw18
 """
 import argparse
 import os

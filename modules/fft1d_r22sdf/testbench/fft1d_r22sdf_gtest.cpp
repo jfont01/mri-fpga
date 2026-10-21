@@ -282,7 +282,9 @@ TEST(Fft1dR22Sdf, LatencyMatchesFormula)
     /*
      * El primer o_valid tiene que salir exactamente en LATENCY (contado en
      * ciclos desde la primera muestra de entrada, con la misma convencion que
-     * run_dut). LATENCY depende de CMUL_PIPE: N + (3 + CMUL_PIPE)(log4 N - 1).
+     * run_dut). LATENCY depende de CMUL_PIPE y de la paridad de log2(N), con
+     * U = floor(log2 N / 2): N + (3 + CMUL_PIPE)(U - 1) si es par,
+     * N + (3 + CMUL_PIPE) U - 1 si es impar (etapa radix-2 final).
      * Ademas: N salidas validas seguidas y un solo o_last, en la ultima.
      *
      * El vm compara el RTL contra el modelo ciclo a ciclo, asi que este test y

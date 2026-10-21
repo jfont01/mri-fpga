@@ -70,6 +70,16 @@
       "TW_DIR": "twiddles/n1024_tw18",
       "SCALE_MASK": 784,
       "CMUL_PIPE": 0
+    },
+    {
+      "name": "n512_nb20_tw18_io16",
+      "N": 512,
+      "NB": 20,
+      "NBF": 19,
+      "NB_TW": 18,
+      "NB_IN": 16,
+      "NB_OUT": 16,
+      "TW_DIR": "twiddles/n512_tw18"
     }
   ]
 }
