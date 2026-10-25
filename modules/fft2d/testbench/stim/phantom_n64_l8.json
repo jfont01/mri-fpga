@@ -16,5 +16,5 @@
     0.006562442783601932,
     0.007560121173891403
   ],
-  "format": "int32 little-endian [L][N2][N1][re, im], Q1.15"
+  "format": "int32 little-endian [L][filas][columnas][re, im], Q1.15"
 }

@@ -58,8 +58,88 @@
       "N1": 64, "N2": 32, "SCALE_MASK1": 25, "SCALE_MASK2": 4,
       "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
       "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n32_tw18",
-      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/phantom_n64_l8.bin",
-      "N_COILS": 8
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/phantom_n64_l8.bin", "N_COILS": 8,
+      "stim_gen": {"kind": "phantom", "N": 64, "L": 8, "af": 2, "norm": "bobina"}
+    },
+    {
+      "name": "img64_shepp",
+      "N1": 64, "N2": 64, "INVERSE": 0, "SCALE_MASK1": 63, "SCALE_MASK2": 63,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/img64_shepp.bin", "N_COILS": 1,
+      "stim_gen": {"kind": "shepp", "N": 64}
+    },
+    {
+      "name": "img256_shepp",
+      "N1": 256, "N2": 256, "INVERSE": 0, "SCALE_MASK1": 255, "SCALE_MASK2": 255,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/img256_shepp.bin", "N_COILS": 1,
+      "stim_gen": {"kind": "shepp", "N": 256},
+      "gtest": {"modes": []}
+    },
+    {
+      "name": "img512_shepp",
+      "N1": 512, "N2": 512, "INVERSE": 0, "SCALE_MASK1": 511, "SCALE_MASK2": 511,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n512_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n512_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/img512_shepp.bin", "N_COILS": 1,
+      "stim_gen": {"kind": "shepp", "N": 512},
+      "gtest": {"modes": []}
+    },
+    {
+      "name": "img256_sine_x16",
+      "N1": 256, "N2": 256, "INVERSE": 0, "SCALE_MASK1": 255, "SCALE_MASK2": 255,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/img256_sine_x16.bin", "N_COILS": 1,
+      "stim_gen": {"kind": "sine", "N": 256, "fx": 16, "fy": 0},
+      "gtest": {"modes": []}
+    },
+    {
+      "name": "img256_sine_12_5",
+      "N1": 256, "N2": 256, "INVERSE": 0, "SCALE_MASK1": 255, "SCALE_MASK2": 255,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/img256_sine_12_5.bin", "N_COILS": 1,
+      "stim_gen": {"kind": "sine", "N": 256, "fx": 12, "fy": 5},
+      "gtest": {"modes": []}
+    },
+    {
+      "name": "img256_sine_rot25",
+      "N1": 256, "N2": 256, "INVERSE": 0, "SCALE_MASK1": 255, "SCALE_MASK2": 255,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/img256_sine_rot25.bin", "N_COILS": 1,
+      "stim_gen": {"kind": "sine", "N": 256, "f": 20, "angle": 25},
+      "gtest": {"modes": []}
+    },
+    {
+      "name": "img256_rings",
+      "N1": 256, "N2": 256, "INVERSE": 0, "SCALE_MASK1": 255, "SCALE_MASK2": 255,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/img256_rings.bin", "N_COILS": 1,
+      "stim_gen": {"kind": "rings", "N": 256, "period": 16},
+      "gtest": {"modes": []}
+    },
+    {
+      "name": "img256_zoneplate",
+      "N1": 256, "N2": 256, "INVERSE": 0, "SCALE_MASK1": 255, "SCALE_MASK2": 255,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/img256_zoneplate.bin", "N_COILS": 1,
+      "stim_gen": {"kind": "zoneplate", "N": 256},
+      "gtest": {"modes": []}
+    },
+    {
+      "name": "img512_zoneplate",
+      "N1": 512, "N2": 512, "INVERSE": 0, "SCALE_MASK1": 511, "SCALE_MASK2": 511,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n512_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n512_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/img512_zoneplate.bin", "N_COILS": 1,
+      "stim_gen": {"kind": "zoneplate", "N": 512},
+      "gtest": {"modes": []}
     }
   ]
 }

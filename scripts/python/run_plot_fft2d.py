@@ -16,6 +16,13 @@ los .dat de cada caso y genera una figura por caso y por bobina:
 
 El eje horizontal es siempre el readout (r en el k-space, x en la imagen).
 
+Modo imagen (INVERSE = 0, p. ej. las imagenes de gen_fft2d_stim.py): la
+entrada es una imagen y la salida su espectro, asi que la fila 1 pasa a ser
+  (a) la imagen de entrada (lineal, en grises)
+  (b) |X| de la salida y (c) |X| de la FFT 2D ideal, en dB y centrados
+      (fftshift: frecuencia 0 en el medio)
+  (d) |error| en LSB, tambien centrado
+
 Orden de la salida
 ------------------
 La fft2d entrega o = t1 * N2 + t2 = A[p = br(t2), x = br(t1)] (bit-reversed en
@@ -249,7 +256,45 @@ def make_figure(k_l, a_l, ref_l, st, ph, title, out_png, cfg, coil):
     plt.close(fig)
 
 
-def plot_case(label, k_all, a_hw, n_last, cfg, coils, out_dir, phantom_meta, raw_in):
+def make_figure_image(x_l, a_l, ref_l, st, title, out_png, cfg, meta):
+    """Modo imagen: entrada en el espacio, salida = espectro (centrado con fftshift)."""
+    fig, axes = plt.subplots(1, 4, figsize=(21, 5.6), squeeze=False, constrained_layout=True)
+    n2, n1 = x_l.shape
+    ax = axes[0, 0]
+    img = x_l.real if np.abs(x_l.imag).max() == 0 else np.abs(x_l)
+    im = ax.imshow(img, cmap="gray", origin="upper", interpolation="nearest")
+    what = meta.get("image", "imagen") if meta else "imagen"
+    ax.set_title(f"(a) entrada: {what}  ({n1} x {n2}, Q1.15)")
+    ax.set_xlabel("x  (columna, readout)"); ax.set_ylabel("y  (fila)")
+    fig.colorbar(im, ax=ax, shrink=0.85)
+
+    shift = lambda z: np.fft.fftshift(z)
+    ext = [-n1 // 2 - 0.5, n1 // 2 - 0.5, -n2 // 2 - 0.5, n2 // 2 - 0.5]
+    spec = dict(origin="lower", interpolation="nearest", extent=ext, aspect="equal")
+    rmax = np.abs(ref_l).max() or 1.0
+    floor = -100.0
+    for ax, z, name in ((axes[0, 1], a_l, "(b) |X| salida del modelo"),
+                        (axes[0, 2], ref_l, "(c) |X| FFT 2D ideal")):
+        zdb = (20 * np.log10(np.abs(shift(z)) / rmax + 1e-30)).clip(floor, None)
+        im = ax.imshow(zdb, cmap="inferno", vmin=floor, vmax=0, **spec)
+        ax.set_title(f"{name}  [dB re max]")
+        ax.set_xlabel("kx  (ciclos por imagen)"); ax.set_ylabel("ky")
+        fig.colorbar(im, ax=ax, shrink=0.85)
+
+    ax = axes[0, 3]
+    im = ax.imshow(np.abs(shift(st["e"])), cmap="magma", **spec)
+    sq = "inf" if np.isinf(st["sqnr"]) else f"{st['sqnr']:.1f}"
+    ax.set_title(f"(d) |error| [LSB]  SQNR {sq} dB\nrms {st['rms']:.3f}  max {st['max']:.2f}  "
+                 f"sesgo ({st['bias'][0]:+.3f}, {st['bias'][1]:+.3f})")
+    ax.set_xlabel("kx"); ax.set_ylabel("ky")
+    fig.colorbar(im, ax=ax, shrink=0.85)
+
+    fig.suptitle(title, fontsize=13, fontweight="bold")
+    fig.savefig(out_png, dpi=110)
+    plt.close(fig)
+
+
+def plot_case(label, k_all, a_hw, n_last, cfg, coils, out_dir, phantom_meta, raw_in, image_meta=None):
     """k_all: [L, N2, N1] complejo (Q1.15 -> real). a_hw: [L, N1, N2] complejo."""
     a_nat = hw_to_natural(a_hw, cfg)
     ref = reference(k_all, cfg)
@@ -275,14 +320,18 @@ def plot_case(label, k_all, a_hw, n_last, cfg, coils, out_dir, phantom_meta, raw
 
     files = []
     for l in coils:
-        title = (f"fft2d  |  {label}  |  bobina {l}\n"
+        title = (f"fft2d  |  {label}  |  bobina {l}{'' if cfg['inverse'] else '   (FFT directa)'}\n"
                  f"N1={cfg['n1']} (mask {cfg['m1']}, S1={cfg['s1']})   "
                  f"N2={cfg['n2']} (mask {cfg['m2']}, S2={cfg['s2']})   "
                  f"in Q{cfg['nb_in'] - cfg['nbf_in']}.{cfg['nbf_in']}   "
                  f"out Q{cfg['nb_out'] - cfg['nbf_out']}.{cfg['nbf_out']}"
                  f"{'   INVERSA' if cfg['inverse'] else ''}")
         png = out_dir / f"{label.replace(' ', '_').replace('(', '').replace(')', '')}_coil{l}.png"
-        make_figure(k_all[l], a_nat[l], ref[l], stats_all[l], ph, title, png, cfg, l)
+        if cfg["inverse"]:
+            make_figure(k_all[l], a_nat[l], ref[l], stats_all[l], ph, title, png, cfg, l)
+        else:
+            make_figure_image(k_all[l], a_nat[l], ref[l], stats_all[l], title.replace("bobina", "canal"),
+                              png, cfg, image_meta)
         files.append(png)
     return files
 
@@ -315,16 +364,18 @@ def from_case(module_dir, case_dir, name, params, src, coil, all_coils):
     a_hw = a[:L * t].reshape(L, cfg["n1"], cfg["n2"])
     raw_in = (qr[:L * t].reshape(L, cfg["n2"], cfg["n1"]), qi[:L * t].reshape(L, cfg["n2"], cfg["n1"]))
 
-    meta = None
+    meta, image_meta = None, None
     if as_int(params.get("STIM_TYPE"), 0) == 3:
         sidecar = (module_dir / str(params.get("STIM_FILE", ""))).with_suffix(".json")
         if sidecar.is_file():
             m = json.loads(sidecar.read_text())
             if m.get("kind") == "phantom":
                 meta = m
+            elif m.get("kind") == "image":
+                image_meta = m
 
     coils = range(L) if all_coils else [min(coil, L - 1)]
-    plot_case(f"{name}_{src}", k_all, a_hw, n_last, cfg, coils, case_dir / "plots", meta, raw_in)
+    plot_case(f"{name}_{src}", k_all, a_hw, n_last, cfg, coils, case_dir / "plots", meta, raw_in, image_meta)
     return True
 
 
