@@ -1,0 +1,7 @@
+{
+  "kind": "image",
+  "image": "shepp",
+  "N": 512,
+  "A": 0.9,
+  "format": "int32 little-endian [L][filas][columnas][re, im], Q1.15"
+}

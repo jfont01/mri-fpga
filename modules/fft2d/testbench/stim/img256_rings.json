@@ -1,0 +1,8 @@
+{
+  "kind": "image",
+  "image": "rings",
+  "N": 256,
+  "A": 0.9,
+  "period": 16,
+  "format": "int32 little-endian [L][filas][columnas][re, im], Q1.15"
+}

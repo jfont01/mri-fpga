@@ -1,0 +1,9 @@
+{
+  "kind": "image",
+  "image": "sine",
+  "N": 256,
+  "A": 0.9,
+  "fx": 16,
+  "fy": 0,
+  "format": "int32 little-endian [L][filas][columnas][re, im], Q1.15"
+}

@@ -1,0 +1,8 @@
+{
+  "regression_dir": "build",
+  "defaults": {
+    "N_CYCLES": 16,
+    "auto_defines": true
+  },
+  "cases": []
+}
