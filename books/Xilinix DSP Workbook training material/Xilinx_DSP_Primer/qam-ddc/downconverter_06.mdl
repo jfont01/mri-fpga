@@ -1,0 +1,2038 @@
+Model {
+  Name			  "downconverter_07"
+  Version		  5.0
+  SaveDefaultBlockParams  on
+  SampleTimeColors	  off
+  LibraryLinkDisplay	  "none"
+  WideLines		  off
+  ShowLineDimensions	  off
+  ShowPortDataTypes	  off
+  ShowLoopsOnError	  on
+  IgnoreBidirectionalLines off
+  ShowStorageClass	  off
+  ExecutionOrder	  off
+  RecordCoverage	  off
+  CovPath		  "/"
+  CovSaveName		  "covdata"
+  CovMetricSettings	  "dw"
+  CovNameIncrementing	  off
+  CovHtmlReporting	  on
+  covSaveCumulativeToWorkspaceVar on
+  CovSaveSingleToWorkspaceVar on
+  CovCumulativeVarName	  "covCumulativeData"
+  CovCumulativeReport	  off
+  DataTypeOverride	  "UseLocalSettings"
+  MinMaxOverflowLogging	  "UseLocalSettings"
+  MinMaxOverflowArchiveMode "Overwrite"
+  BlockNameDataTip	  off
+  BlockParametersDataTip  off
+  BlockDescriptionStringDataTip	off
+  ToolBar		  on
+  StatusBar		  on
+  BrowserShowLibraryLinks off
+  BrowserLookUnderMasks	  off
+  PreLoadFcn		  "load_downconverter_input"
+  StartFcn		  "load_downconverter_input"
+  Created		  "Mon Aug 15 09:47:50 2005"
+  UpdateHistory		  "UpdateHistoryNever"
+  ModifiedByFormat	  "%<Auto>"
+  LastModifiedBy	  "gstephen"
+  ModifiedDateFormat	  "%<Auto>"
+  LastModifiedDate	  "Wed Oct 26 11:53:40 2005"
+  ModelVersionFormat	  "1.%<AutoIncrement:44>"
+  ConfigurationManager	  "None"
+  SimParamPage		  "Solver"
+  LinearizationMsg	  "none"
+  Profile		  off
+  ParamWorkspaceSource	  "MATLABWorkspace"
+  AccelSystemTargetFile	  "accel.tlc"
+  AccelTemplateMakefile	  "accel_default_tmf"
+  AccelMakeCommand	  "make_rtw"
+  TryForcingSFcnDF	  off
+  ExtModeMexFile	  "ext_comm"
+  ExtModeBatchMode	  off
+  ExtModeTrigType	  "manual"
+  ExtModeTrigMode	  "normal"
+  ExtModeTrigPort	  "1"
+  ExtModeTrigElement	  "any"
+  ExtModeTrigDuration	  1000
+  ExtModeTrigHoldOff	  0
+  ExtModeTrigDelay	  0
+  ExtModeTrigDirection	  "rising"
+  ExtModeTrigLevel	  0
+  ExtModeArchiveMode	  "off"
+  ExtModeAutoIncOneShot	  off
+  ExtModeIncDirWhenArm	  off
+  ExtModeAddSuffixToVar	  off
+  ExtModeWriteAllDataToWs off
+  ExtModeArmWhenConnect	  on
+  ExtModeSkipDownloadWhenConnect off
+  ExtModeLogAll		  on
+  ExtModeAutoUpdateStatusClock on
+  BufferReuse		  on
+  RTWExpressionDepthLimit 5
+  SimulationMode	  "normal"
+  Solver		  "FixedStepDiscrete"
+  SolverMode		  "SingleTasking"
+  StartTime		  "0.0"
+  StopTime		  "32768/12.8e6"
+  MaxOrder		  5
+  MaxStep		  "auto"
+  MinStep		  "auto"
+  MaxNumMinSteps	  "-1"
+  InitialStep		  "auto"
+  FixedStep		  "auto"
+  RelTol		  "1e-3"
+  AbsTol		  "auto"
+  OutputOption		  "RefineOutputTimes"
+  OutputTimes		  "[]"
+  Refine		  "1"
+  LoadExternalInput	  off
+  ExternalInput		  "[t, u]"
+  LoadInitialState	  off
+  InitialState		  "xInitial"
+  SaveTime		  on
+  TimeSaveName		  "tout"
+  SaveState		  off
+  StateSaveName		  "xout"
+  SaveOutput		  on
+  OutputSaveName	  "yout"
+  SaveFinalState	  off
+  FinalStateName	  "xFinal"
+  SaveFormat		  "Array"
+  Decimation		  "1"
+  LimitDataPoints	  on
+  MaxDataPoints		  "1000"
+  SignalLoggingName	  "sigsOut"
+  ConsistencyChecking	  "none"
+  ArrayBoundsChecking	  "none"
+  AlgebraicLoopMsg	  "warning"
+  BlockPriorityViolationMsg "warning"
+  MinStepSizeMsg	  "warning"
+  InheritedTsInSrcMsg	  "warning"
+  DiscreteInheritContinuousMsg "warning"
+  MultiTaskRateTransMsg	  "error"
+  SingleTaskRateTransMsg  "none"
+  CheckForMatrixSingularity "none"
+  IntegerOverflowMsg	  "warning"
+  Int32ToFloatConvMsg	  "warning"
+  ParameterDowncastMsg	  "error"
+  ParameterOverflowMsg	  "error"
+  ParameterPrecisionLossMsg "warning"
+  UnderSpecifiedDataTypeMsg "none"
+  UnnecessaryDatatypeConvMsg "none"
+  VectorMatrixConversionMsg "none"
+  InvalidFcnCallConnMsg	  "error"
+  SignalLabelMismatchMsg  "none"
+  UnconnectedInputMsg	  "warning"
+  UnconnectedOutputMsg	  "warning"
+  UnconnectedLineMsg	  "warning"
+  SfunCompatibilityCheckMsg "none"
+  RTWInlineParameters	  off
+  BlockReductionOpt	  on
+  BooleanDataType	  on
+  ConditionallyExecuteInputs on
+  ParameterPooling	  on
+  OptimizeBlockIOStorage  on
+  ZeroCross		  on
+  AssertionControl	  "UseLocalSettings"
+  ProdHWDeviceType	  "Microprocessor"
+  ProdHWWordLengths	  "8,16,32,32"
+  RTWSystemTargetFile	  "grt.tlc"
+  RTWTemplateMakefile	  "grt_default_tmf"
+  RTWMakeCommand	  "make_rtw"
+  RTWGenerateCodeOnly	  off
+  RTWRetainRTWFile	  off
+  TLCProfiler		  off
+  TLCDebug		  off
+  TLCCoverage		  off
+  TLCAssertion		  off
+  BlockDefaults {
+    Orientation		    "right"
+    ForegroundColor	    "black"
+    BackgroundColor	    "white"
+    DropShadow		    off
+    NamePlacement	    "normal"
+    FontName		    "Helvetica"
+    FontSize		    10
+    FontWeight		    "normal"
+    FontAngle		    "normal"
+    ShowName		    on
+  }
+  BlockParameterDefaults {
+    Block {
+      BlockType		      DiscretePulseGenerator
+      PulseType		      "Sample based"
+      Amplitude		      "1"
+      Period		      "2"
+      PulseWidth	      "1"
+      PhaseDelay	      "0"
+      SampleTime	      "1"
+      VectorParams1D	      on
+    }
+    Block {
+      BlockType		      FrameConversion
+      OutFrame		      "Frame-based"
+    }
+    Block {
+      BlockType		      FromWorkspace
+      VariableName	      "simulink_input"
+      SampleTime	      "-1"
+      Interpolate	      on
+      OutputAfterFinalValue   "Extrapolation"
+    }
+    Block {
+      BlockType		      Gain
+      Gain		      "1"
+      Multiplication	      "Element-wise(K.*u)"
+      ShowAdditionalParam     off
+      ParameterDataTypeMode   "Same as input"
+      ParameterDataType	      "sfix(16)"
+      ParameterScalingMode    "Best Precision: Matrix-wise"
+      ParameterScaling	      "2^0"
+      OutDataTypeMode	      "Same as input"
+      OutDataType	      "sfix(16)"
+      OutScaling	      "2^0"
+      LockScale		      off
+      RndMeth		      "Floor"
+      SaturateOnIntegerOverflow	on
+    }
+    Block {
+      BlockType		      Inport
+      Port		      "1"
+      PortDimensions	      "-1"
+      SampleTime	      "-1"
+      ShowAdditionalParam     off
+      LatchInput	      off
+      DataType		      "auto"
+      OutDataType	      "sfix(16)"
+      OutScaling	      "2^0"
+      SignalType	      "auto"
+      SamplingMode	      "auto"
+      Interpolate	      on
+    }
+    Block {
+      BlockType		      Mux
+      Inputs		      "4"
+      DisplayOption	      "none"
+    }
+    Block {
+      BlockType		      Outport
+      Port		      "1"
+      OutputWhenDisabled      "held"
+      InitialOutput	      "[]"
+    }
+    Block {
+      BlockType		      Product
+      Inputs		      "2"
+      Multiplication	      "Element-wise(.*)"
+      ShowAdditionalParam     off
+      InputSameDT	      on
+      OutDataTypeMode	      "Same as first input"
+      OutDataType	      "sfix(16)"
+      OutScaling	      "2^0"
+      LockScale		      off
+      RndMeth		      "Floor"
+      SaturateOnIntegerOverflow	on
+    }
+    Block {
+      BlockType		      RandomNumber
+      Mean		      "0"
+      Variance		      "1"
+      Seed		      "0"
+      SampleTime	      "-1"
+      VectorParams1D	      on
+    }
+    Block {
+      BlockType		      Reference
+    }
+    Block {
+      BlockType		      Scope
+      Floating		      off
+      ModelBased	      off
+      TickLabels	      "OneTimeTick"
+      ZoomMode		      "on"
+      Grid		      "on"
+      TimeRange		      "auto"
+      YMin		      "-5"
+      YMax		      "5"
+      SaveToWorkspace	      off
+      SaveName		      "ScopeData"
+      LimitDataPoints	      on
+      MaxDataPoints	      "5000"
+      Decimation	      "1"
+      SampleInput	      off
+      SampleTime	      "0"
+    }
+    Block {
+      BlockType		      "S-Function"
+      FunctionName	      "system"
+      PortCounts	      "[]"
+      SFunctionModules	      "''"
+    }
+    Block {
+      BlockType		      Sin
+      SineType		      "Time based"
+      Amplitude		      "1"
+      Bias		      "0"
+      Frequency		      "1"
+      Phase		      "0"
+      Samples		      "10"
+      Offset		      "0"
+      SampleTime	      "-1"
+      VectorParams1D	      on
+    }
+    Block {
+      BlockType		      SubSystem
+      ShowPortLabels	      on
+      Permissions	      "ReadWrite"
+      RTWSystemCode	      "Auto"
+      RTWFcnNameOpts	      "Auto"
+      RTWFileNameOpts	      "Auto"
+      SimViewingDevice	      off
+      DataTypeOverride	      "UseLocalSettings"
+      MinMaxOverflowLogging   "UseLocalSettings"
+    }
+    Block {
+      BlockType		      Sum
+      IconShape		      "rectangular"
+      Inputs		      "++"
+      ShowAdditionalParam     off
+      InputSameDT	      on
+      OutDataTypeMode	      "Same as first input"
+      OutDataType	      "sfix(16)"
+      OutScaling	      "2^0"
+      LockScale		      off
+      RndMeth		      "Floor"
+      SaturateOnIntegerOverflow	on
+    }
+    Block {
+      BlockType		      Terminator
+    }
+  }
+  AnnotationDefaults {
+    HorizontalAlignment	    "center"
+    VerticalAlignment	    "middle"
+    ForegroundColor	    "black"
+    BackgroundColor	    "white"
+    DropShadow		    off
+    FontName		    "Helvetica"
+    FontSize		    10
+    FontWeight		    "normal"
+    FontAngle		    "normal"
+  }
+  LineDefaults {
+    FontName		    "Helvetica"
+    FontSize		    9
+    FontWeight		    "normal"
+    FontAngle		    "normal"
+  }
+  System {
+    Name		    "downconverter_07"
+    Location		    [2, 74, 998, 683]
+    Open		    on
+    ModelBrowserVisibility  off
+    ModelBrowserWidth	    200
+    ScreenColor		    "white"
+    PaperOrientation	    "landscape"
+    PaperPositionMode	    "auto"
+    PaperType		    "A4"
+    PaperUnits		    "centimeters"
+    ZoomFactor		    "69"
+    ReportName		    "simulink-default.rpt"
+    Block {
+      BlockType		      Reference
+      Name		      " System Generator"
+      Tag		      "genX"
+      Ports		      []
+      Position		      [32, 523, 83, 573]
+      ShowName		      off
+      AttributesFormatString  "System\\nGenerator"
+      UserDataPersistent      on
+      UserData		      "DataTag0"
+      SourceBlock	      "xbsIndex_r3/ System Generator"
+      SourceType	      "Xilinx System Generator"
+      xilinxfamily	      "Virtex2"
+      part		      "xc2v1000"
+      speed		      "-4"
+      package		      "bg575"
+      synthesis_tool	      "XST"
+      directory		      "./netlist"
+      testbench		      off
+      simulink_period	      "1/12.8e6"
+      sysclk_period	      "20"
+      incr_netlist	      off
+      trim_vbits	      "Everywhere in SubSystem"
+      dbl_ovrd		      "According to Block Masks"
+      core_generation	      "According to Block Masks"
+      run_coregen	      off
+      deprecated_control      off
+      eval_field	      "0"
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "CIC"
+      Ports		      [2, 2]
+      Position		      [690, 198, 785, 262]
+      SourceBlock	      "xbsIndex_r3/CIC"
+      SourceType	      "Xilinx Cascaded Integrator-Comb Filter"
+      filter_type	      "Decimator"
+      samp_rate_change	      "16"
+      stages		      "5"
+      differential_delay      "1"
+      latency		      "1"
+      explicit_period	      off
+      period		      "1"
+      dbl_ovrd		      off
+      show_param	      off
+      use_rpm		      on
+      gen_core		      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "CIC1"
+      Ports		      [2, 2]
+      Position		      [690, 313, 785, 377]
+      SourceBlock	      "xbsIndex_r3/CIC"
+      SourceType	      "Xilinx Cascaded Integrator-Comb Filter"
+      filter_type	      "Decimator"
+      samp_rate_change	      "16"
+      stages		      "5"
+      differential_delay      "1"
+      latency		      "1"
+      explicit_period	      off
+      period		      "1"
+      dbl_ovrd		      off
+      show_param	      off
+      use_rpm		      on
+      gen_core		      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Constant"
+      Ports		      [0, 1]
+      Position		      [555, 275, 600, 305]
+      ShowName		      off
+      SourceBlock	      "xbsIndex_r3/Constant"
+      SourceType	      "Xilinx Constant Block"
+      const		      "1"
+      arith_type	      "Boolean"
+      n_bits		      "32"
+      bin_pt		      "0"
+      explicit_period	      on
+      period		      "1/12.8e6"
+      dbl_ovrd		      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Constant1"
+      Ports		      [0, 1]
+      Position		      [1125, 270, 1170, 300]
+      ShowName		      off
+      SourceBlock	      "xbsIndex_r3/Constant"
+      SourceType	      "Xilinx Constant Block"
+      const		      "1.75390625"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "10"
+      bin_pt		      "8"
+      explicit_period	      on
+      period		      "1/200e3"
+      dbl_ovrd		      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Convert"
+      Ports		      [1, 1]
+      Position		      [815, 210, 860, 240]
+      SourceBlock	      "xbsIndex_r3/Convert"
+      SourceType	      "Xilinx Converter Block"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "24"
+      bin_pt		      "23"
+      quantization	      "Round  (unbiased: +/- Inf)"
+      overflow		      "Saturate"
+      latency		      "0"
+      explicit_period	      off
+      period		      "1"
+      dbl_ovrd		      off
+      show_param	      off
+      inserted_by_tool	      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Convert1"
+      Ports		      [1, 1]
+      Position		      [825, 330, 870, 360]
+      SourceBlock	      "xbsIndex_r3/Convert"
+      SourceType	      "Xilinx Converter Block"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "24"
+      bin_pt		      "23"
+      quantization	      "Round  (unbiased: +/- Inf)"
+      overflow		      "Saturate"
+      latency		      "0"
+      explicit_period	      off
+      period		      "1"
+      dbl_ovrd		      off
+      show_param	      off
+      inserted_by_tool	      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Convert2"
+      Ports		      [1, 1]
+      Position		      [975, 209, 995, 241]
+      SourceBlock	      "xbsIndex_r3/Convert"
+      SourceType	      "Xilinx Converter Block"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "24"
+      bin_pt		      "23"
+      quantization	      "Round  (unbiased: +/- Inf)"
+      overflow		      "Saturate"
+      latency		      "0"
+      explicit_period	      off
+      period		      "1"
+      dbl_ovrd		      off
+      show_param	      off
+      inserted_by_tool	      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Convert3"
+      Ports		      [1, 1]
+      Position		      [980, 329, 995, 361]
+      SourceBlock	      "xbsIndex_r3/Convert"
+      SourceType	      "Xilinx Converter Block"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "24"
+      bin_pt		      "23"
+      quantization	      "Round  (unbiased: +/- Inf)"
+      overflow		      "Saturate"
+      latency		      "0"
+      explicit_period	      off
+      period		      "1"
+      dbl_ovrd		      off
+      show_param	      off
+      inserted_by_tool	      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Sin
+      Name		      "Cos"
+      Position		      [35, 305, 65, 335]
+      SineType		      "Time based"
+      Frequency		      "2*pi*3.30999970436096e6"
+      Phase		      "pi/2"
+      SampleTime	      "1/12.8e6"
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "FIR"
+      Ports		      [1, 1]
+      Position		      [895, 314, 960, 376]
+      SourceBlock	      "xbsIndex_r3/FIR"
+      SourceType	      "Xilinx Finite Impulse Response Filter"
+      coef		      "[ -0.000347137 0 0.00251317 0 -0.010158539 0 0."
+"03055191 0 -0.081981659 0 0.309417725 0.5 0.309417725 0 -0.081981659 0 0.0305"
+"5191 0 -0.010158539 0 0.00251317 0 -0.000347137]"
+      structure		      "Half-Band Filter"
+      coef_n_bits	      "24"
+      coef_bin_pt	      "23"
+      coef_arith_type	      "Signed  (2's complement)"
+      num_channels	      "1"
+      serial_input	      off
+      polyphase_behavior      "Decimate:  2:1 (samples in:out)"
+      latency		      "1"
+      over_sample	      "1"
+      explicit_period	      off
+      period		      "1"
+      reload		      off
+      valids		      off
+      dbl_ovrd		      off
+      show_param	      off
+      gen_core		      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "FIR1"
+      Ports		      [1, 1]
+      Position		      [890, 194, 955, 256]
+      SourceBlock	      "xbsIndex_r3/FIR"
+      SourceType	      "Xilinx Finite Impulse Response Filter"
+      coef		      "[ -0.000347137 0 0.00251317 0 -0.010158539 0 0."
+"03055191 0 -0.081981659 0 0.309417725 0.5 0.309417725 0 -0.081981659 0 0.0305"
+"5191 0 -0.010158539 0 0.00251317 0 -0.000347137]"
+      structure		      "Half-Band Filter"
+      coef_n_bits	      "24"
+      coef_bin_pt	      "23"
+      coef_arith_type	      "Signed  (2's complement)"
+      num_channels	      "1"
+      serial_input	      off
+      polyphase_behavior      "Decimate:  2:1 (samples in:out)"
+      latency		      "1"
+      over_sample	      "1"
+      explicit_period	      off
+      period		      "1"
+      reload		      off
+      valids		      off
+      dbl_ovrd		      off
+      show_param	      off
+      gen_core		      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "FIR2"
+      Ports		      [1, 1]
+      Position		      [1015, 314, 1080, 376]
+      SourceBlock	      "xbsIndex_r3/FIR"
+      SourceType	      "Xilinx Finite Impulse Response Filter"
+      coef		      "[6.10352e-005 0.000793457 -0.000305176 -0.00518"
+"799 -0.00253296 0.0162964 0.0179443 -0.0342712 -0.0702209 0.0523071 0.303986 "
+"0.439972 0.303986 0.0523071 -0.0702209 -0.0342712 0.0179443 0.0162964 -0.0025"
+"3296 -0.00518799 -0.000305176 0.000793457 6.10352e-005]"
+      structure		      "Inferred from Coefficients"
+      coef_n_bits	      "22"
+      coef_bin_pt	      "21"
+      coef_arith_type	      "Signed  (2's complement)"
+      num_channels	      "1"
+      serial_input	      off
+      polyphase_behavior      "Decimate:  2:1 (samples in:out)"
+      latency		      "1"
+      over_sample	      "1"
+      explicit_period	      off
+      period		      "1"
+      reload		      off
+      valids		      off
+      dbl_ovrd		      off
+      show_param	      off
+      gen_core		      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "FIR3"
+      Ports		      [1, 1]
+      Position		      [1015, 194, 1080, 256]
+      SourceBlock	      "xbsIndex_r3/FIR"
+      SourceType	      "Xilinx Finite Impulse Response Filter"
+      coef		      "[6.10352e-005 0.000793457 -0.000305176 -0.00518"
+"799 -0.00253296 0.0162964 0.0179443 -0.0342712 -0.0702209 0.0523071 0.303986 "
+"0.439972 0.303986 0.0523071 -0.0702209 -0.0342712 0.0179443 0.0162964 -0.0025"
+"3296 -0.00518799 -0.000305176 0.000793457 6.10352e-005]"
+      structure		      "Inferred from Coefficients"
+      coef_n_bits	      "22"
+      coef_bin_pt	      "21"
+      coef_arith_type	      "Signed  (2's complement)"
+      num_channels	      "1"
+      serial_input	      off
+      polyphase_behavior      "Decimate:  2:1 (samples in:out)"
+      latency		      "1"
+      over_sample	      "1"
+      explicit_period	      off
+      period		      "1"
+      reload		      off
+      valids		      off
+      dbl_ovrd		      off
+      show_param	      off
+      gen_core		      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Gain
+      Name		      "Gain"
+      Position		      [240, 275, 270, 305]
+      Gain		      "900"
+    }
+    Block {
+      BlockType		      Gain
+      Name		      "Gain1"
+      Position		      [355, 275, 385, 305]
+      Gain		      "40e-6"
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Gateway In"
+      Ports		      [1, 1]
+      Position		      [395, 279, 450, 301]
+      ShowName		      off
+      SourceBlock	      "xbsIndex_r3/Gateway In"
+      SourceType	      "Xilinx Gateway In"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "14"
+      bin_pt		      "13"
+      quantization	      "Round  (unbiased: +/- Inf)"
+      overflow		      "Wrap"
+      period		      "1/12.8e6"
+      timing_constraint	      "None"
+      locs_specified	      off
+      LOCs		      "{}"
+      needs_fixed_name	      off
+      dbl_ovrd		      off
+      show_param	      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Gateway Out1"
+      Ports		      [1, 1]
+      Position		      [1275, 324, 1330, 346]
+      ShowName		      off
+      SourceBlock	      "xbsIndex_r3/Gateway Out"
+      SourceType	      "Xilinx Gateway Out"
+      hdl_port		      on
+      timing_constraint	      "None"
+      locs_specified	      off
+      LOCs		      "{}"
+      needs_fixed_name	      off
+      show_param	      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+      Port {
+	PortNumber		1
+	Name			"Q Received"
+	TestPoint		off
+	LinearAnalysisOutput	off
+	LinearAnalysisInput	off
+	RTWStorageClass		"Auto"
+	DataLogging		off
+	DataLoggingNameMode	"SignalName"
+	DataLoggingDecimateData	off
+	DataLoggingDecimation	"2"
+	DataLoggingLimitDataPoints off
+	DataLoggingMaxPoints	"5000"
+      }
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Gateway Out2"
+      Ports		      [1, 1]
+      Position		      [1275, 229, 1330, 251]
+      ShowName		      off
+      SourceBlock	      "xbsIndex_r3/Gateway Out"
+      SourceType	      "Xilinx Gateway Out"
+      hdl_port		      on
+      timing_constraint	      "None"
+      locs_specified	      off
+      LOCs		      "{}"
+      needs_fixed_name	      off
+      show_param	      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+      Port {
+	PortNumber		1
+	Name			"I Received"
+	TestPoint		off
+	LinearAnalysisOutput	off
+	LinearAnalysisInput	off
+	RTWStorageClass		"Auto"
+	DataLogging		off
+	DataLoggingNameMode	"SignalName"
+	DataLoggingDecimateData	off
+	DataLoggingDecimation	"2"
+	DataLoggingLimitDataPoints off
+	DataLoggingMaxPoints	"5000"
+      }
+    }
+    Block {
+      BlockType		      Scope
+      Name		      "I Compare"
+      Ports		      [1]
+      Position		      [1410, 204, 1445, 256]
+      Location		      [5, 53, 1029, 718]
+      Open		      off
+      NumInputPorts	      "1"
+      ZoomMode		      "xonly"
+      List {
+	ListType		AxesTitles
+	axes1			"%<SignalLabel>"
+      }
+      List {
+	ListType		SelectedSignals
+	axes1			""
+      }
+      TimeRange		      "0.003"
+      YMin		      "-0.8"
+      YMax		      "0.8"
+      SaveName		      "ScopeData4"
+      DataFormat	      "Structure"
+      MaxDataPoints	      "32768"
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Integer Delay"
+      Ports		      [1, 1]
+      Position		      [67, 130, 123, 170]
+      Orientation	      "up"
+      SourceBlock	      "dspsigops/Integer Delay"
+      SourceType	      "Integer Delay"
+      delay		      "1024"
+      ic		      "0"
+      reset_popup	      "None"
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Integer Delay1"
+      Ports		      [1, 1]
+      Position		      [67, 395, 123, 435]
+      Orientation	      "down"
+      SourceBlock	      "dspsigops/Integer Delay"
+      SourceType	      "Integer Delay"
+      delay		      "1024"
+      ic		      "0"
+      reset_popup	      "None"
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Mult"
+      Ports		      [2, 1]
+      Position		      [525, 202, 575, 253]
+      SourceBlock	      "xbsIndex_r3/Mult"
+      SourceType	      "Xilinx Multiplier"
+      precision		      "User Defined"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "15"
+      bin_pt		      "14"
+      quantization	      "Round  (unbiased: +/- Inf)"
+      overflow		      "Flag as Error"
+      latency		      "3"
+      explicit_period	      off
+      period		      "1"
+      en		      off
+      dbl_ovrd		      off
+      show_param	      off
+      mult_type		      "Parallel"
+      oversample	      "2"
+      use_embedded	      off
+      pipeline		      on
+      use_rpm		      on
+      placement_style	      "Rectangular Shape"
+      gen_core		      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Mult1"
+      Ports		      [2, 1]
+      Position		      [530, 322, 580, 373]
+      SourceBlock	      "xbsIndex_r3/Mult"
+      SourceType	      "Xilinx Multiplier"
+      precision		      "User Defined"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "15"
+      bin_pt		      "14"
+      quantization	      "Round  (unbiased: +/- Inf)"
+      overflow		      "Flag as Error"
+      latency		      "3"
+      explicit_period	      off
+      period		      "1"
+      en		      off
+      dbl_ovrd		      off
+      show_param	      off
+      mult_type		      "Parallel"
+      oversample	      "2"
+      use_embedded	      off
+      pipeline		      on
+      use_rpm		      on
+      placement_style	      "Rectangular Shape"
+      gen_core		      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Mult2"
+      Ports		      [2, 1]
+      Position		      [1195, 212, 1245, 263]
+      SourceBlock	      "xbsIndex_r3/Mult"
+      SourceType	      "Xilinx Multiplier"
+      precision		      "User Defined"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "18"
+      bin_pt		      "17"
+      quantization	      "Truncate"
+      overflow		      "Saturate"
+      latency		      "3"
+      explicit_period	      off
+      period		      "-1"
+      en		      off
+      dbl_ovrd		      off
+      show_param	      off
+      mult_type		      "Parallel"
+      oversample	      "2"
+      use_embedded	      off
+      pipeline		      on
+      use_rpm		      on
+      placement_style	      "Rectangular Shape"
+      gen_core		      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Mult3"
+      Ports		      [2, 1]
+      Position		      [1195, 307, 1245, 358]
+      SourceBlock	      "xbsIndex_r3/Mult"
+      SourceType	      "Xilinx Multiplier"
+      precision		      "User Defined"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "18"
+      bin_pt		      "17"
+      quantization	      "Truncate"
+      overflow		      "Saturate"
+      latency		      "3"
+      explicit_period	      off
+      period		      "-1"
+      en		      off
+      dbl_ovrd		      off
+      show_param	      off
+      mult_type		      "Parallel"
+      oversample	      "2"
+      use_embedded	      off
+      pipeline		      on
+      use_rpm		      on
+      placement_style	      "Rectangular Shape"
+      gen_core		      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Mux
+      Name		      "Mux"
+      Ports		      [2, 1]
+      Position		      [1380, 391, 1385, 429]
+      ShowName		      off
+      Inputs		      "2"
+      DisplayOption	      "bar"
+    }
+    Block {
+      BlockType		      Mux
+      Name		      "Mux1"
+      Ports		      [2, 1]
+      Position		      [1380, 126, 1385, 164]
+      ShowName		      off
+      Inputs		      "2"
+      DisplayOption	      "bar"
+    }
+    Block {
+      BlockType		      SubSystem
+      Name		      "NCO"
+      Ports		      [0, 2]
+      Position		      [460, 260, 500, 320]
+      TreatAsAtomicUnit	      off
+      System {
+	Name			"NCO"
+	Location		[2, 74, 1014, 699]
+	Open			off
+	ModelBrowserVisibility	off
+	ModelBrowserWidth	200
+	ScreenColor		"white"
+	PaperOrientation	"landscape"
+	PaperPositionMode	"auto"
+	PaperType		"A4"
+	PaperUnits		"centimeters"
+	ZoomFactor		"100"
+	Block {
+	  BlockType		  Reference
+	  Name			  "AddSub"
+	  Ports			  [2, 1]
+	  Position		  [180, 112, 230, 163]
+	  ShowName		  off
+	  SourceBlock		  "xbsIndex_r3/AddSub"
+	  SourceType		  "Xilinx Adder/Subtractor"
+	  mode			  "Addition"
+	  precision		  "User Defined"
+	  arith_type		  "Unsigned"
+	  n_bits		  "32"
+	  bin_pt		  "0"
+	  quantization		  "Truncate"
+	  overflow		  "Wrap"
+	  latency		  "0"
+	  explicit_period	  "off"
+	  period		  "1"
+	  use_carryin		  "off"
+	  use_carryout		  "off"
+	  en			  "off"
+	  dbl_ovrd		  "off"
+	  show_param		  "off"
+	  use_core		  "on"
+	  pipeline		  "off"
+	  use_rpm		  "on"
+	  gen_core		  "off"
+	  xl_area		  "[0, 0, 0, 0, 0, 0, 0]"
+	  xl_use_area		  "off"
+	}
+	Block {
+	  BlockType		  Reference
+	  Name			  "Constant"
+	  Ports			  [0, 1]
+	  Position		  [25, 135, 70, 165]
+	  ShowName		  off
+	  SourceBlock		  "xbsIndex_r3/Constant"
+	  SourceType		  "Xilinx Constant Block"
+	  const			  "1.11065e9"
+	  arith_type		  "Unsigned"
+	  n_bits		  "32"
+	  bin_pt		  "0"
+	  explicit_period	  "on"
+	  period		  "1/12.8e6"
+	  dbl_ovrd		  "off"
+	}
+	Block {
+	  BlockType		  Reference
+	  Name			  "Gateway Out"
+	  Ports			  [1, 1]
+	  Position		  [620, 174, 675, 196]
+	  SourceBlock		  "xbsIndex_r3/Gateway Out"
+	  SourceType		  "Xilinx Gateway Out"
+	  hdl_port		  "on"
+	  timing_constraint	  "None"
+	  locs_specified	  "off"
+	  LOCs			  "{}"
+	  needs_fixed_name	  "off"
+	  show_param		  "off"
+	  xl_area		  "[0, 0, 0, 0, 0, 0, 0]"
+	  xl_use_area		  "off"
+	}
+	Block {
+	  BlockType		  Reference
+	  Name			  "Gateway Out1"
+	  Ports			  [1, 1]
+	  Position		  [620, 259, 675, 281]
+	  SourceBlock		  "xbsIndex_r3/Gateway Out"
+	  SourceType		  "Xilinx Gateway Out"
+	  hdl_port		  "on"
+	  timing_constraint	  "None"
+	  locs_specified	  "off"
+	  LOCs			  "{}"
+	  needs_fixed_name	  "off"
+	  show_param		  "off"
+	  xl_area		  "[0, 0, 0, 0, 0, 0, 0]"
+	  xl_use_area		  "off"
+	}
+	Block {
+	  BlockType		  Mux
+	  Name			  "Mux"
+	  Ports			  [2, 1]
+	  Position		  [700, 206, 705, 244]
+	  ShowName		  off
+	  Inputs		  "2"
+	  DisplayOption		  "bar"
+	}
+	Block {
+	  BlockType		  Reference
+	  Name			  "ROM"
+	  Ports			  [1, 1]
+	  Position		  [400, 114, 450, 166]
+	  SourceBlock		  "xbsIndex_r3/ROM"
+	  SourceType		  "Xilinx Single Port Read-Only Memory"
+	  depth			  "262144"
+	  initVector		  "sin(pi*(0:262143)/131072)"
+	  arith_type		  "Signed  (2's comp)"
+	  n_bits		  "18"
+	  bin_pt		  "17"
+	  latency		  "1"
+	  init_zero		  "on"
+	  explicit_period	  "off"
+	  period		  "1"
+	  rst			  "off"
+	  init_reg		  "0"
+	  en			  "off"
+	  dbl_ovrd		  "off"
+	  show_param		  "off"
+	  distributed_mem	  "off"
+	  use_rpm		  "off"
+	  gen_core		  "off"
+	  xl_area		  "[0, 0, 0, 0, 0, 0, 0]"
+	  xl_use_area		  "off"
+	}
+	Block {
+	  BlockType		  Reference
+	  Name			  "ROM1"
+	  Ports			  [1, 1]
+	  Position		  [400, 189, 450, 241]
+	  SourceBlock		  "xbsIndex_r3/ROM"
+	  SourceType		  "Xilinx Single Port Read-Only Memory"
+	  depth			  "262144"
+	  initVector		  "cos(pi*(0:262143)/131072)"
+	  arith_type		  "Signed  (2's comp)"
+	  n_bits		  "18"
+	  bin_pt		  "17"
+	  latency		  "1"
+	  init_zero		  "on"
+	  explicit_period	  "off"
+	  period		  "1"
+	  rst			  "off"
+	  init_reg		  "0"
+	  en			  "off"
+	  dbl_ovrd		  "off"
+	  show_param		  "off"
+	  distributed_mem	  "off"
+	  use_rpm		  "off"
+	  gen_core		  "off"
+	  xl_area		  "[0, 0, 0, 0, 0, 0, 0]"
+	  xl_use_area		  "off"
+	}
+	Block {
+	  BlockType		  Reference
+	  Name			  "Register"
+	  Ports			  [1, 1]
+	  Position		  [200, 26, 245, 74]
+	  Orientation		  "left"
+	  ShowName		  off
+	  SourceBlock		  "xbsIndex_r3/Register"
+	  SourceType		  "Xilinx Register Block"
+	  init			  "0"
+	  reg_only_valid	  "off"
+	  explicit_period	  "on"
+	  period		  "1/12.8e6"
+	  rst			  "off"
+	  en			  "off"
+	  out_en		  "off"
+	  dbl_ovrd		  "off"
+	  show_param		  "off"
+	  xl_area		  "[0, 0, 0, 0, 0, 0, 0]"
+	  xl_use_area		  "off"
+	}
+	Block {
+	  BlockType		  Reference
+	  Name			  "Shift"
+	  Ports			  [1, 1]
+	  Position		  [315, 124, 360, 156]
+	  SourceBlock		  "xbsIndex_r3/Shift"
+	  SourceType		  "Xilinx Shift Block"
+	  shift_dir		  "Right"
+	  shift_bits		  "14"
+	  precision		  "User Defined"
+	  arith_type		  "Unsigned"
+	  n_bits		  "18"
+	  bin_pt		  "0"
+	  quantization		  "Truncate"
+	  overflow		  "Wrap"
+	  latency		  "0"
+	  explicit_period	  "off"
+	  period		  "1"
+	  en			  "off"
+	  dbl_ovrd		  "off"
+	  show_param		  "off"
+	  xl_area		  "[0, 0, 0, 0, 0, 0, 0]"
+	  xl_use_area		  "off"
+	}
+	Block {
+	  BlockType		  Scope
+	  Name			  "Time\nScope1"
+	  Ports			  [1]
+	  Position		  [745, 199, 780, 251]
+	  Location		  [5, 53, 1029, 718]
+	  Open			  off
+	  NumInputPorts		  "1"
+	  ZoomMode		  "xonly"
+	  List {
+	    ListType		    AxesTitles
+	    axes1		    "%<SignalLabel>"
+	  }
+	  List {
+	    ListType		    SelectedSignals
+	    axes1		    ""
+	  }
+	  TimeRange		  "3.499999999999988e-005"
+	  YMin			  "-1"
+	  YMax			  "1"
+	  SaveName		  "ScopeData3"
+	  DataFormat		  "Structure"
+	  MaxDataPoints		  "32768"
+	}
+	Block {
+	  BlockType		  Outport
+	  Name			  "Out1"
+	  Position		  [475, 133, 505, 147]
+	}
+	Block {
+	  BlockType		  Outport
+	  Name			  "Out2"
+	  Position		  [485, 208, 515, 222]
+	  Port			  "2"
+	}
+	Line {
+	  SrcBlock		  "Constant"
+	  SrcPort		  1
+	  DstBlock		  "AddSub"
+	  DstPort		  2
+	}
+	Line {
+	  SrcBlock		  "AddSub"
+	  SrcPort		  1
+	  Points		  [0, 0; 55, 0]
+	  Branch {
+	    Points		    [0, -90]
+	    DstBlock		    "Register"
+	    DstPort		    1
+	  }
+	  Branch {
+	    DstBlock		    "Shift"
+	    DstPort		    1
+	  }
+	}
+	Line {
+	  SrcBlock		  "Register"
+	  SrcPort		  1
+	  Points		  [-40, 0; 0, 75]
+	  DstBlock		  "AddSub"
+	  DstPort		  1
+	}
+	Line {
+	  SrcBlock		  "ROM"
+	  SrcPort		  1
+	  Points		  [5, 0]
+	  Branch {
+	    DstBlock		    "Out1"
+	    DstPort		    1
+	  }
+	  Branch {
+	    Points		    [0, 45]
+	    DstBlock		    "Gateway Out"
+	    DstPort		    1
+	  }
+	}
+	Line {
+	  SrcBlock		  "ROM1"
+	  SrcPort		  1
+	  Points		  [5, 0]
+	  Branch {
+	    DstBlock		    "Out2"
+	    DstPort		    1
+	  }
+	  Branch {
+	    Points		    [0, 55]
+	    DstBlock		    "Gateway Out1"
+	    DstPort		    1
+	  }
+	}
+	Line {
+	  SrcBlock		  "Shift"
+	  SrcPort		  1
+	  Points		  [5, 0]
+	  Branch {
+	    DstBlock		    "ROM"
+	    DstPort		    1
+	  }
+	  Branch {
+	    Points		    [0, 75]
+	    DstBlock		    "ROM1"
+	    DstPort		    1
+	  }
+	}
+	Line {
+	  SrcBlock		  "Gateway Out"
+	  SrcPort		  1
+	  Points		  [0, 30]
+	  DstBlock		  "Mux"
+	  DstPort		  1
+	}
+	Line {
+	  SrcBlock		  "Mux"
+	  SrcPort		  1
+	  DstBlock		  "Time\nScope1"
+	  DstPort		  1
+	}
+	Line {
+	  SrcBlock		  "Gateway Out1"
+	  SrcPort		  1
+	  Points		  [0, -35]
+	  DstBlock		  "Mux"
+	  DstPort		  2
+	}
+	Annotation {
+	  Name			  "Cos"
+	  Position		  [422, 270]
+	}
+	Annotation {
+	  Name			  "Sin"
+	  Position		  [424, 98]
+	}
+      }
+    }
+    Block {
+      BlockType		      SubSystem
+      Name		      "Other Frequency \nMultiplexed Channels"
+      Ports		      [0, 1]
+      Position		      [270, 130, 310, 190]
+      TreatAsAtomicUnit	      off
+      System {
+	Name			"Other Frequency \nMultiplexed Channels"
+	Location		[2, 74, 1014, 699]
+	Open			off
+	ModelBrowserVisibility	off
+	ModelBrowserWidth	200
+	ScreenColor		"white"
+	PaperOrientation	"landscape"
+	PaperPositionMode	"auto"
+	PaperType		"A4"
+	PaperUnits		"centimeters"
+	ZoomFactor		"100"
+	Block {
+	  BlockType		  Reference
+	  Name			  "Digital Filter"
+	  Ports			  [1, 1]
+	  Position		  [45, 98, 130, 152]
+	  SourceBlock		  "dsparch4/Digital Filter"
+	  SourceType		  "Digital Filter"
+	  TypePopup		  "FIR (all zeros)"
+	  IIRFiltStruct		  "Direct form II transposed"
+	  AllPoleFiltStruct	  "Direct form"
+	  FIRFiltStruct		  "Direct form"
+	  CoeffSource		  "Specify via dialog"
+	  NumCoeffs		  "BandStop"
+	  DenCoeffs		  "[1]"
+	  BiQuadCoeffs		  "[1 0.3 0.4 1 0.1 0.2]"
+	  LatticeCoeffs		  "[0.2 0.4]"
+	  denIgnore		  "on"
+	  FiltPerSampPopup	  "One filter per frame"
+	  IC			  "0"
+	  ICnum			  "0"
+	  ICden			  "0"
+	}
+	Block {
+	  BlockType		  RandomNumber
+	  Name			  "Random\nNumber"
+	  Position		  [65, 35, 95, 65]
+	  Variance		  "2.5298221281347e+5"
+	  Seed			  "1"
+	  SampleTime		  "1/12.8e6"
+	}
+	Block {
+	  BlockType		  Scope
+	  Name			  "Scope"
+	  Ports			  [1]
+	  Position		  [150, 49, 180, 81]
+	  Location		  [1, 49, 1025, 714]
+	  Open			  off
+	  NumInputPorts		  "1"
+	  List {
+	    ListType		    AxesTitles
+	    axes1		    "%<SignalLabel>"
+	  }
+	  DataFormat		  "StructureWithTime"
+	}
+	Block {
+	  BlockType		  Outport
+	  Name			  "Out1"
+	  Position		  [155, 118, 185, 132]
+	}
+	Line {
+	  SrcBlock		  "Random\nNumber"
+	  SrcPort		  1
+	  Points		  [0, -20; -70, 0]
+	  DstBlock		  "Digital Filter"
+	  DstPort		  1
+	}
+	Line {
+	  SrcBlock		  "Digital Filter"
+	  SrcPort		  1
+	  Points		  [0, 0]
+	  Branch {
+	    DstBlock		    "Out1"
+	    DstPort		    1
+	  }
+	  Branch {
+	    DstBlock		    "Scope"
+	    DstPort		    1
+	  }
+	}
+      }
+    }
+    Block {
+      BlockType		      Product
+      Name		      "Product"
+      Ports		      [2, 1]
+      Position		      [155, 221, 200, 254]
+      ShowName		      off
+      InputSameDT	      off
+    }
+    Block {
+      BlockType		      Product
+      Name		      "Product1"
+      Ports		      [2, 1]
+      Position		      [155, 326, 200, 359]
+      ShowName		      off
+      InputSameDT	      off
+    }
+    Block {
+      BlockType		      Scope
+      Name		      "Q Compare"
+      Ports		      [1]
+      Position		      [1410, 304, 1445, 356]
+      Location		      [5, 53, 1029, 718]
+      Open		      off
+      NumInputPorts	      "1"
+      ZoomMode		      "xonly"
+      List {
+	ListType		AxesTitles
+	axes1			"%<SignalLabel>"
+      }
+      List {
+	ListType		SelectedSignals
+	axes1			""
+      }
+      TimeRange		      "0.003"
+      YMin		      "-0.8"
+      YMax		      "0.8"
+      SaveName		      "ScopeData1"
+      DataFormat	      "Structure"
+      MaxDataPoints	      "32768"
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Shift"
+      Ports		      [1, 1]
+      Position		      [1110, 329, 1155, 361]
+      ShowName		      off
+      SourceBlock	      "xbsIndex_r3/Shift"
+      SourceType	      "Xilinx Shift Block"
+      shift_dir		      "Left"
+      shift_bits	      "5"
+      precision		      "User Defined"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "18"
+      bin_pt		      "17"
+      quantization	      "Truncate"
+      overflow		      "Saturate"
+      latency		      "0"
+      explicit_period	      off
+      period		      "1"
+      en		      off
+      dbl_ovrd		      off
+      show_param	      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Shift1"
+      Ports		      [1, 1]
+      Position		      [1110, 209, 1155, 241]
+      ShowName		      off
+      SourceBlock	      "xbsIndex_r3/Shift"
+      SourceType	      "Xilinx Shift Block"
+      shift_dir		      "Left"
+      shift_bits	      "5"
+      precision		      "User Defined"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "18"
+      bin_pt		      "17"
+      quantization	      "Truncate"
+      overflow		      "Saturate"
+      latency		      "0"
+      explicit_period	      off
+      period		      "1"
+      en		      off
+      dbl_ovrd		      off
+      show_param	      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Shift2"
+      Ports		      [1, 1]
+      Position		      [620, 199, 665, 231]
+      SourceBlock	      "xbsIndex_r3/Shift"
+      SourceType	      "Xilinx Shift Block"
+      shift_dir		      "Right"
+      shift_bits	      "20"
+      precision		      "User Defined"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "32"
+      bin_pt		      "31"
+      quantization	      "Round  (unbiased: +/- Inf)"
+      overflow		      "Flag as Error"
+      latency		      "0"
+      explicit_period	      off
+      period		      "1"
+      en		      off
+      dbl_ovrd		      off
+      show_param	      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Shift3"
+      Ports		      [1, 1]
+      Position		      [620, 314, 665, 346]
+      SourceBlock	      "xbsIndex_r3/Shift"
+      SourceType	      "Xilinx Shift Block"
+      shift_dir		      "Right"
+      shift_bits	      "20"
+      precision		      "User Defined"
+      arith_type	      "Signed  (2's comp)"
+      n_bits		      "32"
+      bin_pt		      "31"
+      quantization	      "Round  (unbiased: +/- Inf)"
+      overflow		      "Flag as Error"
+      latency		      "0"
+      explicit_period	      off
+      period		      "1"
+      en		      off
+      dbl_ovrd		      off
+      show_param	      off
+      xl_area		      "[0, 0, 0, 0, 0, 0, 0]"
+      xl_use_area	      off
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Signal From\nWorkspace"
+      Ports		      [0, 1]
+      Position		      [20, 213, 75, 247]
+      ShowName		      off
+      SourceBlock	      "dspsrcs4/Signal From\nWorkspace"
+      SourceType	      "Signal From Workspace"
+      X			      "I_part"
+      Ts		      "1/12.8e6"
+      nsamps		      "1"
+      OutputAfterFinalValue   "Cyclic repetition"
+      Port {
+	PortNumber		1
+	Name			"I Transmitted"
+	TestPoint		off
+	LinearAnalysisOutput	off
+	LinearAnalysisInput	off
+	RTWStorageClass		"Auto"
+	DataLogging		off
+	DataLoggingNameMode	"SignalName"
+	DataLoggingDecimateData	off
+	DataLoggingDecimation	"2"
+	DataLoggingLimitDataPoints off
+	DataLoggingMaxPoints	"5000"
+      }
+    }
+    Block {
+      BlockType		      Reference
+      Name		      "Signal From\nWorkspace1"
+      Ports		      [0, 1]
+      Position		      [20, 348, 75, 382]
+      ShowName		      off
+      SourceBlock	      "dspsrcs4/Signal From\nWorkspace"
+      SourceType	      "Signal From Workspace"
+      X			      "Q_part"
+      Ts		      "1/12.8e6"
+      nsamps		      "1"
+      OutputAfterFinalValue   "Cyclic repetition"
+      Port {
+	PortNumber		1
+	Name			"Q Transmitted"
+	TestPoint		off
+	LinearAnalysisOutput	off
+	LinearAnalysisInput	off
+	RTWStorageClass		"Auto"
+	DataLogging		off
+	DataLoggingNameMode	"SignalName"
+	DataLoggingDecimateData	off
+	DataLoggingDecimation	"2"
+	DataLoggingLimitDataPoints off
+	DataLoggingMaxPoints	"5000"
+      }
+    }
+    Block {
+      BlockType		      Sin
+      Name		      "Sin"
+      Position		      [35, 255, 65, 285]
+      SineType		      "Time based"
+      Frequency		      "2*pi*3.30999970436096e6"
+      SampleTime	      "1/12.8e6"
+    }
+    Block {
+      BlockType		      Sum
+      Name		      "Sum"
+      Ports		      [2, 1]
+      Position		      [200, 280, 220, 300]
+      ShowName		      off
+      Inputs		      "|++"
+      InputSameDT	      off
+      OutDataTypeMode	      "Inherit via internal rule"
+    }
+    Block {
+      BlockType		      Sum
+      Name		      "Sum1"
+      Ports		      [2, 1]
+      Position		      [290, 275, 310, 295]
+      ShowName		      off
+      Inputs		      "|++"
+      InputSameDT	      off
+      OutDataTypeMode	      "Inherit via internal rule"
+    }
+    Line {
+      SrcBlock		      "Sin"
+      SrcPort		      1
+      Points		      [70, 0]
+      DstBlock		      "Product"
+      DstPort		      2
+    }
+    Line {
+      Name		      "I Transmitted"
+      Labels		      [0, 0]
+      SrcBlock		      "Signal From\nWorkspace"
+      SrcPort		      1
+      Points		      [15, 0]
+      Branch {
+	DstBlock		"Product"
+	DstPort			1
+      }
+      Branch {
+	DstBlock		"Integer Delay"
+	DstPort			1
+      }
+    }
+    Line {
+      Name		      "Q Transmitted"
+      Labels		      [0, 0]
+      SrcBlock		      "Signal From\nWorkspace1"
+      SrcPort		      1
+      Points		      [0, -15; 15, 0]
+      Branch {
+	DstBlock		"Product1"
+	DstPort			2
+      }
+      Branch {
+	DstBlock		"Integer Delay1"
+	DstPort			1
+      }
+    }
+    Line {
+      SrcBlock		      "Product"
+      SrcPort		      1
+      Points		      [0, 25; -20, 0]
+      DstBlock		      "Sum"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Product1"
+      SrcPort		      1
+      Points		      [0, -30; -20, 0]
+      DstBlock		      "Sum"
+      DstPort		      2
+    }
+    Line {
+      SrcBlock		      "Sum"
+      SrcPort		      1
+      DstBlock		      "Gain"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Gain"
+      SrcPort		      1
+      DstBlock		      "Sum1"
+      DstPort		      2
+    }
+    Line {
+      SrcBlock		      "Sum1"
+      SrcPort		      1
+      Points		      [0, 5]
+      DstBlock		      "Gain1"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Gain1"
+      SrcPort		      1
+      DstBlock		      "Gateway In"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Gateway In"
+      SrcPort		      1
+      Points		      [0, 0]
+      Branch {
+	Points			[0, -75]
+	DstBlock		"Mult"
+	DstPort			1
+      }
+      Branch {
+	Points			[0, 70]
+	DstBlock		"Mult1"
+	DstPort			2
+      }
+    }
+    Line {
+      SrcBlock		      "Constant"
+      SrcPort		      1
+      Points		      [0, 0]
+      Branch {
+	Points			[0, 70]
+	DstBlock		"CIC1"
+	DstPort			2
+      }
+      Branch {
+	Points			[0, -45]
+	DstBlock		"CIC"
+	DstPort			2
+      }
+    }
+    Line {
+      SrcBlock		      "Mult"
+      SrcPort		      1
+      Points		      [0, -15]
+      DstBlock		      "Shift2"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Mult1"
+      SrcPort		      1
+      Points		      [0, -20]
+      DstBlock		      "Shift3"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "CIC1"
+      SrcPort		      1
+      Points		      [20, 0]
+      DstBlock		      "Convert1"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "FIR"
+      SrcPort		      1
+      DstBlock		      "Convert3"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "FIR1"
+      SrcPort		      1
+      DstBlock		      "Convert2"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "FIR2"
+      SrcPort		      1
+      DstBlock		      "Shift"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "FIR3"
+      SrcPort		      1
+      DstBlock		      "Shift1"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Shift1"
+      SrcPort		      1
+      DstBlock		      "Mult2"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Constant1"
+      SrcPort		      1
+      Points		      [0, 0]
+      Branch {
+	Points			[0, -35]
+	DstBlock		"Mult2"
+	DstPort			2
+      }
+      Branch {
+	Points			[0, 35]
+	DstBlock		"Mult3"
+	DstPort			1
+      }
+    }
+    Line {
+      SrcBlock		      "Shift"
+      SrcPort		      1
+      DstBlock		      "Mult3"
+      DstPort		      2
+    }
+    Line {
+      SrcBlock		      "Mult2"
+      SrcPort		      1
+      DstBlock		      "Gateway Out2"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Mult3"
+      SrcPort		      1
+      DstBlock		      "Gateway Out1"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Other Frequency \nMultiplexed Channels"
+      SrcPort		      1
+      Points		      [0, 105; -40, 0]
+      DstBlock		      "Sum1"
+      DstPort		      1
+    }
+    Line {
+      Name		      "Q Received"
+      SrcBlock		      "Gateway Out1"
+      SrcPort		      1
+      Points		      [30, 0]
+      DstBlock		      "Mux"
+      DstPort		      1
+    }
+    Line {
+      Name		      "I Received"
+      SrcBlock		      "Gateway Out2"
+      SrcPort		      1
+      Points		      [25, 0; 0, -85]
+      DstBlock		      "Mux1"
+      DstPort		      2
+    }
+    Line {
+      SrcBlock		      "NCO"
+      SrcPort		      2
+      Points		      [0, 30]
+      DstBlock		      "Mult1"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "NCO"
+      SrcPort		      1
+      Points		      [5, 0]
+      DstBlock		      "Mult"
+      DstPort		      2
+    }
+    Line {
+      SrcBlock		      "Integer Delay"
+      SrcPort		      1
+      Points		      [0, -30; 1235, 0; 0, 40]
+      DstBlock		      "Mux1"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Integer Delay1"
+      SrcPort		      1
+      Points		      [0, 20; 1265, 0; 0, -40]
+      DstBlock		      "Mux"
+      DstPort		      2
+    }
+    Line {
+      SrcBlock		      "Convert"
+      SrcPort		      1
+      DstBlock		      "FIR1"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Convert1"
+      SrcPort		      1
+      DstBlock		      "FIR"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Cos"
+      SrcPort		      1
+      Points		      [70, 0]
+      DstBlock		      "Product1"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Mux"
+      SrcPort		      1
+      Points		      [5, 0]
+      DstBlock		      "Q Compare"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Mux1"
+      SrcPort		      1
+      Points		      [5, 0]
+      DstBlock		      "I Compare"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Shift3"
+      SrcPort		      1
+      DstBlock		      "CIC1"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "CIC"
+      SrcPort		      1
+      Points		      [10, 0]
+      DstBlock		      "Convert"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Shift2"
+      SrcPort		      1
+      DstBlock		      "CIC"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Convert2"
+      SrcPort		      1
+      DstBlock		      "FIR3"
+      DstPort		      1
+    }
+    Line {
+      SrcBlock		      "Convert3"
+      SrcPort		      1
+      DstBlock		      "FIR2"
+      DstPort		      1
+    }
+    Annotation {
+      Name		      "NOTE: This model must have the file \"load_down"
+"converter_input.m\" in the same folder\nThe Matlab \"current directory\" must"
+" then be set to be this folder.\nWhen this is done, savfe and close this file"
+", then re-open it."
+      Position		      [101, 545]
+      HorizontalAlignment     "left"
+    }
+    Annotation {
+      Name		      "I and Q baseband\nsignals with approx.\n100kHz "
+"bandwidth"
+      Position		      [120, 297]
+    }
+    Annotation {
+      Name		      "Modulate onto\n3.3MHz carrier"
+      Position		      [200, 377]
+    }
+    Annotation {
+      Name		      "|||\n|||\n|||\n|||\n|||\n|||\n|||\n|||\n|||\n||"
+"|\n|||\n|||\n|||\n|||\n|||\n|||\n|||\n|||\n|||\n|||\n|||\n|||\n|||\n|||\n|||"
+"\n|||\n|||\n|||\n|||\n|||\n|||\n|||\n|||\n|||"
+      Position		      [347, 272]
+    }
+    Annotation {
+      Name		      "Generate model of received signal"
+      Position		      [248, 62]
+    }
+    Annotation {
+      Name		      "Digital Downconverter"
+      Position		      [448, 66]
+    }
+    Annotation {
+      Name		      "Scale signal\n to be in ADC \nrange"
+      Position		      [394, 342]
+    }
+    Annotation {
+      Name		      "ADC\n(14 bit)"
+      Position		      [421, 262]
+    }
+    Annotation {
+      Name		      "Mix down to \nbaseband"
+      Position		      [546, 187]
+    }
+    Annotation {
+      Name		      "Half-band \nfilter"
+      Position		      [941, 178]
+    }
+    Annotation {
+      Name		      "Programmable\nFIlter"
+      Position		      [1049, 177]
+    }
+    Annotation {
+      Name		      "AGC\nGain"
+      Position		      [1104, 287]
+    }
+    Annotation {
+      Name		      "Digital Downconverter"
+      Position		      [424, 30]
+      FontName		      "Arial Black"
+      FontSize		      16
+      FontAngle		      "italic"
+    }
+  }
+}
+MatData {
+  NumRecords		  1
+  DataRecord {
+    Tag			    DataTag0
+    Data		    "  %)30     .    R!$   8    (     @         %    "
+"\"     $    !     0         %  0 !@    $    ,    <V%V960 =V]R:P        X   \""
+"X\"   !@    @    \"          4    (     0    $    !          4 !  ,     0   !"
+"@   !S:&%R960       !C;VUP:6QA=&EO;@ .    Z ,   8    (     @         %    \" "
+"    $    !     0         %  0 $P    $   \"%    8V]M<&EL871I;VX          &-O;7"
+"!I;&%T:6]N7VQU=     !S:6UU;&EN:U]P97)I;V0     :6YC<E]N971L:7-T         '1R:6U"
+"?=F)I=',           !D8FQ?;W9R9               9&5P<F5C871E9%]C;VYT<F]L      X "
+"  !     !@    @    $          4    (     0    <    !          0    .    = !A "
+"'( 9P!E '0 ,0    X   !  0  !@    @    \"          4    (     0    $    !     "
+"     4 !  '     0    X   !K97ES    =F%L=65S    #@   '@    &    \"     $      "
+"   !0    @    !     0    $         #@   $@    &    \"     0         !0    @  "
+"  !    \"P    $         !    !8   !( $0 3  @ $X 90!T &P :0!S '0    .    <    "
+" 8    (     0         %    \"     $    !     0         .    0     8    (    !"
+"          %    \"     $    '     0         $    #@   '0 80!R &< 90!T #$    . "
+"   0     8    (    !          %    \"     $    (     0         $    $    #$ +"
+"P Q #( +@ X &4 -@ .    .     8    (    !          %    \"     $    #     0   "
+"      $    !@   &\\ 9@!F    #@   &     &    \"     0         !0    @    !    "
+"%P    $         !    \"X   !% '8 90!R 'D =P!H &4 <@!E \"  :0!N \"  4P!U &( 4P"
+"!Y ', = !E &T    .    8     8    (    !          %    \"     $    8     0    "
+"     $    ,    $$ 8P!C &\\ <@!D &D ;@!G \"  = !O \"  0@!L &\\ 8P!K \"  30!A '"
+", :P!S  X    X    !@    @    $          4    (     0    ,    !          0    "
+"&    ;P!F &8    .    < 0   8    (     @         %    \"     $    !     0     "
+"    %  0 \"     $    (    =&%R9V5T,0 .    * 0   8    (     @         %    \" "
+"    $    !     0         %  0 $     $   #     >&EL:6YX9F%M:6QY     '!A<G0    "
+"           !S<&5E9               <&%C:V%G90           '-Y;G1H97-I<U]T;V]L  !D"
+":7)E8W1O<GD         =&5S=&)E;F-H         '-Y<V-L:U]P97)I;V0   !C;W)E7V=E;F5R8"
+"71I;VX <G5N7V-O<F5G96X      &5V86Q?9FEE;&0       !C;&]C:U]L;V,         #@   $"
+"     &    \"     0         !0    @    !    !P    $         !     X   !6 &D <@"
+"!T &4 >  R    #@   $     &    \"     0         !0    @    !    \"     $      "
+"   !    !    !X &, ,@!V #$ ,  P #  #@   #     &    \"     0         !0    @  "
+"  !     @    $         !  $ \"T -  .    0     8    (    !          %    \"   "
+"  $    %     0         $    \"@   &( 9P U #< -0         .    .     8    (    "
+"!          %    \"     $    #     0         $    !@   %@ 4P!4    #@   $@    &"
+"    \"     0         !0    @    !    \"0    $         !    !(    N \"\\ ;@!E "
+"'0 ; !I ', =          .    .     8    (    !          %    \"     $    #     "
+"0         $    !@   &\\ 9@!F    #@   #     &    \"     0         !0    @    !"
+"     @    $         !  $ #( ,  .    8     8    (    !          %    \"     $ "
+"   8     0         $    ,    $$ 8P!C &\\ <@!D &D ;@!G \"  = !O \"  0@!L &\\ 8"
+"P!K \"  30!A ', :P!S  X    X    !@    @    $          4    (     0    ,    ! "
+"         0    &    ;P!F &8    .    ,     8    (    !          %    \"     $  "
+"  !     0         $  ( ,     X    P    !@    @    $          4    (          "
+"     !          0         #@   +@(   &    \"     (         !0    @    !     0"
+"    $         !0 $  P    !    &    '-H87)E9        &-O;7!I;&%T:6]N  X   #H P "
+" !@    @    \"          4    (     0    $    !          4 !  3     0   (4   !"
+"C;VUP:6QA=&EO;@          8V]M<&EL871I;VY?;'5T     '-I;75L:6YK7W!E<FEO9     !I"
+";F-R7VYE=&QI<W0         =')I;5]V8FET<P           &1B;%]O=G)D              !D9"
+"7!R96-A=&5D7V-O;G1R;VP     #@   $     &    \"     0         !0    @    !    !"
+"P    $         !     X   !T &$ <@!G &4 =  Q    #@   $ !   &    \"     (      "
+"   !0    @    !     0    $         !0 $  <    !    #@   &ME>7,   !V86QU97,   "
+" .    >     8    (     0         %    \"     $    !     0         .    2     "
+"8    (    !          %    \"     $    +     0         $    %@   $@ 1 !, \"  3"
+"@!E '0 ; !I ', =     X   !P    !@    @    !          4    (     0    $    !  "
+"        X   !     !@    @    $          4    (     0    <    !          0    "
+".    = !A '( 9P!E '0 ,0    X   !     !@    @    $          4    (     0    @ "
+"   !          0    0    ,0 O #$ ,@ N #@ 90 V  X    X    !@    @    $         "
+" 4    (     0    ,    !          0    &    ;P!F &8    .    8     8    (    ! "
+"         %    \"     $    7     0         $    +@   $4 =@!E '( >0!W &@ 90!R &"
+"4 ( !I &X ( !3 '4 8@!3 'D <P!T &4 ;0    X   !@    !@    @    $          4    "
+"(     0   !@    !          0    P    00!C &, ;P!R &0 :0!N &< ( !T &\\ ( !\" &"
+"P ;P!C &L ( !- &$ <P!K ', #@   #@    &    \"     0         !0    @    !     P"
+"    $         !     8   !O &8 9@    X   !P!   !@    @    \"          4    (  "
+"   0    $    !          4 !  (     0    @   !T87)G970Q  X    H!   !@    @    "
+"\"          4    (     0    $    !          4 !  0     0   ,    !X:6QI;GAF86U"
+"I;'D     <&%R=                '-P965D              !P86-K86=E            <WEN"
+"=&AE<VES7W1O;VP  &1I<F5C=&]R>0        !T97-T8F5N8V@         <WES8VQK7W!E<FEO9"
+"    &-O<F5?9V5N97)A=&EO;@!R=6Y?8V]R96=E;@      979A;%]F:65L9        &-L;V-K7V"
+"QO8P         .    0     8    (    !          %    \"     $    '     0        "
+" $    #@   %8 :0!R '0 90!X #(    .    0     8    (    !          %    \"     "
+"$    (     0         $    $    '@ 8P R '8 ,0 P #  ,  .    ,     8    (    !  "
+"        %    \"     $    \"     0         $  0 +0 T  X   !     !@    @    $  "
+"        4    (     0    4    !          0    *    8@!G #4 -P U          X    "
+"X    !@    @    $          4    (     0    ,    !          0    &    6 !3 %0 "
+"   .    2     8    (    !          %    \"     $    )     0         $    $@  "
+" \"X +P!N &4 = !L &D <P!T          X    X    !@    @    $          4    (    "
+" 0    ,    !          0    &    ;P!F &8    .    ,     8    (    !          % "
+"   \"     $    \"     0         $  0 ,@ P  X   !@    !@    @    $          4 "
+"   (     0   !@    !          0    P    00!C &, ;P!R &0 :0!N &< ( !T &\\ ( !"
+"\" &P ;P!C &L ( !- &$ <P!K ', #@   #@    &    \"     0         !0    @    !  "
+"   P    $         !     8   !O &8 9@    X    P    !@    @    $          4    "
+"(     0    $    !          0  @ P    #@   #     &    \"     0         !0    @"
+"               $         !          "
+  }
+}

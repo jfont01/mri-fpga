@@ -1,0 +1,6 @@
+#### UCF file created by Project Navigator
+NET "clk" PERIOD = 10 ns HIGH 50 %;
+NET "clk" TNM_NET = "clk";
+NET "clr" LOC = "AG5"; #Center Push Button
+NET "clk" LOC = "AJ15"; #50 MHz clock source
+NET "nd"  LOC = "AC11"; #Switch 0
