@@ -130,6 +130,11 @@
 #ifndef FFT2D_INVERSE
 #define FFT2D_INVERSE 1
 #endif
+// Redondeo convergente (empates al par) en las mariposas que escalan y en la
+// salida de los dos nucleos (fft1d_r22sdf, ROUND_CONV). Default 0: half-up.
+#ifndef FFT2D_ROUND_CONV
+#define FFT2D_ROUND_CONV 0
+#endif
 
 namespace fft2d {
 
@@ -155,12 +160,14 @@ struct Params {
         pass1.inverse    = (FFT2D_INVERSE != 0);
         pass1.cmul_pipe  = (FFT2D_CMUL_PIPE != 0);
         pass1.tw_dir     = FFT1D_R22SDF_STRINGIFY(FFT2D_TW_DIR1);
+        pass1.round_conv = (FFT2D_ROUND_CONV != 0);
 
         pass2.n          = FFT2D_N2;
         pass2.scale_mask = FFT2D_SCALE_MASK2;
         pass2.inverse    = (FFT2D_INVERSE != 0);
         pass2.cmul_pipe  = (FFT2D_CMUL_PIPE != 0);
         pass2.tw_dir     = FFT1D_R22SDF_STRINGIFY(FFT2D_TW_DIR2);
+        pass2.round_conv = (FFT2D_ROUND_CONV != 0);
     }
 
     int  n1()    const { return pass1.n; }

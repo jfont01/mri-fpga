@@ -191,6 +191,48 @@
       "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/rt256_shepp.bin", "N_COILS": 1,
       "stim_gen": {"kind": "roundtrip", "image": "shepp", "N": 256, "fwd_masks": [63, 127]},
       "gtest": {"modes": []}
+    },
+    {
+      "name": "n64x32_phantom_conv",
+      "N1": 64, "N2": 32, "SCALE_MASK1": 25, "SCALE_MASK2": 4, "ROUND_CONV": 1,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n32_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/phantom_n64_l8.bin", "N_COILS": 8,
+      "stim_gen": {"kind": "phantom", "N": 64, "L": 8, "af": 2, "norm": "bobina"}
+    },
+    {
+      "name": "rt64_shepp_conv",
+      "N1": 64, "N2": 64, "INVERSE": 1, "SCALE_MASK1": 1, "SCALE_MASK2": 3, "ROUND_CONV": 1,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/rt64_shepp_conv.bin", "N_COILS": 1,
+      "stim_gen": {"kind": "roundtrip", "image": "shepp", "N": 64, "fwd_masks": [15, 31]}
+    },
+    {
+      "name": "rt64_shepp_full_conv",
+      "N1": 64, "N2": 64, "INVERSE": 1, "SCALE_MASK1": 0, "SCALE_MASK2": 0, "ROUND_CONV": 1,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n64_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/rt64_shepp_full_conv.bin", "N_COILS": 1,
+      "stim_gen": {"kind": "roundtrip", "image": "shepp", "N": 64, "fwd_masks": [63, 63]}
+    },
+    {
+      "name": "rt256_shepp_conv",
+      "N1": 256, "N2": 256, "INVERSE": 1, "SCALE_MASK1": 1, "SCALE_MASK2": 3, "ROUND_CONV": 1,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/rt256_shepp_conv.bin", "N_COILS": 1,
+      "stim_gen": {"kind": "roundtrip", "image": "shepp", "N": 256, "fwd_masks": [63, 127]},
+      "gtest": {"modes": []}
+    },
+    {
+      "name": "rt256_sine_rot25_conv",
+      "N1": 256, "N2": 256, "INVERSE": 1, "SCALE_MASK1": 0, "SCALE_MASK2": 1, "ROUND_CONV": 1,
+      "TW_DIR1": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "TW_DIR2": "../fft1d_r22sdf/rtl/twiddles/n256_tw18",
+      "STIM_TYPE": 3, "STIM_FILE": "testbench/stim/rt256_sine_rot25_conv.bin", "N_COILS": 1,
+      "stim_gen": {"kind": "roundtrip", "image": "sine", "N": 256, "f": 20, "angle": 25, "fwd_masks": [127, 255]},
+      "gtest": {"modes": []}
     }
   ]
 }

@@ -1,0 +1,41 @@
+{
+  "kind": "roundtrip",
+  "image": "shepp",
+  "N": 64,
+  "A": 0.9,
+  "fwd_masks": [
+    63,
+    63
+  ],
+  "inv_masks": [
+    0,
+    0
+  ],
+  "sat": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "peaks": [
+    0.2003,
+    0.1135,
+    0.2332
+  ],
+  "sqnr_db": 47.63,
+  "e00_lsb": [
+    -23.0,
+    -6.0
+  ],
+  "round_conv": 1,
+  "spec": {
+    "kind": "roundtrip",
+    "image": "shepp",
+    "N": 64,
+    "fwd_masks": [
+      63,
+      63
+    ]
+  },
+  "format": "int32 little-endian [L][filas][columnas][re, im], Q1.15"
+}

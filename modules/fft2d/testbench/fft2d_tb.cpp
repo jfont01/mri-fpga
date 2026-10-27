@@ -176,6 +176,7 @@ void run_tb(const tb_args& args)
                 << "  tw " << p.pass2.tw_dir << "\n";
     report_file << "INVERSE     : " << p.pass1.inverse << "\n";
     report_file << "CMUL_PIPE   : " << p.pass1.cmul_pipe << "\n";
+    report_file << "ROUND_CONV  : " << p.pass1.round_conv << "\n";
     report_file << "NB/NBF      : " << fft1d_r22sdf::NB << " / " << fft1d_r22sdf::NBF << "\n";
     report_file << "NB_TW/NBF_TW: " << fft1d_r22sdf::NB_TW << " / " << fft1d_r22sdf::NBF_TW << "\n";
     report_file << "NB_IN/NBF_IN: " << fft1d_r22sdf::NB_IN << " / " << fft1d_r22sdf::NBF_IN << "\n";
