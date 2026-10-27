@@ -43,7 +43,8 @@ module fft1d_r22sdf_tail #(
   parameter int N     = 512,
   parameter int NB    = 16,
   parameter int NBF   = 15,
-  parameter bit SCALE = 1'b1
+  parameter bit SCALE = 1'b1,
+  parameter bit ROUND_CONV = 1'b0   // 1: redondeo convergente al escalar
 )(
   input  wire                i_clock,
   input  wire                i_rst,       // sincrono, activo alto
@@ -89,7 +90,8 @@ module fft1d_r22sdf_tail #(
     .NBF     (NBF),
     .DEPTH   (1),
     .ADDR_W  (1),
-    .SCALE   (SCALE)
+    .SCALE   (SCALE),
+    .ROUND_CONV (ROUND_CONV)
   ) u_bf2 (
     .i_clock (i_clock),
     .i_rst   (i_rst),

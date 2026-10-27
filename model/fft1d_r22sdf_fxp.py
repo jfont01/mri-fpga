@@ -28,6 +28,9 @@ ARITMETICA (copia de los .v)
                satura. Con direccion de twiddle 0 se puentea (W^0 = 1).
   salida       Q(NB, NBF) -> Q(NB_OUT, NBF_OUT) con half-up y saturacion.
   half-up      floor((x + 2^(k-1)) / 2^k), como cast.v (suma BIAS y >>>).
+  ROUND_CONV   con 1, las mariposas que escalan y la salida redondean al par en
+               los empates (cast.v con ROUND_CONV = 1): m + (r > h) + (r == h) lsb(m),
+               con m = floor(x / 2^k), r = x - m 2^k y h = 2^(k-1). El cmul no cambia.
 
 Orden: la entrada en orden natural; la salida en el orden del stream
 (bit-reversed), igual que o_cplx_sample.
@@ -59,6 +62,7 @@ class Cfg:
     NBF_OUT: int | None = None
     SCALE_MASK: int = 0xFFFFFFFF
     INVERSE: int = 0
+    ROUND_CONV: int = 0
 
     def fmt(self, nb, nbf):
         """Misma regla de defaults que el RTL: NBF_x = NB_x - (NB - NBF)."""
@@ -107,11 +111,17 @@ class Stats:
 
 
 # --------------------------------------------------------------- aritmetica
-def _cast(x, drop: int, nb: int, stats: Stats | None = None, name: str = ""):
-    """cast.v con ROUND_MODE = 1: half-up al bajar 'drop' bits y saturacion a nb bits."""
+def _cast(x, drop: int, nb: int, stats: Stats | None = None, name: str = "", conv: bool = False):
+    """cast.v con ROUND_MODE = 1: half-up (o, con conv, empates al par) al bajar 'drop'
+    bits y saturacion a nb bits."""
     if drop < 0:
         raise ValueError("cast no puede agregar bits fraccionales")
-    if drop > 0:
+    if drop > 0 and conv:
+        q = x >> drop
+        r = x - (q << drop)
+        h = I64(1) << (drop - 1)
+        x = q + ((r > h) | ((r == h) & ((q & 1) == 1)))
+    elif drop > 0:
         x = (x + (I64(1) << (drop - 1))) >> drop     # >> de numpy en int64 = floor
     lo, hi = -(1 << (nb - 1)), (1 << (nb - 1)) - 1
     if stats is not None:
@@ -120,11 +130,11 @@ def _cast(x, drop: int, nb: int, stats: Stats | None = None, name: str = ""):
     return np.clip(x, lo, hi)
 
 
-def _bfly(ar, ai, cr, ci, scale: bool, nb: int, stats, name):
+def _bfly(ar, ai, cr, ci, scale: bool, nb: int, stats, name, conv: bool = False):
     """(a + c, a - c) con el cast de la mariposa (a = linea de retardo, c = stream)."""
     d = 1 if scale else 0
-    return (_cast(ar + cr, d, nb, stats, name), _cast(ai + ci, d, nb, stats, name),
-            _cast(ar - cr, d, nb, stats, name), _cast(ai - ci, d, nb, stats, name))
+    return (_cast(ar + cr, d, nb, stats, name, conv), _cast(ai + ci, d, nb, stats, name, conv),
+            _cast(ar - cr, d, nb, stats, name, conv), _cast(ai - ci, d, nb, stats, name, conv))
 
 
 def load_twiddles(tw_dir: Path, n: int, nb_tw: int):
@@ -162,6 +172,7 @@ def fft1d_r22sdf_fxp(x_re, x_im, cfg: Cfg, tw_re, tw_im, stats: Stats | None = N
     nb_tw, nbf_tw = cfg.tw
     nb_in, nbf_in = cfg.inp
     nb_out, nbf_out = cfg.out
+    conv = cfg.ROUND_CONV == 1
     sh_in = nbf - nbf_in
     if sh_in < 0 or (nb - nbf) < (nb_in - nbf_in) or nbf < nbf_out:
         raise ValueError("formatos incompatibles (mismas guardas que el RTL)")
@@ -183,7 +194,7 @@ def fft1d_r22sdf_fxp(x_re, x_im, cfg: Cfg, tw_re, tw_im, stats: Stats | None = N
         # BF2II (primera): span M/2, -j en el ultimo cuarto
         h = m // 2
         sr, si, dr, di = _bfly(r[..., :h], i_[..., :h], r[..., h:], i_[..., h:],
-                               cfg.scales(stage), nb, stats, f"etapa{stage}")
+                               cfg.scales(stage), nb, stats, f"etapa{stage}", conv)
         r = np.concatenate([sr, dr], axis=-1)
         i_ = np.concatenate([si, di], axis=-1)
         q = 3 * m // 4
@@ -197,7 +208,7 @@ def fft1d_r22sdf_fxp(x_re, x_im, cfg: Cfg, tw_re, tw_im, stats: Stats | None = N
         for h0 in (0, m // 2):
             sr, si, dr, di = _bfly(r[..., h0:h0 + f], i_[..., h0:h0 + f],
                                    r[..., h0 + f:h0 + 2 * f], i_[..., h0 + f:h0 + 2 * f],
-                                   cfg.scales(stage), nb, stats, f"etapa{stage}")
+                                   cfg.scales(stage), nb, stats, f"etapa{stage}", conv)
             parts_r += [sr, dr]
             parts_i += [si, di]
         r = np.concatenate(parts_r, axis=-1)
@@ -220,14 +231,14 @@ def fft1d_r22sdf_fxp(x_re, x_im, cfg: Cfg, tw_re, tw_im, stats: Stats | None = N
 
     if log_m == 1:   # log2(N) impar: etapa radix-2 final, span 1, sin twiddle
         sr, si, dr, di = _bfly(yr[..., 0::2], yi[..., 0::2], yr[..., 1::2], yi[..., 1::2],
-                               cfg.scales(stage), nb, stats, f"etapa{stage}")
+                               cfg.scales(stage), nb, stats, f"etapa{stage}", conv)
         yr = np.empty_like(yr)
         yi = np.empty_like(yi)
         yr[..., 0::2], yr[..., 1::2] = sr, dr
         yi[..., 0::2], yi[..., 1::2] = si, di
 
-    our = _cast(yr, nbf - nbf_out, nb_out, stats, "salida")
-    oui = _cast(yi, nbf - nbf_out, nb_out, stats, "salida")
+    our = _cast(yr, nbf - nbf_out, nb_out, stats, "salida", conv)
+    oui = _cast(yi, nbf - nbf_out, nb_out, stats, "salida", conv)
     if cfg.INVERSE:
         our, oui = oui, our
     return our, oui

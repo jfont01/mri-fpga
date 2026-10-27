@@ -41,7 +41,8 @@ module btfly_bf2ii #(
   parameter int NBF    = 15,
   parameter int DEPTH  = 32,
   parameter int ADDR_W = 5,
-  parameter bit SCALE  = 1'b1
+  parameter bit SCALE  = 1'b1,
+  parameter bit ROUND_CONV = 1'b0   // 1: redondeo convergente (empates al par) al escalar
 )(
   input  wire                i_clock,
   input  wire                i_rst,     // sincrono, activo alto
@@ -91,13 +92,17 @@ module btfly_bf2ii #(
 
   wire signed [NB-1:0] sum_rnd_re, sum_rnd_im, dif_rnd_re, dif_rnd_im;
 
-  cast #(.NB_IN(NB_SUM), .NBF_IN(NBF_SUM), .NB_OUT(NB), .NBF_OUT(NBF), .ROUND_MODE(1'b1))
+  cast #(.NB_IN(NB_SUM), .NBF_IN(NBF_SUM), .NB_OUT(NB), .NBF_OUT(NBF), .ROUND_MODE(1'b1),
+         .ROUND_CONV(ROUND_CONV))
     u_rnd_sum_re (.i_word(sum_re), .o_word(sum_rnd_re));
-  cast #(.NB_IN(NB_SUM), .NBF_IN(NBF_SUM), .NB_OUT(NB), .NBF_OUT(NBF), .ROUND_MODE(1'b1))
+  cast #(.NB_IN(NB_SUM), .NBF_IN(NBF_SUM), .NB_OUT(NB), .NBF_OUT(NBF), .ROUND_MODE(1'b1),
+         .ROUND_CONV(ROUND_CONV))
     u_rnd_sum_im (.i_word(sum_im), .o_word(sum_rnd_im));
-  cast #(.NB_IN(NB_SUM), .NBF_IN(NBF_SUM), .NB_OUT(NB), .NBF_OUT(NBF), .ROUND_MODE(1'b1))
+  cast #(.NB_IN(NB_SUM), .NBF_IN(NBF_SUM), .NB_OUT(NB), .NBF_OUT(NBF), .ROUND_MODE(1'b1),
+         .ROUND_CONV(ROUND_CONV))
     u_rnd_dif_re (.i_word(dif_re), .o_word(dif_rnd_re));
-  cast #(.NB_IN(NB_SUM), .NBF_IN(NBF_SUM), .NB_OUT(NB), .NBF_OUT(NBF), .ROUND_MODE(1'b1))
+  cast #(.NB_IN(NB_SUM), .NBF_IN(NBF_SUM), .NB_OUT(NB), .NBF_OUT(NBF), .ROUND_MODE(1'b1),
+         .ROUND_CONV(ROUND_CONV))
     u_rnd_dif_im (.i_word(dif_im), .o_word(dif_rnd_im));
 
   wire [2*NB-1:0] w_y0 = {sum_rnd_im, sum_rnd_re};

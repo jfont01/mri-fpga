@@ -67,12 +67,12 @@ def round_stoch(x, d):
     return q + (RNG.integers(0, 1 << d, size=np.shape(x)) < r)
 
 
-def cast_sel(x, drop, nb, stats=None, name=""):
+def cast_sel(x, drop, nb, stats=None, name="", conv=False):
     """_cast del modelo con el redondeo elegido por punto (por el nombre de la etapa)."""
     point = "bfly" if name.startswith("etapa") else "cmul" if name.startswith("cmul") else "out"
     if drop > 0 and MODE["stoch"] and point != "cmul":
         return _cast_halfup(round_stoch(np.asarray(x, dtype=I64), drop), 0, nb, stats, name)
-    if drop > 0 and MODE[point]:
+    if drop > 0 and (MODE[point] or conv):
         return _cast_halfup(round_conv(np.asarray(x, dtype=I64), drop), 0, nb, stats, name)
     return _cast_halfup(x, drop, nb, stats, name)
 

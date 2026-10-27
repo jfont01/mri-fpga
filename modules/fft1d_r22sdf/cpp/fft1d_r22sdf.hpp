@@ -44,7 +44,9 @@
 //
 // Aritmetica: el escalado x1/2 de la mariposa se hace sumando en precision
 // exacta y cuantizando a data_t (AP_RND, AP_SAT), que es exactamente lo que hace
-// el cast del RTL al bajar un bit fraccional.
+// el cast del RTL al bajar un bit fraccional. Con ROUND_CONV = 1 las mariposas
+// que escalan y la salida cuantizan con AP_RND_CONV (empates al par), como el
+// cast.v con ROUND_CONV = 1; el cmul sigue con AP_RND.
 //
 // Modo DOUBLE (-DDOUBLE): todos los tipos son double y los twiddles son exactos
 // (se calculan, no se leen de TW_DIR). No hay ninguna cuantizacion, asi que
@@ -56,7 +58,7 @@
 //   * Los FORMATOS (NB, NBF, NB_TW, NBF_TW, NB_IN, NBF_IN, NB_OUT, NBF_OUT) son
 //     de compilacion: definen los tipos ap_fixed y son comunes a todas las
 //     instancias de un binario.
-//   * N, SCALE_MASK, INVERSE, CMUL_PIPE y TW_DIR son de ELABORACION: cada
+//   * N, SCALE_MASK, INVERSE, CMUL_PIPE, ROUND_CONV y TW_DIR son de ELABORACION: cada
 //     instancia los recibe en un Params, como los parameter de un modulo
 //     Verilog. Asi un mismo binario puede tener una FFT de 1024 y otra de 512
 //     (la FFT2D). Params{} toma los valores de los macros FFT1D_R22SDF_*, y las
@@ -132,12 +134,21 @@ namespace fft1d_r22sdf {
 #define FFT1D_R22SDF_INVERSE 0
 #endif
 
+/*
+ * Redondeo convergente (empates al par) en las mariposas que escalan y en el
+ * cast de salida. Mismo default que el RTL: 0 (half-up, con sesgo).
+ */
+#ifndef FFT1D_R22SDF_ROUND_CONV
+#define FFT1D_R22SDF_ROUND_CONV 0
+#endif
+
 #define FFT1D_R22SDF_STRINGIFY_IMPL(x) #x
 #define FFT1D_R22SDF_STRINGIFY(x) FFT1D_R22SDF_STRINGIFY_IMPL(x)
 
 constexpr std::uint32_t SCALE_MASK = FFT1D_R22SDF_SCALE_MASK;
 constexpr int           CMUL_PIPE  = FFT1D_R22SDF_CMUL_PIPE;
 constexpr int           INVERSE    = FFT1D_R22SDF_INVERSE;
+constexpr int           ROUND_CONV = FFT1D_R22SDF_ROUND_CONV;
 constexpr bool stage_scales(int s) { return ((SCALE_MASK >> s) & 1u) != 0u; }
 
 enum parameters : int {
@@ -195,17 +206,24 @@ enum localparameters : int {
  *
  * in_t -> data_t es exacto (solo se permite ensanchar). data_t -> out_t
  * redondea y satura (AP_RND, AP_SAT), igual que el cast de salida del RTL.
+ * data_conv_t y out_conv_t son los mismos formatos con AP_RND_CONV, para
+ * ROUND_CONV = 1; convertirlos a data_t y out_t es exacto.
  */
 #ifdef DOUBLE
-using in_t   = double;
-using data_t = double;
-using out_t  = double;
-using tw_t   = double;
+using in_t        = double;
+using data_t      = double;
+using out_t       = double;
+using tw_t        = double;
+using data_conv_t = double;
+using out_conv_t  = double;
 #else
 using in_t   = ap_fixed<NB_IN,  NB_IN  - NBF_IN,  AP_RND, AP_SAT>;
 using data_t = ap_fixed<NB,     NB     - NBF,     AP_RND, AP_SAT>;
 using out_t  = ap_fixed<NB_OUT, NB_OUT - NBF_OUT, AP_RND, AP_SAT>;
 using tw_t   = ap_fixed<NB_TW,  NB_TW  - NBF_TW,  AP_RND, AP_SAT>;
+
+using data_conv_t = ap_fixed<NB,     NB     - NBF,     AP_RND_CONV, AP_SAT>;
+using out_conv_t  = ap_fixed<NB_OUT, NB_OUT - NBF_OUT, AP_RND_CONV, AP_SAT>;
 
 /*
  * El producto complejo se evalua en double: es exacto solo si el producto de
@@ -228,6 +246,8 @@ static_assert(CMUL_PIPE == 0 || CMUL_PIPE == 1,
               "fft1d_r22sdf: CMUL_PIPE tiene que ser 0 o 1");
 static_assert(INVERSE == 0 || INVERSE == 1,
               "fft1d_r22sdf: INVERSE tiene que ser 0 o 1");
+static_assert(ROUND_CONV == 0 || ROUND_CONV == 1,
+              "fft1d_r22sdf: ROUND_CONV tiene que ser 0 o 1");
 
 static_assert(LATENCY == latency_of(LOG_N, CMUL_PIPE),
               "fft1d_r22sdf: latency_of no coincide con LATENCY");
@@ -247,6 +267,7 @@ struct Params {
     bool          inverse    = (INVERSE != 0);
     bool          cmul_pipe  = (CMUL_PIPE != 0);
     std::string   tw_dir     = FFT1D_R22SDF_STRINGIFY(FFT1D_R22SDF_TW_DIR);
+    bool          round_conv = (ROUND_CONV != 0);
 
     int  log_n()    const { return ct_log2(n); }
     int  n_units()  const { return log_n() / 2; }
@@ -297,6 +318,7 @@ public:
         has_tail_  = p_.has_tail();
         inverse_   = p_.inverse;
         cmul_pipe_ = p_.cmul_pipe;
+        round_conv_ = p_.round_conv;
 
         unit_.resize(n_units_);
         wire_.resize(n_units_);
@@ -452,8 +474,8 @@ public:
             const data_t y_im = fin_im();
 
             // INVERSE: swap a la salida (como en el RTL, despues del cast)
-            o_re = out_t(inverse_ ? y_im : y_re);
-            o_im = out_t(inverse_ ? y_re : y_im);
+            o_re = to_out(inverse_ ? y_im : y_re);
+            o_im = to_out(inverse_ ? y_re : y_im);
         }
     }
 
@@ -653,19 +675,30 @@ private:
     /*
      * Escalado x1/2 de la mariposa. La suma/resta es exacta y la division por 2
      * tambien, asi que cuantizar el resultado a data_t (AP_RND, AP_SAT) reproduce
-     * exactamente el cast del RTL, que baja un bit fraccional.
+     * exactamente el cast del RTL, que baja un bit fraccional. Con ROUND_CONV,
+     * se cuantiza con AP_RND_CONV (empates al par). Sin escalar no se descarta
+     * ningun bit: solo satura, igual en los dos modos.
      */
-    static data_t butterfly_op(
+    data_t butterfly_op(
         const data_t& a,
         const data_t& b,
         bool add,
-        bool scale)
+        bool scale) const
     {
         const double s = add
             ? (double(a) + double(b))
             : (double(a) - double(b));
 
-        return scale ? data_t(s * 0.5) : data_t(s);
+        if (!scale) {
+            return data_t(s);
+        }
+        return round_conv_ ? data_t(data_conv_t(s * 0.5)) : data_t(s * 0.5);
+    }
+
+    // Cast de salida Q(NB, NBF) -> Q(NB_OUT, NBF_OUT), con el redondeo elegido.
+    out_t to_out(const data_t& v) const
+    {
+        return round_conv_ ? out_t(out_conv_t(v)) : out_t(v);
     }
 
 #ifdef DOUBLE
@@ -900,6 +933,7 @@ private:
     bool   has_tail_{false};
     bool   inverse_{false};
     bool   cmul_pipe_{false};
+    bool   round_conv_{false};
 
 public:
     // Estado observable por el testbench del vm (n_units_ elementos).

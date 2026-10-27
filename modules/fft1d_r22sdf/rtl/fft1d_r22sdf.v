@@ -82,6 +82,13 @@
 // datos: los .mem tienen que tener valores de NB_TW bits. Por defecto NB_TW = NB y
 // NBF_TW = NBF. En el DSP48E2 (27 x 18), twiddle de hasta 18 bits y dato de hasta 27
 // mantienen un DSP por producto real.
+//
+// REDONDEO (ROUND_CONV): las mariposas que escalan y el cast de salida redondean
+// al mas cercano. Con ROUND_CONV = 0 (default) los empates van siempre para arriba
+// (half-up), que tiene sesgo: +1/4 LSB por etapa que escala y otro tanto en la
+// salida, y en 2D se concentra en un punto (bitacora 4.6). Con ROUND_CONV = 1 los
+// empates van al par (convergente) y el sesgo desaparece. El cast del cmul no se
+// toca: baja NBF_TW bits y un empate exacto ahi casi no ocurre.
 // -----------------------------------------------------------------------------
 module fft1d_r22sdf #(
   parameter int    N   = 64,
@@ -97,7 +104,8 @@ module fft1d_r22sdf #(
   parameter int    NB_OUT  = NB,                 // formato del puerto de salida
   parameter int    NBF_OUT = NB_OUT - (NB - NBF),
   parameter bit    CMUL_PIPE = 1'b1,             // 1: registro antes del cast de cada cmul
-  parameter bit    INVERSE   = 1'b0              // 1: IDFT (swap real/imag a la entrada y a la salida)
+  parameter bit    INVERSE   = 1'b0,             // 1: IDFT (swap real/imag a la entrada y a la salida)
+  parameter bit    ROUND_CONV = 1'b0             // 1: redondeo convergente en mariposas y salida
 )(
   input  wire                 i_clock,
   input  wire                 i_rst,          // sincrono, activo alto
@@ -169,7 +177,8 @@ module fft1d_r22sdf #(
         .TW_RE_FILE   ({TW_DIR, "/tw_re.mem"}),
         .TW_IM_FILE   ({TW_DIR, "/tw_im.mem"}),
         .TW_FROM_FILE (TW_FROM_FILE),
-        .CMUL_PIPE    (CMUL_PIPE)
+        .CMUL_PIPE    (CMUL_PIPE),
+        .ROUND_CONV   (ROUND_CONV)
       ) u_unit (
         .i_clock (i_clock),
         .i_rst   (i_rst),
@@ -191,7 +200,8 @@ module fft1d_r22sdf #(
         .N       (N),
         .NB      (NB),
         .NBF     (NBF),
-        .SCALE   (SCALE_MASK[LOG2N-1])
+        .SCALE   (SCALE_MASK[LOG2N-1]),
+        .ROUND_CONV (ROUND_CONV)
       ) u_tail (
         .i_clock (i_clock),
         .i_rst   (i_rst),
@@ -224,9 +234,11 @@ module fft1d_r22sdf #(
   // -------------------------------------------- salida: Q(NB) -> Q(NB_OUT)
   wire signed [NB_OUT-1:0] w_out_re, w_out_im;
 
-  cast #(.NB_IN(NB), .NBF_IN(NBF), .NB_OUT(NB_OUT), .NBF_OUT(NBF_OUT), .ROUND_MODE(1'b1))
+  cast #(.NB_IN(NB), .NBF_IN(NBF), .NB_OUT(NB_OUT), .NBF_OUT(NBF_OUT), .ROUND_MODE(1'b1),
+         .ROUND_CONV(ROUND_CONV))
     u_out_re (.i_word($signed(w_fin_data[0  +: NB])), .o_word(w_out_re));
-  cast #(.NB_IN(NB), .NBF_IN(NBF), .NB_OUT(NB_OUT), .NBF_OUT(NBF_OUT), .ROUND_MODE(1'b1))
+  cast #(.NB_IN(NB), .NBF_IN(NBF), .NB_OUT(NB_OUT), .NBF_OUT(NBF_OUT), .ROUND_MODE(1'b1),
+         .ROUND_CONV(ROUND_CONV))
     u_out_im (.i_word($signed(w_fin_data[NB +: NB])), .o_word(w_out_im));
 
   assign o_valid       = w_fin_valid;

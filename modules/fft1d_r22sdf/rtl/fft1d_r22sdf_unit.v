@@ -69,7 +69,8 @@ module fft1d_r22sdf_unit #(
   parameter        TW_RE_FILE = "tw_re.mem",
   parameter        TW_IM_FILE = "tw_im.mem",
   parameter bit    TW_FROM_FILE = 1'b1,
-  parameter bit    CMUL_PIPE = 1'b1          // 1: registro antes del cast del cmul (+1 ciclo)
+  parameter bit    CMUL_PIPE = 1'b1,         // 1: registro antes del cast del cmul (+1 ciclo)
+  parameter bit    ROUND_CONV = 1'b0         // 1: redondeo convergente en las mariposas que escalan
 )(
   input  wire                i_clock,
   input  wire                i_rst,
@@ -110,7 +111,8 @@ module fft1d_r22sdf_unit #(
     .NBF     (NBF),
     .DEPTH   (DEPTH1),
     .ADDR_W  (ADDR_W1),
-    .SCALE   (SCALE_BF2II)
+    .SCALE   (SCALE_BF2II),
+    .ROUND_CONV (ROUND_CONV)
   ) u_bf2ii (
     .i_clock (i_clock),
     .i_rst   (i_rst),
@@ -152,7 +154,8 @@ module fft1d_r22sdf_unit #(
     .NBF     (NBF),
     .DEPTH   (DEPTH2),
     .ADDR_W  (ADDR_W2),
-    .SCALE   (SCALE_BF2I)
+    .SCALE   (SCALE_BF2I),
+    .ROUND_CONV (ROUND_CONV)
   ) u_bf2i (
     .i_clock (i_clock),
     .i_rst   (i_rst),
