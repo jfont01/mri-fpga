@@ -27,19 +27,22 @@ Los SQNR están en dB. "LSB" sin aclaración es el LSB del puerto de salida (2�
 | `modules/cmul/rtl/cmul.v`, `rtl/fft1d_r22sdf.v`, `fft1d_r22sdf_unit.v`, `cpp/fft1d_r22sdf.hpp`, `testbench/fft1d_r22sdf_tb.sv`, `_tb.cpp`, `_gtest.cpp`, `_tb_regression.json`, wrappers y JSON de síntesis e implementación | **`cmul_pipe` (2026-10-17, aplicado)**: reemplaza a las entregas de abajo para esos archivos |
 | `rtl/fft1d_r22sdf.v`, `fft1d_r22sdf_unit.v`, `cpp/fft1d_r22sdf.hpp`, `testbench/fft1d_r22sdf_tb.sv`, `_tb_regression.json`, wrappers y JSON de síntesis e implementación | **`cmul_pipe_default` (2026-10-18)**: default `CMUL_PIPE = 1`; va encima de `cmul_pipe` |
 | `rtl/fft1d_r22sdf.v`, `cpp/fft1d_r22sdf.hpp`, `testbench/fft1d_r22sdf_tb.sv`, `_tb.cpp`, `_gtest.cpp`, `_tb_regression.json`, wrappers, `scripts/python/run_plot_fft1d.py`, `model/fft2d_ref.py` | **`fft_inverse` (2026-10-18, aplicado)**: parámetro `INVERSE`; va encima de `cmul_pipe_default` |
-| `rtl/fft1d_r22sdf.v`, **`rtl/fft1d_r22sdf_tail.v` (nuevo)**, `cpp/fft1d_r22sdf.hpp`, `testbench/_gtest.cpp`, `_tb.cpp`, `_tb_regression.json`, JSON de síntesis e implementación, twiddles `n8`, `n32`, `n128`, `n512`, `n512_tw18`, **`model/fft2d_theory.py` (nuevo)** | **`fft_n512` (2026-10-18, falta aplicarlo)**: N = 2^impar; va encima de `fft_inverse` |
+| `rtl/fft1d_r22sdf.v`, **`rtl/fft1d_r22sdf_tail.v` (nuevo)**, `cpp/fft1d_r22sdf.hpp`, `testbench/_gtest.cpp`, `_tb.cpp`, `_tb_regression.json`, JSON de síntesis e implementación, twiddles `n8`, `n32`, `n128`, `n512`, `n512_tw18`, **`model/fft2d_theory.py` (nuevo)** | **`fft_n512` (2026-10-18, aplicado)**: N = 2^impar; va encima de `fft_inverse`. `model/fft2d_theory.py` agregado el 2026-10-26; corre en el repo (swap con error 0, R2² con error ≤ 10⁻¹³ de N = 8 a 2048) |
 | `model/fft1d_r22sdf_fxp.py` (modelo bit-exacto vectorizado), `model/fft2d_mask_study.py` (estudio de máscaras) | **`fft2d_mascaras` (2026-10-18, nuevos)** |
 | `rtl/fft1d_r22sdf.v`, `fft1d_r22sdf_unit.v`, `cmul.v` (+ `btfly_bf2i/ii.v` con `SCALE`) | `fft_puertos` (2026-10-11) |
 | `cpp/fft1d_r22sdf.hpp` | `gtest_double` (2026-10-12) |
 | `testbench/fft1d_r22sdf_gtest.cpp` | `gtest_mascara` (2026-10-14) |
 | `testbench/fft1d_r22sdf_tb.sv`, `_tb.cpp`, `_tb_regression.json` | `vm_json_unico` (2026-10-17) |
 | `scripts/python/run_plot_fft1d.py` | `plot_fft1d` (2026-10-17) |
-| `scripts/Makefile` | `makefile_fix` (2026-10-17, falta aplicarlo) |
+| `scripts/Makefile` | `makefile_fix` (2026-10-17, aplicado) |
 | `synthesis/fft1d_r22sdf_wrapper_synth.v`, `implementation/fft1d_r22sdf_wrapper_impl.v` y sus JSON | `synth_impl` (2026-10-17) |
 | `rtl/fft1d_r22sdf.v` con `` `ifndef __SYNTHESIS__ `` (agregado por Julián) y el `` `endif `` corregido | `synth_fix` (2026-10-17) |
 | `gen_twiddles.py` | `fft_puertos` |
 | `model/fft2d_ref.py` (referencia y convenciones de la FFT 2D; los `gen_*.py` están en `model/gen/`) | `fft_inverse` (2026-10-18). Self-test en el repo: `TODO OK` ✅ |
-| **`CLAUDE.md`, `.claude/settings.json`, `docs/bitacora_tesis.md`, `model/fft2d_roundtrip_study.py` (nuevos)** | **`migracion_vscode` (2026-10-25, falta aplicarlo)** |
+| `CLAUDE.md`, `.claude/settings.json`, `doc/bitacora.md`, `model/fft2d_roundtrip_study.py` (nuevos) | `migracion_vscode` (2026-10-25, aplicado; `.claude/` quedó en `.gitignore`) |
+| `model/gen_fft2d_stim.py`, `scripts/python/run_plot_fft2d.py`, `modules/fft2d/testbench/fft2d_tb_regression.json`, twiddles `n256_tw18`, estímulos `img*` | `fft2d_imagenes` (2026-10-24, aplicado el 2026-10-25) |
+| **`model/fft_rounding_study.py` (nuevo): estudio del redondeo convergente (§4.6)** | **`estudio_redondeo` (2026-10-26, en el repo, sin commit)** |
+| **`model/gen_fft2d_stim.py` (familia `roundtrip` y cadena `RoundTrip`), `model/fft2d_roundtrip_study.py` (usa esa cadena), `scripts/python/run_plot_fft2d.py` (modo ida y vuelta), `fft2d_tb_regression.json` (6 casos `rt*`), estímulos `rt*`, `model/fft1d_scaling_bound.py` (nuevo)** | **`fft2d_idavuelta` (2026-10-25, en el repo, sin commit)** |
 
 ---
 
@@ -472,8 +475,32 @@ Error contra la FFT ideal de la entrada cuantizada:
 - **En la imagen, el sesgo es un offset complejo** de algunas décimas de LSB en todos los píxeles: sube el fondo. Con dos pasadas se acumula.
 - **Medido en 2D (2026-10-21, fantoma 1024 × 512, 801 / 384, `run_plot_fft2d.py --full-check`):** el sesgo **no** queda repartido. La salida de la pasada 1 trae un sesgo de ≈ +0,055 LSB por muestra. Para la pasada 2 es una constante a lo largo de cada columna, y la IDFT de una constante es un delta en p = 0. Resultado: en la fila p = 0 el error medio es **+7,5 LSB** en Re y en Im (≈ 512 / 2^S2 × 0,055 = 128 × 0,055 más el sesgo propio de la pasada 2), contra +0,055 en el resto. Después del unfolding, la fila p = 0 cae en y = 0 y en y = N/2: se ve como una línea horizontal en el mapa de error de la imagen. Es un argumento más para el redondeo convergente.
 - **Ida y vuelta (2026-10-25, prueba rápida con `fft1d_r22sdf_fxp.py`, N = 256, 20/18/16):** imagen → FFT 2D con escalado completo → IFFT 2D. Con escalado completo también en la inversa, la ganancia total es N1·N2 / 2^(S_ida + S_vuelta) = 2^16 / 2^32 y la imagen desaparece (pico 1 LSB). Con la inversa sin escalar (ganancia 1) vuelve la imagen, con el SQNR de la FFT directa (Shepp 36,5 dB, seno rotado 49,3, anillos 53,3, *zone plate* 48,7), **pero el sesgo del espectro (≈ +0,06 LSB de media) se convierte en un pico en el píxel (0, 0)**: error ≈ N² × (media del error del espectro) ≈ 65 536 × 0,062 ≈ +4 050 LSB en Shepp (coincide al LSB). En el seno y la *zone plate* ese píxel satura. Es el mismo mecanismo que la fila p = 0 de arriba, llevado a 2D sin escalado que lo atenúe.
-- **Se corrige con redondeo convergente** (*round-half-even*). Al descartar un bit: `resultado = m + (bit_descartado AND lsb(m))`, una compuerta por mariposa. UG579 describe cómo hacerlo en el DSP48E2 con el *pattern detector*, pero las mariposas están en fabric, así que acá serían LUTs.
-- ⏳ Experimento pendiente: agregar un modo convergente al `cast` y al modelo, y medirlo. Cambia la salida bit a bit.
+- **Se corrige con redondeo convergente** (*round-half-even*). Al descartar un bit: `resultado = m + (bit_descartado AND lsb(m))`, una compuerta por mariposa. UG579 (v1.11) describe cómo hacerlo en el DSP48E2 con el *pattern detector* (Cap. 2, "PATTERNDETECT and PATTERNBDETECT Logic", p. 36; Cap. 3, Tabla 3-3, `SEL_MASK = ROUNDING_MODE1/2`, p. 57), pero las mariposas están en fabric, así que acá serían LUTs.
+- **Medido en el modelo bit a bit (2026-10-26, `model/fft_rounding_study.py`)** ✅ modelo Python. Regla general, al descartar d bits de x con m = ⌊x / 2^d⌋ y r = x − m·2^d:
+
+  ```
+  half-up (hoy):  m + (r ≥ 2^(d−1))
+  convergente:    m + (r > 2^(d−1)) + (r = 2^(d−1))·lsb(m)
+  d = 1 (mariposa):  m + (b0 AND lsb(m))
+  d = 4 (salida):    m + (b3 AND (b2 OR b1 OR b0 OR lsb(m)))
+  ```
+
+  | Medida | *half-up* | conv. mariposas | conv. mariposas + salida | conv. en todo |
+  |---|---|---|---|---|
+  | 1D 20/18/16, N = 1024, máscara completa, ruido: sesgo Re / Im | +0,062 / +0,061 LSB | +0,044 / +0,042 | 0,000 / −0,001 | igual |
+  | 1D: rms; sesgo² / MSE | 0,419; 4,4 % | 0,414; 2,2 % | 0,414; 0,0 % | igual |
+  | Fantoma 1024 × 512, 801 / 384: fila p = 0 | +7,54 / +7,51 | +5,62 / +5,58 | +0,017 / +0,008 | igual |
+  | Fantoma: resto de las filas | +0,055 | +0,046 | +0,001 | igual |
+  | Fantoma: SNR de la imagen desplegada | 51,03 dB | 51,06 | 51,12 | igual |
+  | Ida y vuelta Shepp 256: SQNR; error (0, 0) | 54,31 dB; 729 LSB | 54,45; 474 | 54,46; 3 | igual |
+  | Ida y vuelta Shepp 64: error (0, 0) | 47 | 31 | 5 | igual |
+  | Ida y vuelta seno 256: error (0, 0); saturaciones | 3 448; 2 | 3 347; 2 | 2 853; 0 | igual |
+  | Ida y vuelta anillos 256: error (0, 0) | 490 | 854 | 1 350 | igual |
+
+  - **El `cast` de salida (20 → 16, descarta 4 bits) pone 2/3 del sesgo**; las mariposas, 1/3. Convergente solo en las mariposas no alcanza. El `cmul` (descarta 17 bits) no aporta: con convergente ahí los números son idénticos (un empate exacto en 17 bits casi nunca pasa).
+  - **El error en (0, 0) del seno y los anillos no es sesgo.** Con convergente, sale exacto de la media del error del espectro después de la ida: +0,087 LSB en el seno y −0,041 en los anillos (por 2^16 / 2^(S3+S4)), contra +0,0004 en Shepp. Con twiddles de 24 bits da lo mismo (no son los twiddles). Con redondeo estocástico (sin sesgo e independiente de la señal) baja a 48 y 47 LSB, a costa de 3 a 7 dB de SQNR. Es **error de redondeo correlacionado con la señal**, propio de imágenes sintéticas con espectro determinístico; en los anillos el sesgo *half-up* lo compensaba en parte. Con datos reales el ruido térmico hace de *dither*: se espera que se comporten como Shepp. Por eso la medida de B es Shepp (0, 0) y la fila p = 0, no el seno ni los anillos.
+  - **`ap_fixed` con `AP_RND_CONV` y `AP_SAT` = esta regla**, verificado exhaustivo (21 → 20 bits, 2²¹ valores; 20 → 16, 2²⁰; 17 → 16, 2¹⁷): 0 diferencias. El modelo C++ lo puede usar tal cual.
+  - Costo en hardware: el convergente necesita los bits bajos de la suma para decidir el incremento, así que no se puede absorber como una constante; cae en el camino de la BF2I escalada (crítico con 801 / 384 y N = 512, §5.6). Se mide en C.
 
 ### 4.7 Cota de peor caso del error de salida ✅
 
@@ -656,9 +683,9 @@ Referencias: |m̂| exacta 51,99 dB; el redondeo ideal a u16 tiene rms 0,289 LSB.
 
 **La imagen sale en el orden del stream** (bit-reversed en x y en p). Para mostrarla hay que reordenar: en el PS o con direcciones en el escritor (el *scatter* bit-reversed le pega a la eficiencia de las ráfagas en DDR). Es del paso 6.
 
-### 4.12 Ida y vuelta FFT 2D → IFFT 2D: reparto de la escala (2026-10-25) 🟡
+### 4.12 Ida y vuelta FFT 2D → IFFT 2D: reparto de la escala (2026-10-25) ✅ modelo C++
 
-Estudio con `fft1d_r22sdf_fxp.py` (20/18/16, N = 256, imágenes de `gen_fft2d_stim.py`, reordenamiento ideal entre las dos transformadas). Script: `model/fft2d_roundtrip_study.py` (`-N`, `--images`; reproduce la tabla de abajo). Todavía no hay casos de regresión.
+Estudio con `fft1d_r22sdf_fxp.py` (20/18/16, N = 256, imágenes de `gen_fft2d_stim.py`, reordenamiento ideal entre las dos transformadas). Script: `model/fft2d_roundtrip_study.py` (`-N`, `--images`; reproduce la tabla de abajo, también en el repo). Casos de regresión: al final de esta sección.
 
 **Lo que hay en cada frontera entre pasadas se conoce exacto** (sin contar el redondeo). Pasadas 1 y 3 van por filas, 2 y 4 por columnas; S_i = etapas que dividen en la pasada i:
 
@@ -683,6 +710,37 @@ Para que vuelva la imagen, S1 + S2 + S3 + S4 = 2·log2 N (16 con N = 256). En ca
 - El mínimo depende de la imagen. En hardware la máscara es fija salvo que se haga configurable (§9, paso 4). Para SENSE solo importa la inversa (§4.8). La ida y vuelta es un caso de prueba.
 - **El pico en el píxel (0, 0) sigue** con el reparto mínimo (Shepp: 729 LSB de módulo, contra 5 700 con completa / sin escalar; seno: 3 448, con 2 saturaciones). Es el sesgo *half-up* (§4.6). Es la medida para el redondeo convergente.
 - Reordenamiento entre las dos: la salida de la `fft2d` sale en el orden o = t1·N2 + t2, con kx = br(t1) y ky = br(t2). La entrada de la inversa va en orden natural por filas: entrada[ky·N1 + kx] = salida[br(kx)·N2 + br(ky)]. Es transponer y dar vuelta los bits de los dos índices.
+
+**Por qué al principio: cota de los picos internos** ✅ (2026-10-25, `model/fft1d_scaling_bound.py`). Dentro de una pasada, con las S divisiones en las primeras S etapas:
+
+```
+pico de cualquier etapa interna  ≤  máx( pico de la entrada , pico de la salida de la pasada )
+(en módulo, salvo el redondeo)
+```
+
+- Etapas que dividen: (a ± b)·w / 2 con |w| = 1 es un promedio; no supera al mayor de los dos.
+- Etapas que no dividen: después de k etapas de una DIF quedan 2^k DFT independientes de N/2^k puntos. Cada valor intermedio es la IDFT (con su 1/M) de un bloque de la salida, así que no supera el pico de la salida.
+- Consecuencia: **alcanza con chequear las fronteras** (lo que hace el estudio). Dividiendo al final no hay garantía: las primeras etapas suman sin dividir.
+- Verificado: DIF en float con N = 16 a 1024, 8 señales y todos los S, cociente máximo 1,000. Bit a bit (`fft1d_r22sdf_fxp.py`, 20/18/16, N = 64, 512 con tail y 1024; Shepp, ruido y chirp, S mínimo para que la salida quede < 1): al principio 0 saturaciones; al final, con el mismo S, satura siempre (59 a 68 796 componentes) aunque la salida tenga pico 0,9. Chirp en float, N = 256, S = 4: pico interno 14,4 al final contra 0,9 al principio.
+
+**Regla adoptada (Julián, 2026-10-25) para los casos de ida y vuelta:** S mínimo acumulado en cada frontera, divisiones al principio de cada pasada, y el generador exige 0 saturaciones en las 4 pasadas (bit a bit) y S1 + S2 + S3 + S4 = 2·log2 N. "Lo justo" no deja margen: el criterio "< 1" sale de la FFT en float y el redondeo suma algunos LSB, por eso el chequeo es bit a bit.
+- **No es la regla de la máscara de SENSE.** 801 (etapas 0, 5, 8 y 9) y 384 (7 y 8) dividen casi todo al final y la cota no las cubre. Con el fantoma tienen margen ≥ 6,5 dB (§4.8); con fastMRI (§9, paso 4) conviene medir la saturación interna y compararlas con sus equivalentes al principio (15 y 3).
+- **Seno rotado en N = 256 con la regla: satura 2 componentes** en la pasada 4 (una en la etapa 7, otra en el `cast` de salida), en el píxel (0, 0). La imagen vale 0,9 ahí y el sesgo *half-up* le suma +3 276 LSB, así que llega a 1. Con máscaras no se arregla (la ganancia total es 1): es la medida para el redondeo convergente (§9, B). En N = 64 no pasa.
+
+**Casos de regresión `rt*`** (entrega `fft2d_idavuelta`). `gen_fft2d_stim.py` (familia `roundtrip`) arma la imagen, le hace las pasadas 1 y 2 bit a bit con `fwd_masks` y escribe el espectro en orden natural como estímulo (`STIM_TYPE = 3`) de un caso de la `fft2d` con `INVERSE = 1`, `SCALE_MASK1` = m3 y `SCALE_MASK2` = m4. Con esas máscaras corre las 4 pasadas y aplica el chequeo de la regla (si falla, `--from-json` sale con error); avisa si las máscaras no son las de la regla. `run_plot_fft2d` agrega una fila: original, reconstruida, error contra la original, y dos chequeos (el estímulo es el espectro regenerado; la salida del C++ es, bit a bit, la de la cadena de Python). Parámetros de las imágenes: los del estudio.
+
+| Caso | m1, m2 / m3, m4 | Ida y vuelta | \|error(0, 0)\| | Vuelta sola contra la IDFT 2D |
+|---|---|---|---|---|
+| `rt64_shepp` | 15, 31 / 1, 3 | 65,12 dB | 47 LSB | 76,6 dB |
+| `rt64_sine_rot25` | 31, 63 / 0, 1 | 63,75 | 169 | 81,9 |
+| `rt64_rings` | 63, 31 / 1, 0 | 65,92 | 233 | 76,4 |
+| `rt64_zoneplate` | 7, 7 / 7, 7 | 93,56 | 2 | 93,8 |
+| `rt64_shepp_full` (contraste: ida completa, vuelta sin escalar) | 63, 63 / 0, 0 | 47,52 | 375 | 66,0 |
+| `rt256_shepp` (sin gtest, como los `img256`) | 63, 127 / 1, 3 | 54,31 | 729 | 71,6 |
+
+- Todos: 0 saturaciones, estímulo = espectro regenerado y **salida del modelo C++ = cadena de Python bit a bit**. Los números de ida y vuelta son los del estudio.
+- El error de la ida y vuelta viene casi todo de la ida: la vuelta sola da entre 10,5 y 18,5 dB más (salvo la *zone plate*, donde las dos son iguales).
+- Verificado en el repo (2026-10-25): gtest 28/28 (168 tests), sim de los 6 casos `rt*` 6/6, plot 6/6. Los casos de antes no cambian: estímulos idénticos byte a byte y plots idénticos (texto y PNG). Falta el vm: el RTL de la `fft2d` todavía no existe.
 
 ---
 
@@ -928,7 +986,7 @@ gen_unit[2].u_bf2i/r_addr_reg[1]     (fan-out 42, 0,501 ns)
 - **Mutaciones**: 8 de 8 detectadas (sin transponer, k' invertido, fórmula de latencia, `o_last` corrido, escritor o lector que no alternan, lector que arranca antes de `full`, burbuja de 1 ciclo entre bobinas).
 - **Tamaño completo** (`model/fft2d_check_full.py` + `testbench/fft2d_dump.cpp`, compilado con `-O2`): fantoma, 8 bobinas, 801 / 384, normalización por bobina. **0 diferencias en 4 194 304 muestras** contra la cadena de Python; tiempos iguales a la fórmula; SNR de la imagen **51,03 dB**, la misma del estudio de §4.8. También 1023 / 511 con 2 bobinas: 0 diferencias. El C++ tarda 73 s con `-O2`.
 - **Velocidad:** ~8 µs por ciclo y por núcleo de 1024 con `-O2`, unas 17 veces más con `-O0` (el Makefile). Con `-O2` los headers `ap_private` de Vitis HLS tiran falsos positivos de `-Wuninitialized`, así que el script los apaga.
-- **Imágenes cuadradas con la FFT 2D directa** (2026-10-24, entrega `fft2d_imagenes`): `gen_fft2d_stim.py --from-json` genera todos los estímulos que pide el JSON (clave `stim_gen` de cada caso; Shepp-Logan y anillos de `gen/gen_phantom.py`, senos y *zone plate*). Casos `img*` con `INVERSE` = 0, máscara completa y 1 canal; gtest solo en 64 × 64 (en los grandes `"gtest": {"modes": []}`). `run_plot_fft2d` tiene un modo imagen: entrada en grises y espectros centrados (fftshift) en dB. Sim con `-O0`: ~35–40 s en 256², ~2,3 min en 512².
+- **Imágenes cuadradas con la FFT 2D directa** (2026-10-24, entrega `fft2d_imagenes`): `gen_fft2d_stim.py --from-json` genera todos los estímulos que pide el JSON (clave `stim_gen` de cada caso; Shepp-Logan y anillos de `gen/gen_phantom.py`, senos y *zone plate*). Casos `img*` con `INVERSE` = 0, máscara completa y 1 canal; gtest solo en 64 × 64 (en los grandes `"gtest": {"modes": []}`). `run_plot_fft2d` tiene un modo imagen: entrada en grises y espectros centrados (fftshift) en dB. Sim con `-O0`: ~35–40 s en 256², ~2,3 min en 512². En el repo (2026-10-25): gtest 18/18, sim 17/17, plot 17/17.
 
   | Caso | SQNR | Qué se ve |
   |---|---|---|
@@ -939,7 +997,7 @@ gen_unit[2].u_bf2i/r_addr_reg[1]     (fan-out 42, 0,501 ns)
   | *zone plate* 256 / 512 | 48,7 / 42,6 dB | otra *zone plate*, con réplicas: pasa Nyquist en las esquinas |
 
   **Con escalado completo la SQNR cae ~6 dB cada vez que se duplica el lado** (Shepp-Logan: 47,6 → 36,5 → 30,7). Por Parseval, la energía de la salida dividida por N² no depende de N, pero el ruido de redondeo crece con la cantidad de muestras (N²). Es la misma razón por la que en la IFFT de SENSE se eligieron máscaras parciales (§4.8).
-- ⏳ Próxima pasada: FFT 2D y después IFFT 2D (ida y vuelta). La salida de la FFT 2D sale bit-reversed en los dos ejes y por columnas, así que para la IFFT hay que reordenar (en la memoria ideal es una cuestión de direcciones).
+- ✅ Ida y vuelta FFT 2D → IFFT 2D (2026-10-25): casos `rt*`, con la ida calculada en Python y la vuelta en la `fft2d` (§4.12). Encadenar dos `fft2d` queda para cuando esté la memoria (paso 6).
 - ⏳ Los huecos **entre frames** del núcleo 1D están probados solo en el modelo (el test de huecos de la 2D se apoya en eso): falta un caso de vm del 1D con huecos para confirmar que el RTL hace lo mismo.
 - ⏳ Los dos buffers suman 4 MiB y no entran en las 64 URAM (2,25 MiB). Es del paso 6: el modelo deja la memoria aislada para reemplazarla.
 
@@ -957,34 +1015,31 @@ gen_unit[2].u_bf2i/r_addr_reg[1]     (fan-out 42, 0,501 ns)
   - carga Vivado/Vitis (`VIVADO_SETTINGS_64_SH`, `VITIS_SETTINGS_64_SH`);
   - carga `module_utils.sh`, `flist_utils.sh`, `regression_utils.sh` y `xsim_utils.sh`.
 - `help_env` lista los comandos.
-- **Claude Code en VS Code (2026-10-25, migración desde claude.ai):** la bitácora pasa a vivir en el repo, en `docs/bitacora_tesis.md`, y esa copia es la fuente de verdad. `CLAUDE.md` en la raíz tiene las reglas de trabajo y el índice de la bitácora. `.claude/settings.json` bloquea `make qspi` y pide confirmación para `xsdb`, `xsct`, `git commit` y `git push`; es un resguardo, no una barrera: la protección real sigue siendo `CONFIRM_QSPI=NO`. Los manuales van en `docs/manuales/`. Cada llamada de Claude a la terminal es una shell nueva: el entorno se carga en el mismo comando.
+- **Claude Code en VS Code (2026-10-25, migración desde claude.ai):** la bitácora pasa a vivir en el repo, en `doc/bitacora.md`, y esa copia es la fuente de verdad. `CLAUDE.md` en la raíz tiene las reglas de trabajo y el índice de la bitácora. `.claude/settings.json` bloquea `make qspi` y pide confirmación para `xsdb`, `xsct`, `git commit` y `git push`; es un resguardo, no una barrera: la protección real sigue siendo `CONFIRM_QSPI=NO`. Los manuales están en `books/amd-docs/` (no hay `.txt`: se busca con `pdftotext -layout`). Cada llamada de Claude a la terminal es una shell nueva: el entorno se carga en el mismo comando.
 
 ### 6.2 Árbol del repositorio (`mri-fpga/`, 2026-10-17)
 
 ```
-books/           libros en PDF (+ papers/fft, papers/mri, amd-docs/pg151-div-gen.pdf)
+books/           libros en PDF (+ papers/fft, papers/mri, amd-docs/ con los manuales de AMD, Xilinx DSP Workbook)
 bringup/
   scripts/       Makefile, config.mk, boot/, jtag/, tools/, vitis/, vivado/   infraestructura de placa
   v0/            loopback DMA (Tcl de proyecto y block design, firmware)
   v1/, v1.1/     hardware/, firmware/, results/, Makefile                    (v1.1: 250 MHz; estado a confirmar)
-doc/
-  amd/           PDFs de AMD (+ txt/ y pdf/; pdf2text.sh para convertir)
-  theory_r22sdf.md
+doc/             bitacora.md, theory_r22sdf.md, SENSE en el FPGA ecuaciones en limpio.md
 model/           cfxp.py, fxp.py   (modelos de punto fijo en Python)
 modules/         btfly_sdf, cast, cmul, cmul_karatsuba, delay_line,
                  fft1d_r2, fft1d_r2sdf, fft1d_r22sdf, tile_transpose
 rtlsim/          rtlsim.hpp, rtlsim_core.hpp, rtlsim_trace.hpp, include/ (ap_fixed de Vitis HLS)
 scripts/         Makefile, set_env.sh, lint_waivers.txt,
                  python/ (runners + venv), shell/ (utilidades), tcl/ (xsim, synth, impl)
-equations_prompt.txt, prompt.txt
+CLAUDE.md
 ```
 
-**Documentación disponible para consultar.** Claude solo puede leer lo que está subido al **proyecto de claude.ai** (o lo que se adjunta en el chat). Los PDFs del repo no los ve hasta que se suben, idealmente en `.txt` con `doc/amd/pdf2text.sh`.
+**Documentación disponible para consultar.** Desde la migración a Claude Code (2026-10-25), Claude lee directamente `books/` y `doc/` del repo. Verificado: los 76 PDF abren y 75 tienen texto; `books/papers/fft/patent_7415584.pdf` está escaneado (se ve como imagen, no se puede buscar). Los `.doc` del DSP Workbook se leen convirtiéndolos con libreoffice.
 
 | Dónde | Qué hay |
 |---|---|
-| Proyecto (claude.ai) | En txt: UG1085 (TRM), UG579 (DSP), UG573 (memorias), DS987 (K26), PG201, PG164, PG125, PG021, PG037, PG085. En PDF: DS925, UG1400, UG1137, UG1089, UG1209. Además: headers de rtlsim, scripts de bring-up, el RTL de la FFT y esta bitácora. **El RTL del proyecto es del 2026-10-04, anterior a los cambios de octubre**: conviene reemplazarlo por las versiones vigentes (tabla de arriba) |
-| Repo `doc/amd/` | además: PG022 (DataMover), PG034 (CDMA), PG035 (AXIS interconnect), PG059 (AXI interconnect), PG065 (clk_wiz), PG078 (AXI BRAM ctrl), PG144 (GPIO), PG247 (SmartConnect), UG1037 (AXI), UG1118 (IP propio), UG572 (clocking), UG896 (IP), UG949 (metodología), UG984, UG994/995 (IP integrator), WP417 (interconnects) |
+| Repo `books/amd-docs/` | UG1085 (TRM), UG579 (DSP), UG573 (memorias), UG572 (clocking), UG949 (metodología), UG896 (IP), UG994/995 (IP integrator), UG1037 (AXI), UG1118 (IP propio), UG984, DS987 (K26), datasheets del KV260 y del Zynq UltraScale+, PG021, PG022, PG034, PG035, PG037, PG059, PG065, PG078, PG085, PG109 (FFT), PG125, PG144, PG151, PG164, PG201, PG247, WP417. **No están en el repo** (solo estaban en el proyecto de claude.ai): DS925, UG1400, UG1137, UG1089, UG1209 |
 | Repo `books/` | Parhami (*Computer Arithmetic*), Khan (*Digital Design of Signal Processing Systems*), Gonzalez & Woods (*Digital Image Processing*), Watkins y Golub & Van Loan (*Matrix Computations*), Akçakaya et al. (*MR Image Reconstruction*), Brown, Cheng & Haacke (*MRI: Physical Principles*), *MRI From Picture to Proton*, *Parallel Imaging in Clinical MR Applications*, Nishimura (*Principles of MRI*), Liang & Lauterbur (*Principles of MRI: A Signal Processing Perspective*), Paul & Mathew (*Regularized Image Reconstruction in Parallel MRI with MATLAB*), Proakis & Manolakis (*Tratamiento digital de señales*), PG151 (Divider Generator) |
 
 ### 6.3 Estructura de un módulo
@@ -1115,11 +1170,11 @@ build/<CASE>/simulation/vectors/
 ## 9. Pendientes y próximos pasos
 
 **Plan acordado el 2026-10-25, antes del MAC y el CORDIC en C++:**
-- **A. Ida y vuelta FFT 2D → IFFT 2D** (§4.12). Estudio en `model/fft2d_roundtrip_study.py`. ⏳ Julián tiene que decidir:
-  - si se usa la regla "dividir lo justo y al principio de cada pasada";
-  - cómo se arman los casos: el generador de Python calcula el espectro bit a bit y lo reordena como estímulo de un caso `INVERSE = 1` (recomendado), o el tb de C++ encadena dos `fft2d`.
-  - Después: casos en el JSON y ploteo con original, espectro, reconstruida y error.
-- **B. Redondeo convergente** (*round-half-even*, §4.6) en `cast.v` y en los modelos. La medida es el pico del píxel (0, 0) de la ida y vuelta y la fila p = 0 del fantoma.
+- **A. Ida y vuelta FFT 2D → IFFT 2D** (§4.12). ✅ 2026-10-25 en el modelo C++ (entrega `fft2d_idavuelta`):
+  - decidido (Julián): regla "dividir lo justo y al principio de cada pasada", con chequeo bit a bit de 0 saturaciones; los casos se arman con el generador de Python (espectro bit a bit como estímulo de un caso `INVERSE = 1`);
+  - 6 casos `rt*` en el JSON y plot con original, espectro, reconstruida y error;
+  - ⏳ vm cuando exista el RTL de la `fft2d`.
+- **B. Redondeo convergente** (*round-half-even*, §4.6) en `cast.v` y en los modelos. Estudio hecho (2026-10-26, §4.6); ⏳ Julián decide: dónde (propuesta: mariposas + salida, no el `cmul`), un parámetro `ROUND_CONV` para todo el núcleo o uno por punto, default 0 hasta medir timing en C, y la medida (Shepp (0, 0) y fila p = 0). La medida es el pico del píxel (0, 0) de la ida y vuelta (casos `rt*`) y la fila p = 0 del fantoma. También el seno rotado de 256 con la regla, que hoy satura 2 componentes en (0, 0) (§4.12): agregar `rt256_sine_rot25` cuando esté B.
 - **C. Cerrar el núcleo 1D en hardware con la configuración final:**
   - implementación con 801 (N = 1024) y 384 (N = 512) **después de B**, porque B toca el camino crítico (BF2I escalada → suma → redondeo → saturación → DSP);
   - caso de vm con huecos entre tramas.
@@ -1212,14 +1267,10 @@ Pasos propuestos:
 
 | Fecha | Cambio |
 |---|---|
-| antes del 2026-10-10 | Bring-up v0 y barrido de ancho de banda en placa. Diagnóstico del escalado (pico de 0,9 LSB). |
-| 2026-10-10 | Decisión 1024 × 1024. `SCALE` por mariposa y `SCALE_MASK`; 784 por búsqueda exhaustiva. Estudio de precisión: mapa datos × twiddle, análisis de *full precision*, 2D y ruido térmico. |
-| 2026-10-11 | Formatos independientes: `NB_TW` (`cmul` con dos anchos, ROM) y `NB_IN`/`NB_OUT` (ensanche por cableado, `cast` de salida). Guardas con doble `$fatal`. `gen_twiddles.py`. |
-| 2026-10-12 | Modo `DOUBLE` con twiddles exactos; referencia con `(k·i) mod N`. Derivación de la cota B y Monte Carlo. |
-| 2026-10-14 | gtest con máscara: referencia 2^−S, `INPUT_GAIN`, entrada cuantizada. |
-| 2026-10-17 | `tb.sv` con formatos y máscara; JSON único con 14 casos. gtest 28/28, sim 14/14, **vm 14/14 en XSim**. Hallazgo del sesgo *half-up*. `run_plot_fft1d` corregido, con panel de error. Corrección del orden de etapas en la cota. Revisión de la infraestructura: bug de `make` con `DEFINES`, corregido y verificado con los runners reales. Árbol del repo y documentación disponible en §6.2. Definición de SQNR en §4.1. Wrappers de síntesis e implementación con los formatos nuevos y JSON de 4 casos. SNR contra SQNR y modelo de suma de ruidos (§4.1). **Síntesis: 4/4 a 200 MHz, 16 DSP en todos; 20/18 cuesta +14 % de LUT/FF** (§5.6). **Implementación: la elegida cierra con +0,050 ns; camino crítico DSP → `cast` en el `cmul`.** Cifra de DDR4 corregida a 19,2 GB/s (DS987). **`CMUL_PIPE`**: registro antes del `cast` (PREG), latencia 1040, verificado en el sandbox (defaults idénticos byte a byte; 19/19 vm; gtest 38/38 con `LatencyMatchesFormula`) y en el repo (gtest, vm en XSim). **Con `CMUL_PIPE = 1`, la elegida cierra después del ruteo con 0,903 ns (Fmax 244 MHz), +168 FF.** |
+| 2026-10-26 | Registro de cambios ordenado (el más nuevo arriba; dentro del mismo día, el orden que tenía). `model/fft2d_theory.py` agregado (entrega `fft_n512`), corrido en el repo. **Estudio del redondeo convergente** (§4.6, `model/fft_rounding_study.py`): el `cast` de salida pone 2/3 del sesgo y las mariposas 1/3; convergente en los dos lleva la fila p = 0 del fantoma de +7,5 a +0,02 LSB y el (0, 0) de Shepp 256 de 729 a 3; el `cmul` no aporta. El (0, 0) del seno y los anillos es redondeo correlacionado con la señal, no sesgo. `AP_RND_CONV` verificado exhaustivo. |
+| 2026-10-25 | **Ida y vuelta: regla y casos** (entrega `fft2d_idavuelta`, §4.12). Cota de los picos internos con las divisiones al principio de cada pasada, verificada en float y bit a bit (`model/fft1d_scaling_bound.py`). Regla adoptada para los casos, con chequeo bit a bit de 0 saturaciones. `gen_fft2d_stim.py` con la familia `roundtrip` (la cadena `RoundTrip` pasa del estudio al generador; el estudio da la misma salida), 6 casos `rt*` y modo ida y vuelta en `run_plot_fft2d`. Salida del C++ = cadena de Python bit a bit en los 6. gtest 28/28, sim y plot de los `rt*` 6/6; casos de antes sin cambios. Hallazgo: el seno rotado de 256 con la regla satura en (0, 0) por el sesgo. Entrega `fft2d_imagenes` aplicada y verificada en el repo (gtest 18/18, sim 17/17, plot 17/17). Rutas corregidas: `doc/bitacora.md` y `books/amd-docs/` (CLAUDE.md, §6.1, §6.2). |
+| 2026-10-25 | Prueba rápida de ida y vuelta FFT 2D → IFFT 2D (N = 256, modelo bit a bit): con escalado completo en las dos la imagen desaparece; con la inversa sin escalar vuelve, pero el sesgo *half-up* del espectro aparece como un pico de ≈ 4 000 LSB en el píxel (0, 0) (§4.6). Reparto de la escala (§4.12): lo que hay entre pasadas se conoce exacto; dividir lo justo y al principio de cada pasada da +18 dB en Shepp (54,3 contra 36,5); dividir al final satura. **Migración a Claude Code en VS Code** (entrega `migracion_vscode`): bitácora en `doc/`, `CLAUDE.md`, `.claude/settings.json`, `model/fft2d_roundtrip_study.py` (§4.12, §6.1). Plan A–D en §9. |
 | 2026-10-24 | **Imágenes para la FFT 2D** (entrega `fft2d_imagenes`): Shepp-Logan 64 / 256 / 512, senos (exactos y rotados), anillos y *zone plate*, con la FFT directa; modo imagen en `run_plot_fft2d`; generador por JSON. Glosario de símbolos en §1. Hallazgo: con escalado completo, −6 dB de SQNR por cada duplicación del lado. Doc "SENSE en el FPGA: ecuaciones en limpio" (pasos 1–5 con fórmulas renderizadas, diagrama de la trama y tabla de valores); queda abierta la elección de λ. |
-| 2026-10-25 | Prueba rápida de ida y vuelta FFT 2D → IFFT 2D (N = 256, modelo bit a bit): con escalado completo en las dos la imagen desaparece; con la inversa sin escalar vuelve, pero el sesgo *half-up* del espectro aparece como un pico de ≈ 4 000 LSB en el píxel (0, 0) (§4.6). Reparto de la escala (§4.12): lo que hay entre pasadas se conoce exacto; dividir lo justo y al principio de cada pasada da +18 dB en Shepp (54,3 contra 36,5); dividir al final satura. **Migración a Claude Code en VS Code** (entrega `migracion_vscode`): bitácora en `docs/`, `CLAUDE.md`, `.claude/settings.json`, `model/fft2d_roundtrip_study.py` (§4.12, §6.1). Plan A–D en §9. |
 | 2026-10-21 | **MAC de desplegado, puntos 4 y 5** (§4.10, §4.11): `unfold_ref.py` (U por L D Lᴴ, re/im en el orden del C, Tikhonov, escala con 1/g_l y 1/K_n, E por `frexp`, buffer en orden hardware), `mac_cordic_fxp.py` (MAC exacto + salida + CORDIC bit-exacto), `mac_output_study.py`. U'' idéntico al de `solve`; interfaz en orden hardware idéntica al orden natural; con mapas enmascarados sin λ falla el 83 %; propuesta λ = 10⁻⁴, n = 12, G = 5, u16 UQ1.15 con D = 49 − S − E − F_OUT: 51,96 dB de punta a punta. |
 | 2026-10-21 | **MAC de desplegado, puntos 1–3** (§4.9, `model/mac_unfold_study.py`): m̂ = 2^(S−19+E)·Σ U''·A verificado (5,5·10⁻¹⁶); E común por sesión alcanza; NB_U = 16 pierde 0,001 dB; acumulador de NB_U + 20 bits, suma independiente del orden; propuesta de infraestructura para el código del PS. Paso 5 de la FFT 2D cerrado en el repo (gtest 16/16, sim 8/8, plot 8/8). |
 | 2026-10-21 | **FFT 2D: tb, plot y JSON único** (entrega `fft2d_tb_plot`): `fft2d_tb.cpp` de verdad, `fft2d_stimulus.hpp` común a tb y gtest, `fft2d_tb_regression.json` (8 casos, incluido el fantoma 64 × 64), `model/gen_fft2d_stim.py`, `run_plot_fft2d.py` con `--full-check`. `fft2d_check_full.py` corrido en el repo: OK. Hallazgo: el sesgo *half-up* se concentra en la fila p = 0 (+7,5 LSB) y se ve como una línea en la imagen desplegada (§4.6). |
@@ -1230,3 +1281,9 @@ Pasos propuestos:
 | 2026-10-18 | **FFT 2D, paso 2:** parámetro `INVERSE` (swap real/imag; 0 LUT, 0 latencia), entrega `fft_inverse` con 5 casos `_inv_`. gtest referencia IDFT, plot con IFFT. Verificado en el sandbox; la relación swap es bit a bit también en el RTL. `model/fft2d_ref.py` con `--gen-dir` por defecto en `model/gen/`. |
 | 2026-10-18 | **FFT 2D, paso 1:** convenciones y referencia (`model/fft2d_ref.py`, §3.8). Dimensiones confirmadas (512 × 1024 por bobina). Plegado, flujo del hardware, unfolding en orden hardware y k-space centrado verificados. Conclusión: el datapath no necesita hardware de reordenamiento ni shifts. |
 | 2026-10-18 | **Default `CMUL_PIPE = 1`** (entrega `cmul_pipe_default`); los casos `_pipe_` pasan a ser `_nopipe_` con `CMUL_PIPE = 0`; caso 27/18 sin registro desactivado en implementación. Verificado en el sandbox: 19/19 vm, gtest 38/38, sim 19/19, wrappers. **Camino crítico nuevo**: línea de retardo LUTRAM de BF2I (unidad 0) → suma → saturación → entrada A del DSP; 68 % ruteo, *fan-out* 167 en la dirección. PREG confirmado por el nombre de la celda DSP. |
+| 2026-10-17 | `tb.sv` con formatos y máscara; JSON único con 14 casos. gtest 28/28, sim 14/14, **vm 14/14 en XSim**. Hallazgo del sesgo *half-up*. `run_plot_fft1d` corregido, con panel de error. Corrección del orden de etapas en la cota. Revisión de la infraestructura: bug de `make` con `DEFINES`, corregido y verificado con los runners reales. Árbol del repo y documentación disponible en §6.2. Definición de SQNR en §4.1. Wrappers de síntesis e implementación con los formatos nuevos y JSON de 4 casos. SNR contra SQNR y modelo de suma de ruidos (§4.1). **Síntesis: 4/4 a 200 MHz, 16 DSP en todos; 20/18 cuesta +14 % de LUT/FF** (§5.6). **Implementación: la elegida cierra con +0,050 ns; camino crítico DSP → `cast` en el `cmul`.** Cifra de DDR4 corregida a 19,2 GB/s (DS987). **`CMUL_PIPE`**: registro antes del `cast` (PREG), latencia 1040, verificado en el sandbox (defaults idénticos byte a byte; 19/19 vm; gtest 38/38 con `LatencyMatchesFormula`) y en el repo (gtest, vm en XSim). **Con `CMUL_PIPE = 1`, la elegida cierra después del ruteo con 0,903 ns (Fmax 244 MHz), +168 FF.** |
+| 2026-10-14 | gtest con máscara: referencia 2^−S, `INPUT_GAIN`, entrada cuantizada. |
+| 2026-10-12 | Modo `DOUBLE` con twiddles exactos; referencia con `(k·i) mod N`. Derivación de la cota B y Monte Carlo. |
+| 2026-10-11 | Formatos independientes: `NB_TW` (`cmul` con dos anchos, ROM) y `NB_IN`/`NB_OUT` (ensanche por cableado, `cast` de salida). Guardas con doble `$fatal`. `gen_twiddles.py`. |
+| 2026-10-10 | Decisión 1024 × 1024. `SCALE` por mariposa y `SCALE_MASK`; 784 por búsqueda exhaustiva. Estudio de precisión: mapa datos × twiddle, análisis de *full precision*, 2D y ruido térmico. |
+| antes del 2026-10-10 | Bring-up v0 y barrido de ancho de banda en placa. Diagnóstico del escalado (pico de 0,9 LSB). |
