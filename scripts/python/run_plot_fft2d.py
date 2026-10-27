@@ -31,7 +31,11 @@ misma entrada) y se agrega
           (g) |error| contra la original en dB, (h) SQNR de la ida y vuelta,
           error en el pixel (0, 0) y dos chequeos: el estimulo es el espectro
           regenerado y la salida es, bit a bit, la de la cadena de Python
-          (gen_fft2d_stim.RoundTrip)
+          (gen_fft2d_stim.RoundTrip, con el ROUND_CONV del caso)
+
+En los casos con INVERSE = 1 la linea de texto agrega el sesgo de la fila p = 0
+y el del resto: el sesgo half-up se concentra en p = 0 (bitacora 4.6) y con
+ROUND_CONV = 1 tiene que desaparecer.
 
 Orden de la salida
 ------------------
@@ -125,6 +129,7 @@ def case_config(params):
         "n1": n1, "n2": n2, "l1": l1, "l2": l2, "m1": m1, "m2": m2,
         "s1": bin(m1).count("1"), "s2": bin(m2).count("1"),
         "inverse": as_int(params.get("INVERSE"), 1) == 1,
+        "round_conv": as_int(params.get("ROUND_CONV"), 0) == 1,
         "coils": as_int(params.get("N_COILS"), 3),
         "nbf_in": as_int(params.get("NBF_IN"), nb_in - nbi),
         "nbf_out": as_int(params.get("NBF_OUT"), nb_out - nbi),
@@ -216,7 +221,7 @@ def roundtrip_check(meta, qr_in, qi_in, a_nat, cfg):
     sys.path.insert(0, str(md))
     from gen_fft2d_stim import roundtrip_chain              # noqa: E402
 
-    r = roundtrip_chain(md / "gen", meta["spec"], (cfg["m1"], cfg["m2"]))
+    r = roundtrip_chain(md / "gen", meta["spec"], (cfg["m1"], cfg["m2"]), round_conv=int(cfg["round_conv"]))
     X = r["X"]
     same_stim = (qr_in.shape[1:] == X.shape and np.array_equal(qr_in[0], X.real)
                  and np.array_equal(qi_in[0], X.imag))
@@ -388,6 +393,10 @@ def plot_case(label, k_all, a_hw, n_last, cfg, coils, out_dir, phantom_meta, raw
         extra = (f"; ida y vuelta {rt['sqnr']:.2f} dB, |error(0,0)| {abs(rt['e00']):.0f} LSB; "
                  f"estimulo = espectro: {'si' if rt['same_stim'] else 'NO'}; "
                  f"salida = cadena Python: {'si' if rt['same_chain'] else 'NO'}")
+    if cfg["inverse"]:
+        e_all = np.stack([s["e"] for s in stats_all])                          # [l, p, x], LSB
+        extra += (f"; sesgo fila p=0 {e_all[:, 0].real.mean():+.3f}/{e_all[:, 0].imag.mean():+.3f}, "
+                  f"resto {e_all[:, 1:].real.mean():+.4f}/{e_all[:, 1:].imag.mean():+.4f}")
     print(f"  [OK]   {label}: {cfg['n1']}x{cfg['n2']}, {a_nat.shape[0]} bobinas, o_last {n_last}, "
           f"S1={cfg['s1']} S2={cfg['s2']}; SQNR por bobina [{sq}] dB; "
           f"max {max(s['max'] for s in stats_all):.2f} LSB{extra}")
@@ -399,7 +408,7 @@ def plot_case(label, k_all, a_hw, n_last, cfg, coils, out_dir, phantom_meta, raw
                  f"N2={cfg['n2']} (mask {cfg['m2']}, S2={cfg['s2']})   "
                  f"in Q{cfg['nb_in'] - cfg['nbf_in']}.{cfg['nbf_in']}   "
                  f"out Q{cfg['nb_out'] - cfg['nbf_out']}.{cfg['nbf_out']}"
-                 f"{'   INVERSA' if cfg['inverse'] else ''}")
+                 f"{'   INVERSA' if cfg['inverse'] else ''}{'   CONV' if cfg['round_conv'] else ''}")
         png = out_dir / f"{label.replace(' ', '_').replace('(', '').replace(')', '')}_coil{l}.png"
         if cfg["inverse"]:
             make_figure(k_all[l], a_nat[l], ref[l], stats_all[l], ph, title, png, cfg, l, rt)
