@@ -28,7 +28,8 @@ Tres familias:
            Con las mascaras del caso corre las 4 pasadas y exige 0
            saturaciones y S1 + S2 + S3 + S4 = 2 log2 N (vuelve la imagen con
            ganancia 1). Avisa si las mascaras no son las de la regla "lo
-           justo, al principio de cada pasada".
+           justo, al principio de cada pasada". Con ROUND_CONV = 1 en el caso,
+           las 4 pasadas (tambien la ida, que hace Python) redondean al par.
 
 Escribe:
   <out>.bin   int32 little-endian [L][filas][columnas][re, im], enteros crudos
@@ -112,10 +113,11 @@ class RoundTrip:
     natural (reordenamiento ideal entre pasadas). Pasadas 1 y 3 por filas, 2 y 4 por
     columnas; 1 y 2 directas, 3 y 4 inversas (INVERSE = 1)."""
 
-    def __init__(self, n: int, nb: int = 20, nb_tw: int = 18, nb_io: int = 16):
+    def __init__(self, n: int, nb: int = 20, nb_tw: int = 18, nb_io: int = 16, round_conv: int = 0):
         self.n, self.log = n, n.bit_length() - 1
         self.fmt = dict(N=n, NB=nb, NBF=nb - 1, NB_TW=nb_tw, NBF_TW=nb_tw - 1,
-                        NB_IN=nb_io, NBF_IN=nb_io - 1, NB_OUT=nb_io, NBF_OUT=nb_io - 1)
+                        NB_IN=nb_io, NBF_IN=nb_io - 1, NB_OUT=nb_io, NBF_OUT=nb_io - 1,
+                        ROUND_CONV=round_conv)
         self.tw = F.load_twiddles(TW_ROOT / f"n{n}_tw{nb_tw}", n, nb_tw)
         self.br = bitrev(n)                      # involucion: br(br(i)) = i
 
@@ -166,7 +168,7 @@ def minimal_split(peaks, log: int):
     return s, ok
 
 
-def roundtrip_chain(gen_dir: Path, spec: dict, inv_masks=None) -> dict:
+def roundtrip_chain(gen_dir: Path, spec: dict, inv_masks=None, round_conv: int = 0) -> dict:
     """
     Ida y vuelta bit a bit de la imagen de spec (kind = roundtrip), todo en LSB de
     Q1.15 y en orden natural:
@@ -174,11 +176,12 @@ def roundtrip_chain(gen_dir: Path, spec: dict, inv_masks=None) -> dict:
       X   espectro despues de las pasadas 1 y 2 [ky, kx]: el estimulo
       y   salida de las 4 pasadas, si se dan las mascaras de la vuelta [m3, m4]
     rule_masks son las de la regla (lo justo, al principio de cada pasada).
+    round_conv = 1: redondeo convergente en las 4 pasadas (ROUND_CONV del nucleo).
     """
     n = int(spec["N"])
     m1, m2 = (_int(v) for v in spec["fwd_masks"])
     params = {k: v for k, v in spec.items() if k not in ("kind", "image", "N", "fwd_masks")}
-    rt = RoundTrip(n)
+    rt = RoundTrip(n, round_conv=round_conv)
     qr, qi = q15(make_image(gen_dir, spec["image"], n, params).astype(np.complex128))
     x = qr + 1j * qi
     X, _, _ = rt.run(qr, qi, [m1, m2])
@@ -220,14 +223,15 @@ def generate_roundtrip(gen_dir: Path, spec: dict, out: Path, case: dict) -> bool
         raise ValueError(f"{name}: un caso roundtrip tiene que dar SCALE_MASK1 y SCALE_MASK2 (m3 y m4)")
     if _int(case.get("N1", n)) != n or _int(case.get("N2", n)) != n or _int(case.get("INVERSE", 1)) != 1:
         raise ValueError(f"{name}: un caso roundtrip va con N1 = N2 = {n} e INVERSE = 1")
-    r = roundtrip_chain(gen_dir, spec, (case["SCALE_MASK1"], case["SCALE_MASK2"]))
+    rc = _int(case.get("ROUND_CONV", 0))
+    r = roundtrip_chain(gen_dir, spec, (case["SCALE_MASK1"], case["SCALE_MASK2"]), round_conv=rc)
     X = r["X"]
     write(out, X.real.astype(np.int64)[None], X.imag.astype(np.int64)[None],
           {"kind": "roundtrip", "image": spec["image"], "N": n, "A": AMP, **r["params"],
            "fwd_masks": r["fwd_masks"], "inv_masks": r["masks"][2:], "sat": r["sats"],
            "peaks": [round(p, 4) for p in r["peaks"]], "sqnr_db": round(r["sqnr_db"], 2),
-           "e00_lsb": [r["e00"].real, r["e00"].imag], "spec": spec})
-    print(f"      ida y vuelta: mascaras {r['masks']}, S = {r['s_total']}, sat {r['sats']}, "
+           "e00_lsb": [r["e00"].real, r["e00"].imag], **({"round_conv": rc} if rc else {}), "spec": spec})
+    print(f"      ida y vuelta{' (convergente)' if rc else ''}: mascaras {r['masks']}, S = {r['s_total']}, sat {r['sats']}, "
           f"picos " + ", ".join(f"{p:.3f}" for p in r["peaks"])
           + f", SQNR {r['sqnr_db']:.2f} dB, |error(0,0)| {abs(r['e00']):.0f} LSB")
     if r["rule_masks"] is not None and r["masks"] != r["rule_masks"]:
@@ -296,6 +300,8 @@ def main() -> int:
                     help="con --image: estimulo roundtrip (espectro con estas mascaras de ida)")
     ap.add_argument("--inv-masks", type=int, nargs=2, default=None, metavar=("M3", "M4"),
                     help="mascaras de la vuelta, para el chequeo (con --fwd-masks)")
+    ap.add_argument("--round-conv", action="store_true",
+                    help="roundtrip con redondeo convergente en las 4 pasadas (ROUND_CONV = 1)")
     ap.add_argument("--gen-dir", type=Path, default=HERE / "gen")
     ap.add_argument("--out", type=Path, default=None, help="archivo .bin de salida")
     a = ap.parse_args()
@@ -317,7 +323,8 @@ def main() -> int:
         if a.image is None or a.inv_masks is None:
             ap.error("--fwd-masks va con --image y --inv-masks")
         spec = {"kind": "roundtrip", "image": spec.pop("kind"), **spec, "fwd_masks": a.fwd_masks}
-        case = {"N1": a.N, "N2": a.N, "SCALE_MASK1": a.inv_masks[0], "SCALE_MASK2": a.inv_masks[1]}
+        case = {"N1": a.N, "N2": a.N, "SCALE_MASK1": a.inv_masks[0], "SCALE_MASK2": a.inv_masks[1],
+                "ROUND_CONV": int(a.round_conv)}
     return 0 if generate(a.gen_dir, spec, a.out, case) else 1
 
 
