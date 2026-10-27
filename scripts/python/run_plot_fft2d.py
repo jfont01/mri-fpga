@@ -23,6 +23,16 @@ entrada es una imagen y la salida su espectro, asi que la fila 1 pasa a ser
       (fftshift: frecuencia 0 en el medio)
   (d) |error| en LSB, tambien centrado
 
+Modo ida y vuelta (STIM_FILE de gen_fft2d_stim.py con kind = roundtrip): la
+entrada es el espectro bit a bit de una imagen (pasadas 1 y 2) y la fft2d hace
+la vuelta (pasadas 3 y 4). La fila 1 es la de siempre (contra la IDFT 2D de la
+misma entrada) y se agrega
+  fila 2  (e) la imagen original, (f) la reconstruida (parte real),
+          (g) |error| contra la original en dB, (h) SQNR de la ida y vuelta,
+          error en el pixel (0, 0) y dos chequeos: el estimulo es el espectro
+          regenerado y la salida es, bit a bit, la de la cadena de Python
+          (gen_fft2d_stim.RoundTrip)
+
 Orden de la salida
 ------------------
 La fft2d entrega o = t1 * N2 + t2 = A[p = br(t2), x = br(t1)] (bit-reversed en
@@ -192,10 +202,38 @@ def phantom_unfold(meta, qr_in, qi_in, a_nat, cfg):
 
 
 # ----------------------------------------------------------------------
+# Ida y vuelta: rehacer imagen y espectro y comparar contra la original
+# ----------------------------------------------------------------------
+def roundtrip_check(meta, qr_in, qi_in, a_nat, cfg):
+    """
+    Rehace la imagen y las 4 pasadas con gen_fft2d_stim.roundtrip_chain (el
+    stim_gen guardado en el .json y las mascaras de este caso como vuelta).
+    a_nat: [1, p, x] en Q1.15. Devuelve dict o None (con motivo).
+    """
+    md = model_dir()
+    if md is None or not (md / "gen_fft2d_stim.py").is_file():
+        return None, "no se encuentra model/gen_fft2d_stim.py (PROJECT_ROOT)"
+    sys.path.insert(0, str(md))
+    from gen_fft2d_stim import roundtrip_chain              # noqa: E402
+
+    r = roundtrip_chain(md / "gen", meta["spec"], (cfg["m1"], cfg["m2"]))
+    X = r["X"]
+    same_stim = (qr_in.shape[1:] == X.shape and np.array_equal(qr_in[0], X.real)
+                 and np.array_equal(qi_in[0], X.imag))
+    y = a_nat[0] * 2.0 ** cfg["nbf_out"]                    # LSB, exacto
+    x = r["x"]
+    e = y - x
+    sqnr = 10 * np.log10(np.sum(np.abs(x) ** 2) / max(np.sum(np.abs(e) ** 2), 1e-300))
+    return {"x": x, "y": y, "e": e, "sqnr": sqnr, "e00": complex(e[0, 0]),
+            "same_stim": same_stim, "same_chain": bool(np.array_equal(y, r["y"])),
+            "sats": r["sats"], "masks": r["masks"], "image": meta["spec"]["image"]}, ""
+
+
+# ----------------------------------------------------------------------
 # Figura
 # ----------------------------------------------------------------------
-def make_figure(k_l, a_l, ref_l, st, ph, title, out_png, cfg, coil):
-    rows = 2 if ph is not None else 1
+def make_figure(k_l, a_l, ref_l, st, ph, title, out_png, cfg, coil, rt=None):
+    rows = 2 if (ph is not None or rt is not None) else 1
     fig, axes = plt.subplots(rows, 4, figsize=(20, 4.6 * rows + 0.6), squeeze=False,
                              constrained_layout=True)
     ext_k = dict(aspect="auto", origin="lower", interpolation="nearest")
@@ -251,6 +289,31 @@ def make_figure(k_l, a_l, ref_l, st, ph, title, out_png, cfg, coil):
                f"SNR imagen {ph['snr']:.2f} dB")
         ax.text(0.02, 0.6, txt, fontsize=12, va="center", family="monospace")
 
+    if rt is not None:
+        img = dict(aspect="equal", origin="upper", interpolation="nearest")
+        xmax = np.abs(rt["x"]).max() or 1.0
+        for ax, z, name in ((axes[1, 0], rt["x"].real, f"(e) original: {rt['image']}"),
+                            (axes[1, 1], rt["y"].real, "(f) reconstruida (parte real)")):
+            im = ax.imshow(z / 2.0 ** cfg["nbf_out"], cmap="gray", vmin=-xmax / 2.0 ** cfg["nbf_out"],
+                           vmax=xmax / 2.0 ** cfg["nbf_out"], **img)
+            ax.set_title(name); ax.set_xlabel("x"); ax.set_ylabel("y")
+            fig.colorbar(im, ax=ax, shrink=0.85)
+        ax = axes[1, 2]
+        im = ax.imshow((20 * np.log10(np.abs(rt["e"]) / xmax + 1e-30)).clip(-120, None),
+                       cmap="magma", vmin=-120, vmax=-20, **img)
+        ax.set_title("(g) |reconstruida - original|  [dB re max]"); ax.set_xlabel("x"); ax.set_ylabel("y")
+        fig.colorbar(im, ax=ax, shrink=0.85)
+        ax = axes[1, 3]
+        ax.set_axis_off()
+        m = rt["masks"]
+        txt = (f"ida  m1 = {m[0]}, m2 = {m[1]}\nvuelta  m3 = {m[2]}, m4 = {m[3]}\n"
+               f"S = {sum(bin(v).count('1') for v in m)}, sat por pasada {rt['sats']}\n\n"
+               f"SQNR ida y vuelta {rt['sqnr']:.2f} dB\n"
+               f"error (0, 0) = {rt['e00'].real:+.0f} {rt['e00'].imag:+.0f}j LSB\n\n"
+               "estimulo = espectro regenerado: " + ("si" if rt["same_stim"] else "NO") +
+               "\nsalida = cadena Python: " + ("si (bit a bit)" if rt["same_chain"] else "NO"))
+        ax.text(0.02, 0.5, txt, fontsize=12, va="center", family="monospace")
+
     fig.suptitle(title, fontsize=13, fontweight="bold")
     fig.savefig(out_png, dpi=110)
     plt.close(fig)
@@ -294,7 +357,8 @@ def make_figure_image(x_l, a_l, ref_l, st, title, out_png, cfg, meta):
     plt.close(fig)
 
 
-def plot_case(label, k_all, a_hw, n_last, cfg, coils, out_dir, phantom_meta, raw_in, image_meta=None):
+def plot_case(label, k_all, a_hw, n_last, cfg, coils, out_dir, phantom_meta, raw_in, image_meta=None,
+              rt_meta=None):
     """k_all: [L, N2, N1] complejo (Q1.15 -> real). a_hw: [L, N1, N2] complejo."""
     a_nat = hw_to_natural(a_hw, cfg)
     ref = reference(k_all, cfg)
@@ -306,6 +370,12 @@ def plot_case(label, k_all, a_hw, n_last, cfg, coils, out_dir, phantom_meta, raw
         ph, why = phantom_unfold(phantom_meta, qr_in, qi_in, a_nat, cfg)
         if ph is None:
             print(f"  [WARN] {label}: sin fila del fantoma ({why})")
+    rt = None
+    if rt_meta is not None:
+        qr_in, qi_in = raw_in
+        rt, why = roundtrip_check(rt_meta, qr_in, qi_in, a_nat, cfg)
+        if rt is None:
+            print(f"  [WARN] {label}: sin fila de la ida y vuelta ({why})")
 
     out_dir.mkdir(parents=True, exist_ok=True)
     stats_all = [error_stats(a_nat[l], ref[l], lsb) for l in range(a_nat.shape[0])]
@@ -314,6 +384,10 @@ def plot_case(label, k_all, a_hw, n_last, cfg, coils, out_dir, phantom_meta, raw
     if ph is not None:
         extra = (f"; SNR imagen {ph['snr']:.2f} dB; estimulo = fantoma: "
                  f"{'si' if ph['same_stim'] else 'NO'}")
+    if rt is not None:
+        extra = (f"; ida y vuelta {rt['sqnr']:.2f} dB, |error(0,0)| {abs(rt['e00']):.0f} LSB; "
+                 f"estimulo = espectro: {'si' if rt['same_stim'] else 'NO'}; "
+                 f"salida = cadena Python: {'si' if rt['same_chain'] else 'NO'}")
     print(f"  [OK]   {label}: {cfg['n1']}x{cfg['n2']}, {a_nat.shape[0]} bobinas, o_last {n_last}, "
           f"S1={cfg['s1']} S2={cfg['s2']}; SQNR por bobina [{sq}] dB; "
           f"max {max(s['max'] for s in stats_all):.2f} LSB{extra}")
@@ -328,7 +402,7 @@ def plot_case(label, k_all, a_hw, n_last, cfg, coils, out_dir, phantom_meta, raw
                  f"{'   INVERSA' if cfg['inverse'] else ''}")
         png = out_dir / f"{label.replace(' ', '_').replace('(', '').replace(')', '')}_coil{l}.png"
         if cfg["inverse"]:
-            make_figure(k_all[l], a_nat[l], ref[l], stats_all[l], ph, title, png, cfg, l)
+            make_figure(k_all[l], a_nat[l], ref[l], stats_all[l], ph, title, png, cfg, l, rt)
         else:
             make_figure_image(k_all[l], a_nat[l], ref[l], stats_all[l], title.replace("bobina", "canal"),
                               png, cfg, image_meta)
@@ -364,7 +438,7 @@ def from_case(module_dir, case_dir, name, params, src, coil, all_coils):
     a_hw = a[:L * t].reshape(L, cfg["n1"], cfg["n2"])
     raw_in = (qr[:L * t].reshape(L, cfg["n2"], cfg["n1"]), qi[:L * t].reshape(L, cfg["n2"], cfg["n1"]))
 
-    meta, image_meta = None, None
+    meta, image_meta, rt_meta = None, None, None
     if as_int(params.get("STIM_TYPE"), 0) == 3:
         sidecar = (module_dir / str(params.get("STIM_FILE", ""))).with_suffix(".json")
         if sidecar.is_file():
@@ -373,9 +447,12 @@ def from_case(module_dir, case_dir, name, params, src, coil, all_coils):
                 meta = m
             elif m.get("kind") == "image":
                 image_meta = m
+            elif m.get("kind") == "roundtrip":
+                rt_meta = m
 
     coils = range(L) if all_coils else [min(coil, L - 1)]
-    plot_case(f"{name}_{src}", k_all, a_hw, n_last, cfg, coils, case_dir / "plots", meta, raw_in, image_meta)
+    plot_case(f"{name}_{src}", k_all, a_hw, n_last, cfg, coils, case_dir / "plots", meta, raw_in, image_meta,
+              rt_meta)
     return True
 
 
