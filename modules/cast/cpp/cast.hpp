@@ -28,12 +28,17 @@ namespace cast {
 #define CAST_ROUND_MODE 1
 #endif
 
+#ifndef CAST_ROUND_CONV
+#define CAST_ROUND_CONV 0
+#endif
+
 enum parameters : int {
     NB_IN      = CAST_NB_IN,
     NBF_IN     = CAST_NBF_IN,
     NB_OUT     = CAST_NB_OUT,
     NBF_OUT    = CAST_NBF_OUT,
-    ROUND_MODE = CAST_ROUND_MODE
+    ROUND_MODE = CAST_ROUND_MODE,
+    ROUND_CONV = CAST_ROUND_CONV
 };
 
 enum localparameters : int {
@@ -66,6 +71,14 @@ static_assert(
 );
 
 /*
+ * Same guard as the RTL: ROUND_CONV only changes how ties are broken.
+ */
+static_assert(
+    ROUND_CONV == 0 || ROUND_MODE != 0,
+    "cast: ROUND_CONV = 1 needs ROUND_MODE = 1"
+);
+
+/*
  * Input fixed-point type.
  *
  * Default ap_fixed quantization/overflow is enough for the input type because
@@ -79,17 +92,21 @@ using in_t = ap_fixed<NB_IN, NBI_IN>;
  * ROUND_MODE = 0:
  *   truncation + saturation
  *
- * ROUND_MODE = 1:
- *   rounding + saturation
+ * ROUND_MODE = 1, ROUND_CONV = 0:
+ *   rounding (ties up, half-up) + saturation
+ *
+ * ROUND_MODE = 1, ROUND_CONV = 1:
+ *   convergent rounding (ties to even) + saturation
  *
  * The output type itself encodes the quantization and overflow policy.
  */
 using out_trunc_t = ap_fixed<NB_OUT, NBI_OUT, AP_TRN, AP_SAT>;
 using out_round_t = ap_fixed<NB_OUT, NBI_OUT, AP_RND, AP_SAT>;
+using out_conv_t  = ap_fixed<NB_OUT, NBI_OUT, AP_RND_CONV, AP_SAT>;
 
 using out_t = typename std::conditional<
     (ROUND_MODE != 0),
-    out_round_t,
+    typename std::conditional<(ROUND_CONV != 0), out_conv_t, out_round_t>::type,
     out_trunc_t
 >::type;
 

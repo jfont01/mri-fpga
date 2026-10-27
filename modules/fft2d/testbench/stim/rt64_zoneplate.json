@@ -1,0 +1,40 @@
+{
+  "kind": "roundtrip",
+  "image": "zoneplate",
+  "N": 64,
+  "A": 0.9,
+  "fwd_masks": [
+    7,
+    7
+  ],
+  "inv_masks": [
+    7,
+    7
+  ],
+  "sat": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "peaks": [
+    0.9,
+    0.9,
+    0.9
+  ],
+  "sqnr_db": 93.56,
+  "e00_lsb": [
+    2.0,
+    0.0
+  ],
+  "spec": {
+    "kind": "roundtrip",
+    "image": "zoneplate",
+    "N": 64,
+    "fwd_masks": [
+      7,
+      7
+    ]
+  },
+  "format": "int32 little-endian [L][filas][columnas][re, im], Q1.15"
+}

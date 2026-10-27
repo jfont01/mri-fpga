@@ -210,6 +210,7 @@ void run_tb(const tb_args& args)
     report_file << "NB_OUT      : " << cast::NB_OUT << "\n";
     report_file << "NBF_OUT     : " << cast::NBF_OUT << "\n";
     report_file << "ROUND_MODE  : " << cast::ROUND_MODE << "\n";
+    report_file << "ROUND_CONV  : " << cast::ROUND_CONV << "\n";
     report_file << "\n";
 
     report_file << "input_csv   : " << vectors.in_ports_csv() << "\n";

@@ -52,6 +52,76 @@
       "NB_OUT": 12,
       "NBF_OUT": 8,
       "ROUND_MODE": 1
+    },
+    {
+      "name": "q8_5_to_q6_4_conv",
+      "NB_IN": 8,
+      "NBF_IN": 5,
+      "NB_OUT": 6,
+      "NBF_OUT": 4,
+      "ROUND_MODE": 1,
+      "ROUND_CONV": 1
+    },
+    {
+      "name": "q12_8_to_q8_4_conv",
+      "NB_IN": 12,
+      "NBF_IN": 8,
+      "NB_OUT": 8,
+      "NBF_OUT": 4,
+      "ROUND_MODE": 1,
+      "ROUND_CONV": 1
+    },
+    {
+      "name": "q10_6_to_q8_6_conv",
+      "NB_IN": 10,
+      "NBF_IN": 6,
+      "NB_OUT": 8,
+      "NBF_OUT": 6,
+      "ROUND_MODE": 1,
+      "ROUND_CONV": 1
+    },
+    {
+      "name": "q16_12_to_q12_8_conv",
+      "NB_IN": 16,
+      "NBF_IN": 12,
+      "NB_OUT": 12,
+      "NBF_OUT": 8,
+      "ROUND_MODE": 1,
+      "ROUND_CONV": 1
+    },
+    {
+      "name": "q21_20_to_q20_19_round",
+      "NB_IN": 21,
+      "NBF_IN": 20,
+      "NB_OUT": 20,
+      "NBF_OUT": 19,
+      "ROUND_MODE": 1
+    },
+    {
+      "name": "q21_20_to_q20_19_conv",
+      "NB_IN": 21,
+      "NBF_IN": 20,
+      "NB_OUT": 20,
+      "NBF_OUT": 19,
+      "ROUND_MODE": 1,
+      "ROUND_CONV": 1
+    },
+    {
+      "name": "q20_19_to_q16_15_round",
+      "NB_IN": 20,
+      "NBF_IN": 19,
+      "NB_OUT": 16,
+      "NBF_OUT": 15,
+      "ROUND_MODE": 1
+    },
+    {
+      "name": "q20_19_to_q16_15_conv",
+      "NB_IN": 20,
+      "NBF_IN": 19,
+      "NB_OUT": 16,
+      "NBF_OUT": 15,
+      "ROUND_MODE": 1,
+      "ROUND_CONV": 1
     }
   ]
 }

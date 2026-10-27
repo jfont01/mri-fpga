@@ -21,6 +21,10 @@
 `define CAST_ROUND_MODE 1
 `endif
 
+`ifndef CAST_ROUND_CONV
+`define CAST_ROUND_CONV 0
+`endif
+
 module cast_tb;
 
     localparam int NB_IN      = `CAST_NB_IN;
@@ -28,6 +32,7 @@ module cast_tb;
     localparam int NB_OUT     = `CAST_NB_OUT;
     localparam int NBF_OUT    = `CAST_NBF_OUT;
     localparam bit ROUND_MODE = `CAST_ROUND_MODE;
+    localparam bit ROUND_CONV = `CAST_ROUND_CONV;
 
     logic signed [NB_IN-1:0]  i_word;
     logic signed [NB_OUT-1:0] o_word;
@@ -55,7 +60,8 @@ module cast_tb;
         .NBF_IN     (NBF_IN),
         .NB_OUT     (NB_OUT),
         .NBF_OUT    (NBF_OUT),
-        .ROUND_MODE (ROUND_MODE)
+        .ROUND_MODE (ROUND_MODE),
+        .ROUND_CONV (ROUND_CONV)
     ) u_cast (
         .i_word (i_word),
         .o_word (o_word)
@@ -106,6 +112,7 @@ module cast_tb;
         $display("[cast_tb] NB_OUT     = %0d", NB_OUT);
         $display("[cast_tb] NBF_OUT    = %0d", NBF_OUT);
         $display("[cast_tb] ROUND_MODE = %0d", ROUND_MODE);
+        $display("[cast_tb] ROUND_CONV = %0d", ROUND_CONV);
 
         $fwrite(fd_out_csv, "cycle,o_word\n");
 

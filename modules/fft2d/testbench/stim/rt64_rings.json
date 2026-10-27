@@ -1,0 +1,42 @@
+{
+  "kind": "roundtrip",
+  "image": "rings",
+  "N": 64,
+  "A": 0.9,
+  "period": 16,
+  "fwd_masks": [
+    63,
+    31
+  ],
+  "inv_masks": [
+    1,
+    0
+  ],
+  "sat": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "peaks": [
+    0.5906,
+    0.9243,
+    0.5906
+  ],
+  "sqnr_db": 65.92,
+  "e00_lsb": [
+    233.0,
+    0.0
+  ],
+  "spec": {
+    "kind": "roundtrip",
+    "image": "rings",
+    "N": 64,
+    "period": 16,
+    "fwd_masks": [
+      63,
+      31
+    ]
+  },
+  "format": "int32 little-endian [L][filas][columnas][re, im], Q1.15"
+}

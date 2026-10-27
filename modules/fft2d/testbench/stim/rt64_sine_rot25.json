@@ -1,0 +1,44 @@
+{
+  "kind": "roundtrip",
+  "image": "sine",
+  "N": 64,
+  "A": 0.9,
+  "f": 20,
+  "angle": 25,
+  "fwd_masks": [
+    31,
+    63
+  ],
+  "inv_masks": [
+    0,
+    1
+  ],
+  "sat": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "peaks": [
+    0.8822,
+    0.6101,
+    0.6456
+  ],
+  "sqnr_db": 63.75,
+  "e00_lsb": [
+    126.0,
+    112.0
+  ],
+  "spec": {
+    "kind": "roundtrip",
+    "image": "sine",
+    "N": 64,
+    "f": 20,
+    "angle": 25,
+    "fwd_masks": [
+      31,
+      63
+    ]
+  },
+  "format": "int32 little-endian [L][filas][columnas][re, im], Q1.15"
+}
