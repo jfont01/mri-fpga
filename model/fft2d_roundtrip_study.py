@@ -26,6 +26,9 @@ Compara tres repartos:
   minimo, al principio     S minimos, las etapas que dividen primero en cada pasada
   minimo, al final         S minimos, las etapas que dividen al final
 
+La cadena bit a bit (RoundTrip, boundary_peaks, minimal_split) vive en
+gen_fft2d_stim.py, que la usa para los casos roundtrip de la fft2d.
+
 Uso (desde la raiz del repo):
   python3 model/fft2d_roundtrip_study.py            # N = 256, las 4 imagenes
   python3 model/fft2d_roundtrip_study.py -N 512 --images shepp rings
@@ -42,12 +45,10 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-import fft1d_r22sdf_fxp as F                    # noqa: E402
 import gen_fft2d_stim as G                      # noqa: E402
+from gen_fft2d_stim import RoundTrip, boundary_peaks, minimal_split   # noqa: E402
 
 GEN_DIR = HERE / "gen"
-TW_ROOT = HERE.parent / "modules" / "fft1d_r22sdf" / "rtl" / "twiddles"
-FS = 32768.0                                     # fondo de escala Q1.15
 
 IMAGES = {
     "shepp": {},
@@ -55,65 +56,6 @@ IMAGES = {
     "rings": {"period": 16},
     "zoneplate": {},
 }
-
-
-def bitrev(n: int) -> np.ndarray:
-    L = n.bit_length() - 1
-    return np.array([int(format(i, f"0{L}b")[::-1], 2) for i in range(n)])
-
-
-class RoundTrip:
-    def __init__(self, n: int, nb: int = 20, nb_tw: int = 18, nb_io: int = 16):
-        self.n, self.log = n, n.bit_length() - 1
-        self.fmt = dict(N=n, NB=nb, NBF=nb - 1, NB_TW=nb_tw, NBF_TW=nb_tw - 1,
-                        NB_IN=nb_io, NBF_IN=nb_io - 1, NB_OUT=nb_io, NBF_OUT=nb_io - 1)
-        self.tw = F.load_twiddles(TW_ROOT / f"n{n}_tw{nb_tw}", n, nb_tw)
-        self.br = bitrev(n)                      # involucion: br(br(i)) = i
-
-    def _pass(self, xr, xi, mask, inverse, stats):
-        """Una pasada sobre el ultimo eje; entrada y salida en orden natural."""
-        cfg = F.Cfg(**self.fmt, SCALE_MASK=mask, INVERSE=inverse)
-        yr, yi = F.fft1d_r22sdf_fxp(xr, xi, cfg, *self.tw, stats)
-        return yr[..., self.br], yi[..., self.br]
-
-    def run(self, qr, qi, masks):
-        """Devuelve (salida compleja en LSB, saturaciones por pasada, picos en las 3 fronteras)."""
-        sats, peaks = [], []
-        r, i = qr, qi
-        for k, (mask, inv) in enumerate(zip(masks, (0, 0, 1, 1))):
-            st = F.Stats()
-            r, i = self._pass(r.T.copy(), i.T.copy(), mask, inv, st) if k % 2 else \
-                self._pass(r, i, mask, inv, st)
-            if k % 2:
-                r, i = r.T, i.T
-            sats.append(st.total_sat)
-            if k < 3:
-                peaks.append(np.abs(r + 1j * i).max() / FS)
-        return r + 1j * i, sats, peaks
-
-    # máscaras: bit i = etapa i en orden de tiempo
-    def early(self, s: int) -> int:
-        return (1 << s) - 1
-
-    def late(self, s: int) -> int:
-        return ((1 << s) - 1) << (self.log - s)
-
-
-def boundary_peaks(x: np.ndarray, n: int):
-    """Picos sin escalar en las tres fronteras, en fondo de escala."""
-    xf = x / FS
-    return (np.abs(np.fft.fft(xf, axis=1)).max(),
-            np.abs(np.fft.fft2(xf)).max(),
-            n * np.abs(np.fft.fft(xf, axis=0)).max())
-
-
-def minimal_split(peaks, log: int):
-    """S1..S4 minimos para que cada frontera quede < 1 y el total sea 2 log2 N."""
-    acc = [math.floor(math.log2(p)) + 1 if p >= 1 else 0 for p in peaks]
-    acc = [max(acc[0], 0), max(acc[1], acc[0]), max(acc[2], acc[1])]
-    s = [acc[0], acc[1] - acc[0], acc[2] - acc[1], 2 * log - acc[2]]
-    ok = all(0 <= v <= log for v in s)
-    return s, ok
 
 
 def sqnr(ref, got):
