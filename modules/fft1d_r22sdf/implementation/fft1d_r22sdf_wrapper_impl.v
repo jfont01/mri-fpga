@@ -56,6 +56,11 @@
 `ifndef FFT1D_R22SDF_INVERSE
 `define FFT1D_R22SDF_INVERSE 0
 `endif
+// Redondeo convergente en las mariposas que escalan y en la salida. Cae en el
+// camino de la BF2I escalada, por eso se mide aca. Default 0 (half-up).
+`ifndef FFT1D_R22SDF_ROUND_CONV
+`define FFT1D_R22SDF_ROUND_CONV 0
+`endif
 // -----------------------------------------------------------------------------
 // fft1d_r22sdf_wrapper_impl
 //
@@ -95,7 +100,8 @@ module fft1d_r22sdf_wrapper_impl #(
     parameter int          NB_OUT     = `FFT1D_R22SDF_NB_OUT,
     parameter int          NBF_OUT    = `FFT1D_R22SDF_NBF_OUT,
     parameter bit          CMUL_PIPE  = `FFT1D_R22SDF_CMUL_PIPE,
-    parameter bit          INVERSE    = `FFT1D_R22SDF_INVERSE
+    parameter bit          INVERSE    = `FFT1D_R22SDF_INVERSE,
+    parameter bit          ROUND_CONV = `FFT1D_R22SDF_ROUND_CONV
 )(
     input  wire                  i_clock,
     input  wire                  i_rst,
@@ -131,7 +137,8 @@ module fft1d_r22sdf_wrapper_impl #(
         .NB_OUT       (NB_OUT),
         .NBF_OUT      (NBF_OUT),
         .CMUL_PIPE    (CMUL_PIPE),
-        .INVERSE      (INVERSE)
+        .INVERSE      (INVERSE),
+        .ROUND_CONV   (ROUND_CONV)
     ) u_dut (
         .i_clock       (i_clock),
         .i_rst         (r_rst),

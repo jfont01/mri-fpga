@@ -79,6 +79,52 @@
       "NB_IN": 16,
       "NB_OUT": 16,
       "TW_DIR": "twiddles/n512_tw18"
+    },
+    {
+      "name": "n1024_nb20_tw18_io16_m801",
+      "N": 1024,
+      "NB": 20,
+      "NBF": 19,
+      "NB_TW": 18,
+      "NB_IN": 16,
+      "NB_OUT": 16,
+      "TW_DIR": "twiddles/n1024_tw18",
+      "SCALE_MASK": 801
+    },
+    {
+      "name": "n1024_nb20_tw18_io16_m801_conv",
+      "N": 1024,
+      "NB": 20,
+      "NBF": 19,
+      "NB_TW": 18,
+      "NB_IN": 16,
+      "NB_OUT": 16,
+      "TW_DIR": "twiddles/n1024_tw18",
+      "SCALE_MASK": 801,
+      "ROUND_CONV": 1
+    },
+    {
+      "name": "n512_nb20_tw18_io16_m384",
+      "N": 512,
+      "NB": 20,
+      "NBF": 19,
+      "NB_TW": 18,
+      "NB_IN": 16,
+      "NB_OUT": 16,
+      "TW_DIR": "twiddles/n512_tw18",
+      "SCALE_MASK": 384
+    },
+    {
+      "name": "n512_nb20_tw18_io16_m384_conv",
+      "N": 512,
+      "NB": 20,
+      "NBF": 19,
+      "NB_TW": 18,
+      "NB_IN": 16,
+      "NB_OUT": 16,
+      "TW_DIR": "twiddles/n512_tw18",
+      "SCALE_MASK": 384,
+      "ROUND_CONV": 1
     }
   ]
 }

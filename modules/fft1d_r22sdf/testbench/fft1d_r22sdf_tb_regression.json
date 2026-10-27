@@ -423,6 +423,56 @@
       "STIM_K0": 3,   "STIM_A0": 400, "STIM_PH0": 0,
       "STIM_K1": 64,  "STIM_A1": 300, "STIM_PH1": 45,
       "STIM_K2": 255, "STIM_A2": 200, "STIM_PH2": 90
+    },
+    {
+      "name": "n64_q1_15_frames3_gap0",
+      "N": 64, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n64",
+      "TB_FRAMES": 3, "TB_GAP": 0,
+      "N_CYCLES": 300,
+      "STIM_TYPE": 3, "STIM_NOISE_SEED": 12345, "STIM_NOISE_AMP": 700
+    },
+    {
+      "name": "n64_q1_15_frames3_gap3",
+      "N": 64, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n64",
+      "TB_FRAMES": 3, "TB_GAP": 3,
+      "N_CYCLES": 300,
+      "STIM_TYPE": 3, "STIM_NOISE_SEED": 12345, "STIM_NOISE_AMP": 700
+    },
+    {
+      "name": "n64_q1_15_frames3_gap100",
+      "N": 64, "NB": 16, "NBF": 15,
+      "TW_DIR": "rtl/twiddles/n64",
+      "TB_FRAMES": 3, "TB_GAP": 100,
+      "N_CYCLES": 500,
+      "STIM_TYPE": 3, "STIM_NOISE_SEED": 12345, "STIM_NOISE_AMP": 700
+    },
+    {
+      "name": "n512_nb20_tw18_io16_m384_conv_frames3_gap1",
+      "N": 512, "NB": 20, "NBF": 19, "NB_TW": 18, "NB_IN": 16, "NB_OUT": 16,
+      "TW_DIR": "rtl/twiddles/n512_tw18",
+      "SCALE_MASK": 384,
+      "ROUND_CONV": 1,
+      "TB_FRAMES": 3, "TB_GAP": 1,
+      "N_CYCLES": 2100,
+      "STIM_TYPE": 0, "STIM_NTONES": 3,
+      "STIM_K0": 3,   "STIM_A0": 4, "STIM_PH0": 0,
+      "STIM_K1": 64,  "STIM_A1": 2, "STIM_PH1": 45,
+      "STIM_K2": 255, "STIM_A2": 1, "STIM_PH2": 90
+    },
+    {
+      "name": "n1024_nb20_tw18_io16_m801_conv_frames3_gap5",
+      "N": 1024, "NB": 20, "NBF": 19, "NB_TW": 18, "NB_IN": 16, "NB_OUT": 16,
+      "TW_DIR": "rtl/twiddles/n1024_tw18",
+      "SCALE_MASK": 801,
+      "ROUND_CONV": 1,
+      "TB_FRAMES": 3, "TB_GAP": 5,
+      "N_CYCLES": 4200,
+      "STIM_TYPE": 0, "STIM_NTONES": 3,
+      "STIM_K0": 7,   "STIM_A0": 8, "STIM_PH0": 0,
+      "STIM_K1": 128, "STIM_A1": 4, "STIM_PH1": 45,
+      "STIM_K2": 511, "STIM_A2": 2, "STIM_PH2": 90
     }
   ]
 }

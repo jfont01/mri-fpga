@@ -4,6 +4,8 @@
 //
 // Corre el golden C++ (fft1d_r22sdf_model) e inyecta un frame en STREAMING
 // (una muestra por ciclo, sin huecos) seguido de idle para drenar la latencia.
+// Con TB_FRAMES > 1 inyecta varias tramas, separadas por TB_GAP ciclos con
+// i_valid = 0 (ver frame_stimulus).
 // Vuelca con VectorTraceFiles:
 //
 //   simulation/vectors/stimuli/in_ports/{i_valid,i_re,i_im}.dat
@@ -177,7 +179,22 @@ namespace {
  * i_valid=1 se mantiene N ciclos SEGUIDOS: el pipeline SDF exige una muestra
  * por ciclo sin huecos dentro del frame (el contador di_count se resetea si
  * i_valid cae). Tras el frame, idle para drenar la latencia.
+ *
+ * Varias tramas (solo para el vm; el gtest no lo usa):
+ *   TB_FRAMES  cantidad de tramas de N muestras seguidas    (default 1)
+ *   TB_GAP     ciclos con i_valid = 0 entre dos tramas      (default 0)
+ * La trama k es la del estimulo rotada 7k muestras, para que mezclar dos
+ * tramas se note en la salida. Con los defaults, el estimulo de siempre.
  */
+#ifndef FFT1D_R22SDF_TB_FRAMES
+#define FFT1D_R22SDF_TB_FRAMES 1
+#endif
+#ifndef FFT1D_R22SDF_TB_GAP
+#define FFT1D_R22SDF_TB_GAP 0
+#endif
+static_assert(FFT1D_R22SDF_TB_FRAMES >= 1 && FFT1D_R22SDF_TB_GAP >= 0,
+              "fft1d_r22sdf_tb: TB_FRAMES >= 1 y TB_GAP >= 0");
+
 std::vector<double> g_stim_re;
 std::vector<double> g_stim_im;
 
@@ -188,10 +205,15 @@ void init_stimulus()
 
 void frame_stimulus(int cycle, bool& valid, in_t& re, in_t& im)
 {
-    if (cycle < N) {
+    const int period = N + FFT1D_R22SDF_TB_GAP;
+    const int frame  = cycle / period;
+    const int pos    = cycle % period;
+
+    if (frame < FFT1D_R22SDF_TB_FRAMES && pos < N) {
+        const int i = (pos + 7 * frame) % N;
         valid = true;
-        re = in_t(g_stim_re[cycle]);
-        im = in_t(g_stim_im[cycle]);
+        re = in_t(g_stim_re[i]);
+        im = in_t(g_stim_im[i]);
     }
     else {
         valid = false;
@@ -318,6 +340,7 @@ void run_tb(const tb_args& args)
     report_file << "LATENCY     : " << fft1d_r22sdf::LATENCY    << "\n";
     report_file << "\n";
     report_file << "stimulus    : " << fft1d_stimulus::type_name() << "\n";
+    report_file << "frames/gap  : " << FFT1D_R22SDF_TB_FRAMES << " / " << FFT1D_R22SDF_TB_GAP << "\n";
     report_file << "\n";
 
     report_file << "input_csv   : " << vectors.in_ports_csv()  << "\n";
