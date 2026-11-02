@@ -906,7 +906,7 @@ Compara bin por bin, real e imaginario por separado, contra `X[k] = 2^−S Σ x[
 | 2026-10-26 | `fft2d_round_conv` en el repo (Julián): gtest 34/34, sim 28/28; vectores idénticos a los de la copia en los 28 casos | ✅ |
 | 2026-10-26 | `synth_impl_huecos` (entrega 3) en la copia (XSim): sim 51/51, los 46 de antes idénticos byte a byte; gtest y **vm de los 5 casos con huecos 5/5** (3 × N muestras válidas en el modelo y en el RTL) | ✅ |
 | 2026-10-26 | Wrappers de síntesis e implementación con `ROUND_CONV` (XSim, copia): 1024 / 801 y 512 / 384, *half-up* y convergente, salida = modelo; control negativo (caso convergente con `ROUND_CONV = 0`) distinto | ✅ |
-| 2026-10-26 | `synth_impl_huecos` en el repo (Julián): gtest 102/102, sim 51/51. ⏳ vm de los 5 casos con huecos; síntesis e implementación de los 4 casos de SENSE corriendo | ✅ / ⏳ |
+| 2026-10-26 | `synth_impl_huecos` en el repo (Julián): gtest 102/102, sim 51/51, **vm de los 5 casos con huecos 5/5** (0 errores); síntesis e implementación de los 4 casos de SENSE (§5.6) | ✅ |
 | 2026-10-20 | `fft_n512` en el repo (PC nueva, Ubuntu nativo): gtest 66/70. Fallan los 4 casos de N = 8, 32 y 128 en modo `fixed` (los 9 tests, en 0,00 s). En `double` pasan. Causa: faltaban los twiddles `n8`, `n32` y `n128` en el repo (el modo `double` no los lee). Reproducido en el sandbox escondiendo `n8`. Copiados del tar: gtest 70/70 y `--validate` 35/35 | ✅ (Julián) |
 | 2026-10-20 | **Implementación de N = 512** (20/18/16, máscara completa): WNS **+0,192 ns**, WHS +0,007, Fmax 208 MHz, 2408 LUT, 1053 FF, 266 CARRY8, 16 DSP, 0 BRAM | ✅ (Julián) |
 | 2026-10-20 | **Refactor `Params`** (entrega `fft_params`, solo `cpp/fft1d_r22sdf.hpp`), en el sandbox: (1) sim 35/35 con los **vectores idénticos byte a byte** a los del modelo anterior (los reportes difieren solo en `elapsed`); (2) gtest 70/70 (630 tests); (3) **un binario por formato configurado en ejecución** con los `Params` de cada caso, contra los vectores del modelo viejo compilado con macros: 35/35 bit a bit, incluidos los contadores trazados; (4) dos instancias distintas en el mismo `Simulator` (1024 inversa con pipe y 512 sin pipe): 0 diferencias; (5) N = 2, 3, 12, 0 y −8 tiran `invalid_argument` | ✅ (sandbox) ⏳ repo |
@@ -918,7 +918,21 @@ Compara bin por bin, real e imaginario por separado, contra `X[k] = 2^−S Σ x[
 
 ### 5.6 Resultados de síntesis e implementación (2026-10-17)
 
-⏳ **2026-10-26 (paso C):** síntesis e implementación de 4 casos nuevos, 20/18/16 con `CMUL_PIPE = 1`: N = 1024 con 801 y N = 512 con 384, cada uno *half-up* y convergente (`ROUND_CONV`). Corriendo en el repo (Julián). Contexto: en N = 512 el camino crítico ya era la BF2I escalada (suma → redondeo → saturación → DSP), y el convergente agrega lógica justo ahí.
+**2026-10-26 (paso C): las máscaras de SENSE y el redondeo convergente** ✅ (Vivado 2024.2, repo de Julián). 20/18/16, `CMUL_PIPE = 1`, 200 MHz, post-route:
+
+| Caso | WNS (ns) | Fmax est. (MHz) | LUT | FF | CARRY8 | DSP | BRAM |
+|---|---|---|---|---|---|---|---|
+| N = 1024, 801, *half-up* | +0,565 | 225,5 | 2965 | 1070 | 221 | 16 | 0 |
+| N = 1024, 801, convergente | **+0,468** | 220,7 | 2985 | 1074 | 221 | 16 | 0 |
+| N = 512, 384, *half-up* | +0,687 | 231,9 | 2405 | 993 | 182 | 16 | 0 |
+| N = 512, 384, convergente | **+0,540** | 224,2 | 2415 | 997 | 182 | 16 | 0 |
+| (N = 512, máscara completa, *half-up*, 2026-10-20) | +0,192 | 208,0 | 2408 | 1053 | 266 | 16 | 0 |
+
+- **Los 4 cierran a 200 MHz** con ≥ 0,47 ns de margen (WHS positivo en todos, 0,004 a 0,011 ns).
+- **Costo del convergente:** −0,10 ns (801) y −0,15 ns (384) de margen, +10 a +20 LUT y +4 FF; mismos DSP y CARRY8. La síntesis no lo distingue (WNS 1,715 / 1,717 en los dos modos): aparece recién con el ruteo.
+- **Camino crítico, el mismo en los 4:** dirección de la línea de retardo (LUTRAM, `RAMS32`) de la BF2I escalada → suma y redondeo (4 `CARRY8`) → saturación (LUT) → entrada A del DSP del `cmul` de la misma unidad (unidad 2 con 801, M = 64; unidad 3 con 384, M = 8). 6 a 7 niveles; 62 a 68 % ruteo. Con el convergente crece sobre todo el ruteo (2,35 → 2,48 / 2,54 ns).
+- Las máscaras de SENSE tienen **más** margen que N = 512 con máscara completa (+0,192): escalan menos etapas, y menos de ellas alimentan un DSP.
+- ⏳ **Decisión de Julián:** pasar `ROUND_CONV = 1` a default (como `CMUL_PIPE`, 2026-10-18), con la propuesta de que sí: cierra con margen y saca el sesgo (§4.6).
 
 Vivado 2024.2, `xck26-sfvc784-2LV-c`, reloj de 5 ns (200 MHz) con 0,05 ns de incertidumbre, wrapper con registros de entrada y salida. Porcentajes sobre el XCK26 (DS987, tabla 5: 117 120 LUT, 234 240 FF, 1248 DSP).
 
@@ -1052,7 +1066,7 @@ gen_unit[2].u_bf2i/r_addr_reg[1]     (fan-out 42, 0,501 ns)
 
   **Con escalado completo la SQNR cae ~6 dB cada vez que se duplica el lado** (Shepp-Logan: 47,6 → 36,5 → 30,7). Por Parseval, la energía de la salida dividida por N² no depende de N, pero el ruido de redondeo crece con la cantidad de muestras (N²). Es la misma razón por la que en la IFFT de SENSE se eligieron máscaras parciales (§4.8).
 - ✅ Ida y vuelta FFT 2D → IFFT 2D (2026-10-25): casos `rt*`, con la ida calculada en Python y la vuelta en la `fft2d` (§4.12). Encadenar dos `fft2d` queda para cuando esté la memoria (paso 6).
-- ✅ Huecos **entre frames** del núcleo 1D en el RTL (2026-10-26, entrega 3): 5 casos de vm con 3 tramas y huecos de 0, 1, 3, 5 y 100 ciclos, incluidos N = 512 (etapa final) y la configuración de producción; 5/5 en XSim en la copia (⏳ en el repo). El test de huecos de la 2D ya no se apoya solo en el modelo.
+- ✅ Huecos **entre frames** del núcleo 1D en el RTL (2026-10-26, entrega 3): 5 casos de vm con 3 tramas y huecos de 0, 1, 3, 5 y 100 ciclos, incluidos N = 512 (etapa final) y la configuración de producción; 5/5 en XSim, en la copia y en el repo. El test de huecos de la 2D ya no se apoya solo en el modelo.
 - **`FFT2D_ROUND_CONV`** (2026-10-26, entrega 2 del paso B): prende el redondeo convergente en los dos núcleos (default 0). El gtest de composición lo hereda por `Params`. El plot muestra, en los casos inversos, el sesgo de la fila p = 0 contra el resto.
 - ⏳ Los dos buffers suman 4 MiB y no entran en las 64 URAM (2,25 MiB). Es del paso 6: el modelo deja la memoria aislada para reemplazarla.
 
@@ -1233,8 +1247,8 @@ build/<CASE>/simulation/vectors/
   - ⏳ vm cuando exista el RTL de la `fft2d`.
 - **B. Redondeo convergente** (*round-half-even*, §4.6) en `cast.v` y en los modelos. Estudio hecho (2026-10-26, §4.6). Decidido (Julián, 2026-10-26): mariposas que escalan y `cast` de salida, no el `cmul`; un solo parámetro `ROUND_CONV`; default 0 hasta medir timing en C; medida: Shepp (0, 0) y fila p = 0. ✅ `cast`. ✅ Núcleo 1D (entrega 1). ✅ `fft2d` e ida y vuelta (entrega 2): la fila p = 0 y el pico de (0, 0) desaparecen (§4.6). ⏳ Default de `ROUND_CONV` según el timing de C. ⏳ Fantoma completo con convergente en el modelo C++ (`fft2d_check_full.py` / `fft2d_dump`). La medida es el pico del píxel (0, 0) de la ida y vuelta (casos `rt*`) y la fila p = 0 del fantoma. También el seno rotado de 256 con la regla, que hoy satura 2 componentes en (0, 0) (§4.12): agregar `rt256_sine_rot25` cuando esté B.
 - **C. Cerrar el núcleo 1D en hardware con la configuración final:**
-  - implementación con 801 (N = 1024) y 384 (N = 512) **después de B**, porque B toca el camino crítico (BF2I escalada → suma → redondeo → saturación → DSP). ⏳ Corriendo (2026-10-26): 4 casos, *half-up* y convergente (entrega 3, §5.6);
-  - ✅ caso de vm con huecos entre tramas (entrega 3, §5.7; ⏳ vm en el repo).
+  - ✅ implementación con 801 (N = 1024) y 384 (N = 512), *half-up* y convergente (2026-10-26, §5.6): los 4 cierran a 200 MHz; el convergente cuesta 0,10 a 0,15 ns y unas 15 LUT. ⏳ Decidir el default de `ROUND_CONV` (propuesta: 1);
+  - ✅ caso de vm con huecos entre tramas (entrega 3, §5.7): 5/5 en la copia y en el repo.
 - **D. Infraestructura del código del PS:** dónde vive, gtest en la PC y compilación para el A53. Después, `unfold_ref.py` a C++, y modelo C++ del MAC y el CORDIC.
 
 **Corto plazo (FFT 1D):**
@@ -1324,6 +1338,7 @@ Pasos propuestos:
 
 | Fecha | Cambio |
 |---|---|
+| 2026-11-01 | **Paso C, implementación con las máscaras de SENSE** (§5.6): N = 1024 con 801 y N = 512 con 384, *half-up* y convergente: los 4 cierran a 200 MHz (WNS +0,565 / +0,468 y +0,687 / +0,540 ns); el convergente cuesta 0,10 a 0,15 ns, +10 a +20 LUT y +4 FF. Camino crítico: LUTRAM de la BF2I escalada → suma y redondeo → saturación → DSP. Queda decidir el default de `ROUND_CONV`. `.claude/settings.json` pasa a estar versionado. |
 | 2026-10-26 | **Paso B, entrega 2** (`fft2d_round_conv`): `FFT2D_ROUND_CONV`, ida y vuelta con convergente en el generador, sesgo de la fila p = 0 en el plot, 5 casos nuevos. Fantoma 64 × 32: fila p = 0 de +1,1 a +0,06 LSB; Shepp 256: (0, 0) de 729 a 3 LSB y error máximo de 22,9 a 6,4 LSB; el seno de 256 deja de saturar (§4.6). gtest 34/34, sim 28/28, los 23 de antes idénticos. **Paso C, entrega 3** (`synth_impl_huecos`): `ROUND_CONV` en los wrappers y 4 casos de síntesis e implementación con 801 / 384 (corriendo); varias tramas con huecos en el tb y 5 casos de vm: el RTL maneja bien los huecos entre tramas (5/5 en XSim en la copia). |
 | 2026-10-26 | **Paso B, redondeo convergente.** `cast.v` con `ROUND_CONV` (default 0; 8 casos nuevos; barrido exhaustivo en XSim, 0 diferencias). Entrega 1: `ROUND_CONV` en el núcleo 1D (mariposas que escalan y salida; el `cmul` no), modelos C++ y Python, 11 casos nuevos (7 `_conv_` y las máscaras de SENSE 801 y 384, que no estaban en la regresión 1D): los 35 de antes idénticos byte a byte, gtest 92/92, sim, vm en XSim y `--validate` 46/46. El sesgo baja a ~0 en todos los pares; con datapath de 16 bits el error rms baja de ~1,0 a ~0,66 LSB (§4.6). Salidas de `modules/cast/build` sacadas del versionado. |
 | 2026-10-26 | Registro de cambios ordenado (el más nuevo arriba; dentro del mismo día, el orden que tenía). `model/fft2d_theory.py` agregado (entrega `fft_n512`), corrido en el repo. **Estudio del redondeo convergente** (§4.6, `model/fft_rounding_study.py`): el `cast` de salida pone 2/3 del sesgo y las mariposas 1/3; convergente en los dos lleva la fila p = 0 del fantoma de +7,5 a +0,02 LSB y el (0, 0) de Shepp 256 de 729 a 3; el `cmul` no aporta. El (0, 0) del seno y los anillos es redondeo correlacionado con la señal, no sesgo. `AP_RND_CONV` verificado exhaustivo. |
