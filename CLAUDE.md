@@ -47,6 +47,15 @@ La descripción del proyecto en claude.ai está desactualizada (dice 512 × 512)
 - No darme la razón por darla. Si me equivoco, decilo.
 - Usar mis funciones de entorno (`run_gtest`, `run_regression_sim`, ...), no
   `python3 scripts/python/...` a mano.
+- **No leo la bitácora.** Explicame en el chat, en detalle y seguido, qué estamos haciendo,
+  por qué y cómo se llegó a cada conclusión. La bitácora es tu registro (estado,
+  descubrimientos, teoría) para recuperar contexto y la base del informe final: mantenela al
+  día vos, con cada resultado.
+- **Las entregas y git los manejo yo.** Verificá en una copia del repo en el scratchpad, no en
+  el mío. Pasame el parche como archivo (`git apply <archivo>`: hay archivos CRLF y copiar el
+  diff del chat los rompe) y los comandos de commit. No toques el repo ni git sin que te lo
+  pida; la excepción es `doc/bitacora.md`.
+- Poco texto entre comandos; lo importante va completo en la respuesta final.
 
 ## Entorno y comandos
 
