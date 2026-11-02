@@ -41,7 +41,9 @@ Los SQNR están en dB. "LSB" sin aclaración es el LSB del puerto de salida (2�
 | `model/fft2d_ref.py` (referencia y convenciones de la FFT 2D; los `gen_*.py` están en `model/gen/`) | `fft_inverse` (2026-10-18). Self-test en el repo: `TODO OK` ✅ |
 | `CLAUDE.md`, `.claude/settings.json`, `doc/bitacora.md`, `model/fft2d_roundtrip_study.py` (nuevos) | `migracion_vscode` (2026-10-25, aplicado; `.claude/` quedó en `.gitignore`) |
 | `model/gen_fft2d_stim.py`, `scripts/python/run_plot_fft2d.py`, `modules/fft2d/testbench/fft2d_tb_regression.json`, twiddles `n256_tw18`, estímulos `img*` | `fft2d_imagenes` (2026-10-24, aplicado el 2026-10-25) |
-| **`rtl/fft1d_r22sdf.v`, `fft1d_r22sdf_unit.v`, `fft1d_r22sdf_tail.v`, `btfly_bf2i.v`, `btfly_bf2ii.v`, `cpp/fft1d_r22sdf.hpp`, `testbench/fft1d_r22sdf_tb.sv`, `_tb.cpp`, `_tb_regression.json` (46 casos), `model/fft1d_r22sdf_fxp.py`, `model/fft_rounding_study.py`** | **`fft1d_round_conv` (entrega 1 del paso B, 2026-10-26, aplicada, sin commit)** |
+| **`rtl/fft1d_r22sdf.v`, `fft1d_r22sdf_unit.v`, `fft1d_r22sdf_tail.v`, `btfly_bf2i.v`, `btfly_bf2ii.v`, `cpp/fft1d_r22sdf.hpp`, `testbench/fft1d_r22sdf_tb.sv`, `_tb.cpp`, `_tb_regression.json` (46 casos), `model/fft1d_r22sdf_fxp.py`, `model/fft_rounding_study.py`** | `fft1d_round_conv` (entrega 1 del paso B, 2026-10-26, commit `4ac6eea`) |
+| **`synthesis/` e `implementation/fft1d_r22sdf_wrapper_*.v` (`ROUND_CONV`) y sus JSON (11 casos: + 801 y 384, *half-up* y convergente), `testbench/fft1d_r22sdf_tb.cpp` (`TB_FRAMES`, `TB_GAP`), `_tb_regression.json` (51 casos)** | **`synth_impl_huecos` (entrega 3, 2026-10-26, commit `24dfebb`)** |
+| **`modules/fft2d/cpp/fft2d.hpp` (`FFT2D_ROUND_CONV`), `testbench/fft2d_tb.cpp`, `fft2d_tb_regression.json` (28 casos), `model/gen_fft2d_stim.py` (ida y vuelta con `ROUND_CONV`), `scripts/python/run_plot_fft2d.py` (sesgo de la fila p = 0), estímulos `rt*_conv`** | **`fft2d_round_conv` (entrega 2 del paso B, 2026-10-26, commits `73f284e`, `38579f5`, `392257a`)** |
 | `modules/cast/rtl/cast.v`, `cpp/cast.hpp`, `testbench/cast_tb.sv`, `_tb.cpp`, `_tb_regression.json` (14 casos) | `cast_round_conv` (2026-10-26, commiteado) |
 | `model/fft_rounding_study.py` (nuevo): estudio del redondeo convergente (§4.6) | `estudio_redondeo` (2026-10-26, commiteado) |
 | **`model/gen_fft2d_stim.py` (familia `roundtrip` y cadena `RoundTrip`), `model/fft2d_roundtrip_study.py` (usa esa cadena), `scripts/python/run_plot_fft2d.py` (modo ida y vuelta), `fft2d_tb_regression.json` (6 casos `rt*`), estímulos `rt*`, `model/fft1d_scaling_bound.py` (nuevo)** | `fft2d_idavuelta` (2026-10-25, commiteado) |
@@ -520,6 +522,18 @@ Error contra la FFT ideal de la entrada cuantizada:
 
   - El sesgo desaparece en todos, incluidas las máscaras de SENSE (lo que queda, ±0,02, es la incertidumbre de una trama).
   - **Con 16 bits de datapath, el convergente baja el error rms de ~1,0 a ~0,66 LSB (−3,7 dB)**: ahí casi la mitad del error era sesgo (tabla de arriba). Con 20 bits el rms casi no cambia (−0,1 dB): el beneficio es sacar el error sistemático que en 2D se concentra. Conclusión para la tesis: el redondeo convergente vale más cuanto más angosto es el datapath.
+- **En la `fft2d` y la ida y vuelta (entrega 2 del paso B, 2026-10-26)** ✅ modelo C++ (= cadena de Python bit a bit). Es la medida que se eligió para B:
+
+  | Caso | *Half-up* | Convergente |
+  |---|---|---|
+  | Fantoma 64 × 32 (8 bobinas, 25 / 4): sesgo de la fila p = 0, Re / Im | +1,15 / +1,05 LSB | +0,06 / 0,00 LSB |
+  | Fantoma 64 × 32: error máximo; SNR de la imagen desplegada | 4,99 LSB; 71,33 dB | 3,82 LSB; 71,37 dB |
+  | Ida y vuelta Shepp 256: error en (0, 0); error máximo; SQNR | 729 LSB; 22,9 LSB; 54,31 dB | 3 LSB; 6,4 LSB; 54,46 dB |
+  | Ida y vuelta Shepp 64: error en (0, 0) | 47 LSB | 5 LSB |
+  | Shepp 64 con el peor reparto (ida completa, vuelta sin escalar): error en (0, 0) | 375 LSB | 24 LSB |
+  | Seno rotado 256 con la regla | 2 saturaciones (no podía ser caso) | 0 saturaciones; (0, 0) sigue en 2 853 LSB (correlación con la señal, no sesgo) |
+
+  La línea de la fila p = 0 de SENSE y el pico de (0, 0) de la ida y vuelta desaparecen; en Shepp 256 el error máximo de toda la imagen baja a un cuarto. La SNR global casi no cambia: lo que se gana es sacar un error con estructura. ⏳ Falta el fantoma de tamaño completo (1024 × 512, 801 / 384) con convergente en el modelo C++ (`fft2d_check_full.py` todavía no pasa `ROUND_CONV`); el modelo de Python ya dio +7,5 → +0,02 LSB (tabla de arriba).
 
 ### 4.7 Cota de peor caso del error de salida ✅
 
@@ -758,6 +772,7 @@ pico de cualquier etapa interna  ≤  máx( pico de la entrada , pico de la sali
 | `rt256_shepp` (sin gtest, como los `img256`) | 63, 127 / 1, 3 | 54,31 | 729 | 71,6 |
 
 - Todos: 0 saturaciones, estímulo = espectro regenerado y **salida del modelo C++ = cadena de Python bit a bit**. Los números de ida y vuelta son los del estudio.
+- **Con redondeo convergente** (2026-10-26, entrega 2 del paso B): `rt64_shepp_conv`, `rt64_shepp_full_conv`, `rt256_shepp_conv` y `rt256_sine_rot25_conv`. Con `ROUND_CONV = 1` en el caso, el generador hace también la ida con convergente (si no, el sesgo de la ida seguiría en (0, 0)). Resultados en §4.6.
 - El error de la ida y vuelta viene casi todo de la ida: la vuelta sola da entre 10,5 y 18,5 dB más (salvo la *zone plate*, donde las dos son iguales).
 - Verificado en el repo (2026-10-25): gtest 28/28 (168 tests), sim de los 6 casos `rt*` 6/6, plot 6/6. Los casos de antes no cambian: estímulos idénticos byte a byte y plots idénticos (texto y PNG). Falta el vm: el RTL de la `fft2d` todavía no existe.
 
@@ -831,6 +846,7 @@ Compara bin por bin, real e imaginario por separado, contra `X[k] = 2^−S Σ x[
 | N impar (11 casos, 2026-10-18) | N = 8 (tono, ruido), 32 (multitono), 128 (ruido), 512 Q1.15 (multitono, chirp); 512 en 20/18/16: ruido, `m448` (bit 8 = etapa final encendido), `m192` (bit 8 apagado), `inv` y `nopipe` | la etapa radix-2 final con las dos opciones de escalado, `INVERSE` y `CMUL_PIPE = 0` |
 | `*_conv_*` (7 casos, 2026-10-26) | `ROUND_CONV = 1`: N = 64 y 1024 Q1.15 ruido; 20/18/16: 1024 ruido, 784 multitono y saturación, 512 ruido (tail) y 512 inversa | pares de casos existentes con el mismo estímulo: el sesgo baja a ~0 (§4.6) |
 | `m801` y `m384`, *half-up* y `_conv_` (4 casos, 2026-10-26) | 20/18/16, las máscaras de SENSE: 801 en N = 1024 (tonos 0,008 / 0,004 / 0,002) y 384 en N = 512 (0,004 / 0,002 / 0,001) | hasta ahora no estaban en la regresión 1D; sirven también para el paso C |
+| `*_frames3_gap*` (5 casos, 2026-10-26) | 3 tramas con huecos de 0, 3 y 100 ciclos (N = 64, Q1.15, ruido), 1 ciclo (N = 512, 384, convergente) y 5 ciclos (N = 1024, 801, convergente). `TB_FRAMES` y `TB_GAP` son del tb de C++; la trama k es el estímulo rotado 7k muestras | huecos entre tramas en el RTL (el vm compara la salida y, ciclo a ciclo, `r_out_count` y los contadores de la primera unidad) |
 | `*_nopipe_*` (5 casos; eran `*_pipe_*` hasta el 2026-10-18) | `CMUL_PIPE = 0` explícito en N = 64, 256 y 1024 (20/18/16, 784) | referencia sin registro, con los mismos estímulos que sus pares: la salida válida es idéntica, adelantada log₄N − 1 ciclos. El resto de los casos usa el default (`CMUL_PIPE = 1`) |
 
 ### 5.5 Estado de verificación
@@ -885,6 +901,12 @@ Compara bin por bin, real e imaginario por separado, contra `X[k] = 2^−S Σ x[
 | | · modelo de Python (`--validate`) | 46/46 bit a bit ✅ |
 | | · conversión del modelo C++ en las mariposas (`double` → `AP_RND_CONV`), exhaustiva en 2²¹ sumas | 0 diferencias ✅ |
 | 2026-10-26 | `fft1d_round_conv` en el repo (Julián): gtest 92/92, sim 46/46, **vm en XSim 46/46** (los 11 casos nuevos con 0 errores), `--validate` 46/46; `fft2d` gtest y sim sin cambios | ✅ |
+| 2026-10-26 | `fft1d_round_conv`, `fft2d` en la copia: los 23 casos idénticos byte a byte al baseline; gtest 28/28 | ✅ |
+| 2026-10-26 | `fft2d_round_conv` (entrega 2) en la copia: gtest 34/34 (204 tests); sim 28/28, los 23 de antes idénticos byte a byte; los 32 estímulos de antes idénticos; plot 28/28 (salida del C++ = cadena de Python en todos los `rt*`); estudio de ida y vuelta idéntico | ✅ |
+| 2026-10-26 | `fft2d_round_conv` en el repo (Julián): gtest 34/34, sim 28/28; vectores idénticos a los de la copia en los 28 casos | ✅ |
+| 2026-10-26 | `synth_impl_huecos` (entrega 3) en la copia (XSim): sim 51/51, los 46 de antes idénticos byte a byte; gtest y **vm de los 5 casos con huecos 5/5** (3 × N muestras válidas en el modelo y en el RTL) | ✅ |
+| 2026-10-26 | Wrappers de síntesis e implementación con `ROUND_CONV` (XSim, copia): 1024 / 801 y 512 / 384, *half-up* y convergente, salida = modelo; control negativo (caso convergente con `ROUND_CONV = 0`) distinto | ✅ |
+| 2026-10-26 | `synth_impl_huecos` en el repo (Julián): gtest 102/102, sim 51/51. ⏳ vm de los 5 casos con huecos; síntesis e implementación de los 4 casos de SENSE corriendo | ✅ / ⏳ |
 | 2026-10-20 | `fft_n512` en el repo (PC nueva, Ubuntu nativo): gtest 66/70. Fallan los 4 casos de N = 8, 32 y 128 en modo `fixed` (los 9 tests, en 0,00 s). En `double` pasan. Causa: faltaban los twiddles `n8`, `n32` y `n128` en el repo (el modo `double` no los lee). Reproducido en el sandbox escondiendo `n8`. Copiados del tar: gtest 70/70 y `--validate` 35/35 | ✅ (Julián) |
 | 2026-10-20 | **Implementación de N = 512** (20/18/16, máscara completa): WNS **+0,192 ns**, WHS +0,007, Fmax 208 MHz, 2408 LUT, 1053 FF, 266 CARRY8, 16 DSP, 0 BRAM | ✅ (Julián) |
 | 2026-10-20 | **Refactor `Params`** (entrega `fft_params`, solo `cpp/fft1d_r22sdf.hpp`), en el sandbox: (1) sim 35/35 con los **vectores idénticos byte a byte** a los del modelo anterior (los reportes difieren solo en `elapsed`); (2) gtest 70/70 (630 tests); (3) **un binario por formato configurado en ejecución** con los `Params` de cada caso, contra los vectores del modelo viejo compilado con macros: 35/35 bit a bit, incluidos los contadores trazados; (4) dos instancias distintas en el mismo `Simulator` (1024 inversa con pipe y 512 sin pipe): 0 diferencias; (5) N = 2, 3, 12, 0 y −8 tiran `invalid_argument` | ✅ (sandbox) ⏳ repo |
@@ -895,6 +917,8 @@ Compara bin por bin, real e imaginario por separado, contra `X[k] = 2^−S Σ x[
 | 2026-10-20 | Camino crítico de N = 512: BF2I escalada de la unidad 2 → dos carry chains (suma y redondeo) → saturación → A del DSP. Las máscaras 801 y 384 también escalan una BF2I con DSP, así que se espera un WNS del orden de +0,2 ns | 🟡 (falta implementar con 801 y 384) |
 
 ### 5.6 Resultados de síntesis e implementación (2026-10-17)
+
+⏳ **2026-10-26 (paso C):** síntesis e implementación de 4 casos nuevos, 20/18/16 con `CMUL_PIPE = 1`: N = 1024 con 801 y N = 512 con 384, cada uno *half-up* y convergente (`ROUND_CONV`). Corriendo en el repo (Julián). Contexto: en N = 512 el camino crítico ya era la BF2I escalada (suma → redondeo → saturación → DSP), y el convergente agrega lógica justo ahí.
 
 Vivado 2024.2, `xck26-sfvc784-2LV-c`, reloj de 5 ns (200 MHz) con 0,05 ns de incertidumbre, wrapper con registros de entrada y salida. Porcentajes sobre el XCK26 (DS987, tabla 5: 117 120 LUT, 234 240 FF, 1248 DSP).
 
@@ -1028,7 +1052,8 @@ gen_unit[2].u_bf2i/r_addr_reg[1]     (fan-out 42, 0,501 ns)
 
   **Con escalado completo la SQNR cae ~6 dB cada vez que se duplica el lado** (Shepp-Logan: 47,6 → 36,5 → 30,7). Por Parseval, la energía de la salida dividida por N² no depende de N, pero el ruido de redondeo crece con la cantidad de muestras (N²). Es la misma razón por la que en la IFFT de SENSE se eligieron máscaras parciales (§4.8).
 - ✅ Ida y vuelta FFT 2D → IFFT 2D (2026-10-25): casos `rt*`, con la ida calculada en Python y la vuelta en la `fft2d` (§4.12). Encadenar dos `fft2d` queda para cuando esté la memoria (paso 6).
-- ⏳ Los huecos **entre frames** del núcleo 1D están probados solo en el modelo (el test de huecos de la 2D se apoya en eso): falta un caso de vm del 1D con huecos para confirmar que el RTL hace lo mismo.
+- ✅ Huecos **entre frames** del núcleo 1D en el RTL (2026-10-26, entrega 3): 5 casos de vm con 3 tramas y huecos de 0, 1, 3, 5 y 100 ciclos, incluidos N = 512 (etapa final) y la configuración de producción; 5/5 en XSim en la copia (⏳ en el repo). El test de huecos de la 2D ya no se apoya solo en el modelo.
+- **`FFT2D_ROUND_CONV`** (2026-10-26, entrega 2 del paso B): prende el redondeo convergente en los dos núcleos (default 0). El gtest de composición lo hereda por `Params`. El plot muestra, en los casos inversos, el sesgo de la fila p = 0 contra el resto.
 - ⏳ Los dos buffers suman 4 MiB y no entran en las 64 URAM (2,25 MiB). Es del paso 6: el modelo deja la memoria aislada para reemplazarla.
 
 ---
@@ -1206,10 +1231,10 @@ build/<CASE>/simulation/vectors/
   - decidido (Julián): regla "dividir lo justo y al principio de cada pasada", con chequeo bit a bit de 0 saturaciones; los casos se arman con el generador de Python (espectro bit a bit como estímulo de un caso `INVERSE = 1`);
   - 6 casos `rt*` en el JSON y plot con original, espectro, reconstruida y error;
   - ⏳ vm cuando exista el RTL de la `fft2d`.
-- **B. Redondeo convergente** (*round-half-even*, §4.6) en `cast.v` y en los modelos. Estudio hecho (2026-10-26, §4.6). Decidido (Julián, 2026-10-26): mariposas que escalan y `cast` de salida, no el `cmul`; un solo parámetro `ROUND_CONV`; default 0 hasta medir timing en C; medida: Shepp (0, 0) y fila p = 0. ✅ `cast` (commiteado). ✅ Núcleo 1D (entrega 1, §4.6, §5.5). ⏳ Entrega 2: `fft2d` (`FFT2D_ROUND_CONV`), generador y cadena de la ida y vuelta, casos con convergente. La medida es el pico del píxel (0, 0) de la ida y vuelta (casos `rt*`) y la fila p = 0 del fantoma. También el seno rotado de 256 con la regla, que hoy satura 2 componentes en (0, 0) (§4.12): agregar `rt256_sine_rot25` cuando esté B.
+- **B. Redondeo convergente** (*round-half-even*, §4.6) en `cast.v` y en los modelos. Estudio hecho (2026-10-26, §4.6). Decidido (Julián, 2026-10-26): mariposas que escalan y `cast` de salida, no el `cmul`; un solo parámetro `ROUND_CONV`; default 0 hasta medir timing en C; medida: Shepp (0, 0) y fila p = 0. ✅ `cast`. ✅ Núcleo 1D (entrega 1). ✅ `fft2d` e ida y vuelta (entrega 2): la fila p = 0 y el pico de (0, 0) desaparecen (§4.6). ⏳ Default de `ROUND_CONV` según el timing de C. ⏳ Fantoma completo con convergente en el modelo C++ (`fft2d_check_full.py` / `fft2d_dump`). La medida es el pico del píxel (0, 0) de la ida y vuelta (casos `rt*`) y la fila p = 0 del fantoma. También el seno rotado de 256 con la regla, que hoy satura 2 componentes en (0, 0) (§4.12): agregar `rt256_sine_rot25` cuando esté B.
 - **C. Cerrar el núcleo 1D en hardware con la configuración final:**
-  - implementación con 801 (N = 1024) y 384 (N = 512) **después de B**, porque B toca el camino crítico (BF2I escalada → suma → redondeo → saturación → DSP);
-  - caso de vm con huecos entre tramas.
+  - implementación con 801 (N = 1024) y 384 (N = 512) **después de B**, porque B toca el camino crítico (BF2I escalada → suma → redondeo → saturación → DSP). ⏳ Corriendo (2026-10-26): 4 casos, *half-up* y convergente (entrega 3, §5.6);
+  - ✅ caso de vm con huecos entre tramas (entrega 3, §5.7; ⏳ vm en el repo).
 - **D. Infraestructura del código del PS:** dónde vive, gtest en la PC y compilación para el A53. Después, `unfold_ref.py` a C++, y modelo C++ del MAC y el CORDIC.
 
 **Corto plazo (FFT 1D):**
@@ -1299,6 +1324,7 @@ Pasos propuestos:
 
 | Fecha | Cambio |
 |---|---|
+| 2026-10-26 | **Paso B, entrega 2** (`fft2d_round_conv`): `FFT2D_ROUND_CONV`, ida y vuelta con convergente en el generador, sesgo de la fila p = 0 en el plot, 5 casos nuevos. Fantoma 64 × 32: fila p = 0 de +1,1 a +0,06 LSB; Shepp 256: (0, 0) de 729 a 3 LSB y error máximo de 22,9 a 6,4 LSB; el seno de 256 deja de saturar (§4.6). gtest 34/34, sim 28/28, los 23 de antes idénticos. **Paso C, entrega 3** (`synth_impl_huecos`): `ROUND_CONV` en los wrappers y 4 casos de síntesis e implementación con 801 / 384 (corriendo); varias tramas con huecos en el tb y 5 casos de vm: el RTL maneja bien los huecos entre tramas (5/5 en XSim en la copia). |
 | 2026-10-26 | **Paso B, redondeo convergente.** `cast.v` con `ROUND_CONV` (default 0; 8 casos nuevos; barrido exhaustivo en XSim, 0 diferencias). Entrega 1: `ROUND_CONV` en el núcleo 1D (mariposas que escalan y salida; el `cmul` no), modelos C++ y Python, 11 casos nuevos (7 `_conv_` y las máscaras de SENSE 801 y 384, que no estaban en la regresión 1D): los 35 de antes idénticos byte a byte, gtest 92/92, sim, vm en XSim y `--validate` 46/46. El sesgo baja a ~0 en todos los pares; con datapath de 16 bits el error rms baja de ~1,0 a ~0,66 LSB (§4.6). Salidas de `modules/cast/build` sacadas del versionado. |
 | 2026-10-26 | Registro de cambios ordenado (el más nuevo arriba; dentro del mismo día, el orden que tenía). `model/fft2d_theory.py` agregado (entrega `fft_n512`), corrido en el repo. **Estudio del redondeo convergente** (§4.6, `model/fft_rounding_study.py`): el `cast` de salida pone 2/3 del sesgo y las mariposas 1/3; convergente en los dos lleva la fila p = 0 del fantoma de +7,5 a +0,02 LSB y el (0, 0) de Shepp 256 de 729 a 3; el `cmul` no aporta. El (0, 0) del seno y los anillos es redondeo correlacionado con la señal, no sesgo. `AP_RND_CONV` verificado exhaustivo. |
 | 2026-10-25 | **Ida y vuelta: regla y casos** (entrega `fft2d_idavuelta`, §4.12). Cota de los picos internos con las divisiones al principio de cada pasada, verificada en float y bit a bit (`model/fft1d_scaling_bound.py`). Regla adoptada para los casos, con chequeo bit a bit de 0 saturaciones. `gen_fft2d_stim.py` con la familia `roundtrip` (la cadena `RoundTrip` pasa del estudio al generador; el estudio da la misma salida), 6 casos `rt*` y modo ida y vuelta en `run_plot_fft2d`. Salida del C++ = cadena de Python bit a bit en los 6. gtest 28/28, sim y plot de los `rt*` 6/6; casos de antes sin cambios. Hallazgo: el seno rotado de 256 con la regla satura en (0, 0) por el sesgo. Entrega `fft2d_imagenes` aplicada y verificada en el repo (gtest 18/18, sim 17/17, plot 17/17). Rutas corregidas: `doc/bitacora.md` y `books/amd-docs/` (CLAUDE.md, §6.1, §6.2). |
