@@ -28,7 +28,7 @@ ARITMETICA (copia de los .v)
                satura. Con direccion de twiddle 0 se puentea (W^0 = 1).
   salida       Q(NB, NBF) -> Q(NB_OUT, NBF_OUT) con half-up y saturacion.
   half-up      floor((x + 2^(k-1)) / 2^k), como cast.v (suma BIAS y >>>).
-  ROUND_CONV   con 1, las mariposas que escalan y la salida redondean al par en
+  ROUND_CONV   con 1 (default, como el RTL), las mariposas que escalan y la salida redondean al par en
                los empates (cast.v con ROUND_CONV = 1): m + (r > h) + (r == h) lsb(m),
                con m = floor(x / 2^k), r = x - m 2^k y h = 2^(k-1). El cmul no cambia.
 
@@ -62,7 +62,7 @@ class Cfg:
     NBF_OUT: int | None = None
     SCALE_MASK: int = 0xFFFFFFFF
     INVERSE: int = 0
-    ROUND_CONV: int = 0
+    ROUND_CONV: int = 1
 
     def fmt(self, nb, nbf):
         """Misma regla de defaults que el RTL: NBF_x = NB_x - (NB - NBF)."""

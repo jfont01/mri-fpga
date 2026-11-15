@@ -21,6 +21,9 @@ Mide:
   2D      fantoma 1024 x 512, 8 bobinas, 801 / 384: sesgo en la fila p = 0 y en
           el resto, SNR de la imagen desplegada (unos 20 s)
 
+El modelo arranca siempre en half-up (ROUND_CONV = 0 fijo, aunque el default
+del nucleo sea 1): el modo elige el redondeo de cada punto.
+
 Uso (desde la raiz del repo):
   python3 model/fft_rounding_study.py            # todo
   python3 model/fft_rounding_study.py --no-2d --stoch
@@ -99,7 +102,8 @@ def study_1d():
     print("1D, N = 1024, 20/18/16, mascara completa, ruido: error contra la FFT ideal / 2^10 [LSB]")
     for name, m in MODES:
         set_mode(m)
-        cfg = F.Cfg(N=n, NB=20, NBF=19, NB_TW=18, NB_IN=16, NB_OUT=16, SCALE_MASK=n - 1, INVERSE=0)
+        cfg = F.Cfg(N=n, NB=20, NBF=19, NB_TW=18, NB_IN=16, NB_OUT=16, SCALE_MASK=n - 1, INVERSE=0,
+                    ROUND_CONV=0)
         yr, yi = F.fft1d_r22sdf_fxp(xr, xi, cfg, *tw)
         y = np.empty_like(ref)
         y[..., br] = yr + 1j * yi
@@ -111,7 +115,7 @@ def study_1d():
 
 
 def roundtrip_setup(n, kind):
-    rt = G.RoundTrip(n)
+    rt = G.RoundTrip(n, round_conv=0)
     qr, qi = G.q15(G.make_image(HERE / "gen", kind, n, IMAGES[kind]).astype(np.complex128))
     x = qr + 1j * qi
     s, _ = G.minimal_split(G.boundary_peaks(x, n), rt.log)
@@ -175,6 +179,7 @@ def main() -> int:
     ap.add_argument("--stoch", action="store_true", help="agregar redondeo estocastico y la media del espectro")
     a = ap.parse_args()
     self_check()
+    MS.CORE = dict(MS.CORE, ROUND_CONV=0)        # Chain (fantoma) tambien arranca en half-up
     F._cast = cast_sel
     study_1d()
     study_roundtrip(a.stoch)

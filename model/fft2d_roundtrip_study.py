@@ -32,6 +32,10 @@ gen_fft2d_stim.py, que la usa para los casos roundtrip de la fft2d.
 Uso (desde la raiz del repo):
   python3 model/fft2d_roundtrip_study.py            # N = 256, las 4 imagenes
   python3 model/fft2d_roundtrip_study.py -N 512 --images shepp rings
+  python3 model/fft2d_roundtrip_study.py --round-conv 1   # con el redondeo convergente
+
+Por defecto usa half-up (ROUND_CONV = 0), para reproducir la tabla de la bitacora
+(4.12); el nucleo usa convergente por defecto desde el 2026-11-15.
 """
 from __future__ import annotations
 
@@ -66,11 +70,14 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
     ap.add_argument("-N", type=int, default=256)
     ap.add_argument("--images", nargs="+", default=list(IMAGES), choices=list(IMAGES))
+    ap.add_argument("--round-conv", type=int, choices=(0, 1), default=0,
+                    help="ROUND_CONV de las 4 pasadas (default 0, half-up: la tabla de la bitacora)")
     a = ap.parse_args()
 
-    rt = RoundTrip(a.N)
+    rt = RoundTrip(a.N, round_conv=a.round_conv)
     full = (1 << rt.log) - 1
-    print(f"N = {a.N} ({rt.log} etapas por pasada), formatos 20/18/16, total a dividir = {2 * rt.log}")
+    print(f"N = {a.N} ({rt.log} etapas por pasada), formatos 20/18/16, total a dividir = {2 * rt.log}"
+          + ("" if a.round_conv == 0 else ", redondeo convergente"))
     for kind in a.images:
         img = G.make_image(GEN_DIR, kind, a.N, IMAGES[kind])
         qr, qi = G.q15(img.astype(np.complex128))

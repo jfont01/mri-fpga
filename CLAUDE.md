@@ -3,21 +3,24 @@
 Tesis de grado de Ingeniería Biomédica (UNC) de Julián Font. Reconstrucción de MRI con SENSE
 (Pruessmann et al. 1999) a 20 fps en una Kria KV260 (SoM K26, XCK26, Zynq UltraScale+).
 
-**La fuente de verdad es `doc/bitacora.md`**: estado, decisiones, resultados medidos,
-versiones de los archivos, trampas y pendientes. Al empezar una sesión, leé el encabezado y
-la sección que corresponda a la tarea (no hace falta leerla entera):
+**La fuente de verdad es la bitácora, en `doc/`** (separada por archivos desde el 2026-11-15;
+índice en `doc/bitacora.md`): estado, decisiones, resultados medidos, teoría, trampas y
+pendientes. Al empezar una sesión, leé `doc/estado.md` y el archivo que corresponda a la tarea:
 
-| Tema | Sección |
+| Tema | Archivo |
 |---|---|
-| Parámetros, glosario de símbolos | §1 |
-| Arquitectura PS / PL, presupuesto de tiempo | §2 |
-| FFT 1D R2²SDF (diseño, formatos, `SCALE_MASK`, `INVERSE`, N impar) | §3 |
-| Precisión: sesgo *half-up* §4.6, cota §4.7, máscaras 2D §4.8, MAC §4.9–4.11, ida y vuelta §4.12 | §4 |
-| Modelo C++, gtest, síntesis e implementación §5.6, `fft2d` §5.7 | §5 |
-| Infraestructura y comandos (§6.4) | §6 |
-| Trampas conocidas | §8 |
-| Pendientes y plan | §9 |
-| Registro de cambios | §12 |
+| **Estado por bloque, tareas, roadmap y riesgos** (se actualiza siempre) | `doc/estado.md` |
+| Descubrimientos, con cómo se obtuvieron | `doc/hallazgos.md` |
+| Teoría: SENSE y cálculo de U; FFT R2²SDF, IFFT, 2D y arquitecturas; CORDIC | `doc/teoria_sense.md`, `doc/teoria_fft.md`, `doc/teoria_cordic.md` |
+| Parámetros, glosario de símbolos (§1) | `doc/01_contexto.md` |
+| Arquitectura PS / PL, presupuesto de tiempo (§2) | `doc/02_arquitectura.md` |
+| FFT 1D R2²SDF: diseño, formatos, `SCALE_MASK`, `INVERSE`, N impar (§3) | `doc/03_fft_r22sdf.md` |
+| Precisión: sesgo y redondeo §4.6, cota §4.7, máscaras 2D §4.8, MAC §4.9–4.11, ida y vuelta §4.12 | `doc/04_precision.md` |
+| Modelo C++, gtest, síntesis e implementación §5.6, `fft2d` §5.7 | `doc/05_verificacion.md` |
+| Infraestructura y comandos §6.4 | `doc/06_infraestructura.md` |
+| Integración: AXI, DDR, DMA, Vivado, Vitis, bring-up (§7) | `doc/07_integracion.md` |
+| Trampas conocidas (§8) | `doc/08_trampas.md` |
+| Registro de cambios (el más nuevo arriba) | `doc/registro.md` |
 
 Si algo de este archivo contradice a la bitácora, vale la bitácora (y avisame).
 La descripción del proyecto en claude.ai está desactualizada (dice 512 × 512).
@@ -27,7 +30,8 @@ La descripción del proyecto en claude.ai está desactualizada (dice 512 × 512)
 - Imagen final 1024 × 1024. L = 8 bobinas, Af = 2 (submuestreo en phase-encode).
 - k-space por bobina: 512 líneas de PE × 1024 de readout → FFT 2D de 1024 × 512 por bobina.
 - Reloj de la PL: 200 MHz.
-- Núcleo FFT R2²SDF: datapath 20 bits, twiddles 18, puertos 16 (Q1.15), `CMUL_PIPE = 1`.
+- Núcleo FFT R2²SDF: datapath 20 bits, twiddles 18, puertos 16 (Q1.15), `CMUL_PIPE = 1`,
+  `ROUND_CONV = 1` (redondeo convergente en mariposas y salida).
   Máscaras provisorias de la IFFT 2D: 801 (pasada de 1024) y 384 (pasada de 512).
 - PS (una vez por sesión): mapas → U = (SᴴS + λI)⁻¹Sᴴ por LDLᴴ sin raíces → U″ en DDR (32 MiB). λ = 10⁻⁴ propuesto, a confirmar.
 - PL (cada trama): IFFT 2D por bobina en serie → MAC con U″ → CORDIC de magnitud (propuesta: n = 12, G = 5).
@@ -54,7 +58,7 @@ La descripción del proyecto en claude.ai está desactualizada (dice 512 × 512)
 - **Las entregas y git los manejo yo.** Verificá en una copia del repo en el scratchpad, no en
   el mío. Pasame el parche como archivo (`git apply <archivo>`: hay archivos CRLF y copiar el
   diff del chat los rompe) y los comandos de commit. No toques el repo ni git sin que te lo
-  pida; la excepción es `doc/bitacora.md`.
+  pida; la excepción es la bitácora (`doc/*.md`).
 - Poco texto entre comandos; lo importante va completo en la respuesta final.
 
 ## Entorno y comandos
@@ -103,10 +107,10 @@ La descripción del proyecto en claude.ai está desactualizada (dice 512 × 512)
 5. Git: trabajar en la rama en la que estoy; **no hacer commit ni push sin que lo pida**.
    Al terminar, mostrar qué cambió (`git diff --stat` y el diff de lo importante).
 6. Cuando se cierra un resultado, una decisión o un cambio de infraestructura, actualizar
-   `doc/bitacora.md`: la sección afectada, la tabla de versiones y el registro de
-   cambios (§12, el más nuevo arriba).
+   la bitácora: el archivo de la sección afectada, `doc/estado.md`, `doc/hallazgos.md` (si es
+   un descubrimiento) y `doc/registro.md` (el más nuevo arriba).
 
-## Trampas (detalle en la bitácora, §8)
+## Trampas (detalle en `doc/08_trampas.md`)
 
 - Twiddles con un ancho distinto a `NB_TW`: el vm pasa igual (RTL y modelo leen el mismo
   error). Solo lo detecta el gtest.
@@ -115,7 +119,8 @@ La descripción del proyecto en claude.ai está desactualizada (dice 512 × 512)
 - `cast.v` no puede agregar bits fraccionales (devuelve X).
 - Producto del modelo en `double`: exacto solo con `NB + NB_TW ≤ 52`.
 - Redondeo *half-up* al descartar un bit: sesgado (+q/4 por etapa escalada). En 2D se
-  concentra (fila p = 0; píxel (0, 0) en la ida y vuelta).
+  concentra (fila p = 0; píxel (0, 0) en la ida y vuelta). Corregido con `ROUND_CONV = 1`,
+  default desde el 2026-11-15; los casos `_halfup` lo conservan como referencia.
 - N potencia de 2; con log₂N impar se agrega la etapa radix-2 final (`fft1d_r22sdf_tail`).
 - Exceptions en `SetUpTestSuite` de gtest → tests *skipped* → antes el runner daba PASS
   (corregido en `run_gtest.py`). Simular dentro de los tests.
@@ -126,5 +131,5 @@ La descripción del proyecto en claude.ai está desactualizada (dice 512 × 512)
 - `books/amd-docs/`: manuales de AMD/Xilinx y datasheets. Para buscar, `pdftotext -layout`
   (no hay versiones `.txt` guardadas); el PDF para tablas y figuras.
 - `books/`: libros y papers (`books/papers/fft`, `books/papers/mri`). `doc/`: documentación
-  propia (bitácora, `theory_r22sdf.md`, ecuaciones de SENSE).
-- Bibliografía de la tesis: bitácora §11.
+  propia (la bitácora separada por archivos, con la teoría en `doc/teoria_*.md`).
+- Bibliografía de la tesis: `doc/bibliografia.md`.

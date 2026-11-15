@@ -129,7 +129,7 @@ def case_config(params):
         "n1": n1, "n2": n2, "l1": l1, "l2": l2, "m1": m1, "m2": m2,
         "s1": bin(m1).count("1"), "s2": bin(m2).count("1"),
         "inverse": as_int(params.get("INVERSE"), 1) == 1,
-        "round_conv": as_int(params.get("ROUND_CONV"), 0) == 1,
+        "round_conv": as_int(params.get("ROUND_CONV"), 1) == 1,     # default de fft2d.hpp
         "coils": as_int(params.get("N_COILS"), 3),
         "nbf_in": as_int(params.get("NBF_IN"), nb_in - nbi),
         "nbf_out": as_int(params.get("NBF_OUT"), nb_out - nbi),
