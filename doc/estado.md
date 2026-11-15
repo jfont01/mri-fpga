@@ -2,7 +2,7 @@
 
 *Parte de la bitácora de la tesis. Índice general: [bitacora.md](bitacora.md).*
 
-*Última actualización: 2026-11-15.* **Este es el archivo que se actualiza siempre**: cada vez que se cierra una tarea, una decisión o un resultado, se marca acá (y el detalle va al archivo de la sección que corresponda).
+*Última actualización: 2026-11-15 (D1: U en C++).* **Este es el archivo que se actualiza siempre**: cada vez que se cierra una tarea, una decisión o un resultado, se marca acá (y el detalle va al archivo de la sección que corresponda).
 
 Marcas: ✅ hecho y verificado · 🟡 estimado o provisorio (cuenta en papel, fantoma, NumPy ideal) · ⏳ pendiente · — no aplica.
 
@@ -29,7 +29,7 @@ Teoría de cada pieza: [teoria_sense.md](teoria_sense.md) (SENSE y el cálculo d
 | **FFT 2D** (dos núcleos + memoria entre pasadas) | ✅ | ✅ ciclo a ciclo, memoria ideal | ⏳ | ⏳ | ⏳ | [03 §3.8](03_fft_r22sdf.md), [05 §5.7](05_verificacion.md) |
 | **Memoria y *corner-turn*** (URAM o DDR por bloques; cantidad de carriles) | 🟡 cuentas | — (ideal en el modelo) | ⏳ | ⏳ | ⏳ | [02](02_arquitectura.md), [07](07_integracion.md) |
 | **Mapas de sensibilidad** (PS) | 🟡 solo mapas sintéticos | ⏳ | — (software) | — | ⏳ | [teoria_sense §6](teoria_sense.md) |
-| **Cálculo de U** (PS: LDLᴴ, Tikhonov, escalas, buffer) | ✅ con el fantoma | ⏳ (referencia en Python: `unfold_ref.py`) | — (software) | — | ⏳ | [04 §4.10](04_precision.md), [teoria_sense](teoria_sense.md) |
+| **Cálculo de U** (PS: LDLᴴ, Tikhonov, escalas, buffer) | ✅ con el fantoma | ✅ `modules/ps_sense/cpp`, bit a bit con `unfold_ref.py` en la PC y en el A53 (qemu); ⏳ falta su regresión | — (software) | — | ⏳ tiempo en el A53 | [04 §4.10](04_precision.md), [05 §5.8](05_verificacion.md), [teoria_sense](teoria_sense.md) |
 | **MAC de desplegado** | ✅ con el fantoma | ⏳ (bit-exacto en Python: `mac_cordic_fxp.py`) | ⏳ no empezó | ⏳ | ⏳ | [04 §4.9](04_precision.md) |
 | **CORDIC de magnitud** | ✅ n = 12, G = 5 | ⏳ (bit-exacto en Python) | ⏳ | ⏳ | ⏳ | [04 §4.11](04_precision.md), [teoria_cordic](teoria_cordic.md) |
 | **Reordenamiento de la imagen de salida** (bit-reversed en x y p) | 🟡 | — | ⏳ | ⏳ | ⏳ | [04 §4.11](04_precision.md) |
@@ -68,8 +68,10 @@ Teoría de cada pieza: [teoria_sense.md](teoria_sense.md) (SENSE y el cálculo d
 ### Cálculo de U y mapas (PS)
 
 - [x] Algoritmo: A = SᴴS + λI, A = LDLᴴ sin raíces, U por sustitución; Tikhonov λ = 10⁻⁴; U'' con g_l, 2^−E y 1/K_c adentro; buffer en el orden del stream de la `fft2d` (§4.10). Referencia: `model/unfold_ref.py`.
-- [ ] Infraestructura del código del PS: dónde vive, gtest en la PC, compilación cruzada para el A53 (paso D).
-- [ ] `unfold_ref.py` a C++, bit a bit contra la referencia.
+- [x] `unfold_ref.py` a C++ (`modules/ps_sense/cpp/ps_sense.{hpp,cpp}`, 2026-11-15): 19 casos bit a bit (U, d, E, buffer), incluido 1024 × 1024, en la PC y en el A53 con qemu (§5.8). Compila bare-metal con `aarch64-none-elf-g++`.
+- [x] Hallazgo H29: GCC para aarch64 contrae a FMA con `-O2`; hace falta `-ffp-contract=off` (chequeado en ejecución).
+- [ ] Infraestructura del código del PS (paso D): regresión con gtest y vectores, compilación cruzada y qemu. Opciones planteadas, a decidir con Julián.
+- [ ] Sacar o reemplazar la plantilla `testbench/ps_sense_tb.*` de `create_module` (usa `rtlsim`; ya no compila).
 - [ ] Medir el tiempo en el A53 (estimado: menos de 1 s para 172 Mflop).
 - [ ] Mapas de sensibilidad: algoritmo (RSS o ESPIRiT con las líneas ACS) y máscara del objeto.
 - [ ] Elegir λ con datos reales (también regula la amplificación de ruido, el g-factor).

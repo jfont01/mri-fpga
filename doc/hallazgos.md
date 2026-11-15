@@ -129,3 +129,8 @@ RTL y modelo leen el mismo archivo equivocado y coinciden; solo el gtest (contra
 **H28. Dos errores de la infraestructura que daban PASS falsos** (2026-10-17 y 2026-10-20)
 `make` no recompilaba al cambiar los defines del JSON (se probaba la configuración anterior sin aviso), y `run_gtest` daba PASS cuando los tests quedaban *skipped* por una excepción. Los dos corregidos.
 *Detalle:* [08](08_trampas.md).
+
+**H29. GCC para aarch64 usa FMA por default, y eso rompe el bit a bit del código del PS** (2026-11-15)
+Con `-O2`, `aarch64-none-elf-g++` (GCC 13.3, Vitis 2024.2) junta `a*b + c` en `fmadd` aunque se compile con `-std=c++17`: 12 instrucciones FMA en `ps_sense.o`. El FMA redondea una sola vez, así que el resultado ya no es el de NumPy en el último bit. Se vio contando instrucciones con `objdump`, y con un chequeo en tiempo de ejecución (a·a − (1 + 2⁻²⁹) con a = 1 + 2⁻³⁰ da 2⁻⁶⁰ con FMA y 0 sin FMA).
+*Consecuencia:* el código del PS se compila con `-ffp-contract=off` (y nunca con `-ffast-math`), y `build_buffer` se niega a correr si detecta contracción. Con eso, U'' sale idéntico bit a bit a `unfold_ref.py` en la PC y en el A53 (qemu). *Detalle:* [05 §5.8](05_verificacion.md), [08](08_trampas.md).
+

@@ -294,3 +294,31 @@ gen_unit[2].u_bf2i/r_addr_reg[1]     (fan-out 42, 0,501 ns)
 - ✅ Huecos **entre frames** del núcleo 1D en el RTL (2026-10-26, entrega 3): 5 casos de vm con 3 tramas y huecos de 0, 1, 3, 5 y 100 ciclos, incluidos N = 512 (etapa final) y la configuración de producción; 5/5 en XSim, en la copia y en el repo. El test de huecos de la 2D ya no se apoya solo en el modelo.
 - **`FFT2D_ROUND_CONV`** (2026-10-26, entrega 2 del paso B): prende el redondeo convergente en los dos núcleos (default 1 desde el 2026-11-15; los casos `n64x32_phantom_halfup` y `rt*_halfup` son la referencia *half-up*; `rt256_sine_rot25` solo existe en convergente porque en *half-up* satura). El gtest de composición lo hereda por `Params`. El plot muestra, en los casos inversos, el sesgo de la fila p = 0 contra el resto.
 - ⏳ Los dos buffers suman 4 MiB y no entran en las 64 URAM (2,25 MiB). Es del paso 6: el modelo deja la memoria aislada para reemplazarla.
+
+### 5.8 Código del PS: cálculo de U'' (`modules/ps_sense/`, paso D1, 2026-11-15) ✅ PC y A53 (qemu)
+
+**Qué es.** `cpp/ps_sense.hpp` / `ps_sense.cpp`: la versión en C++ de `model/unfold_ref.py`, operación por operación, para correr en el A53 una vez por sesión. C++17 portable: sin excepciones, sin memoria dinámica, sin `iostream`, sin `ap_fixed` ni `rtlsim`. Compila igual con el `g++` de la PC, con `aarch64-none-elf-g++` (bare-metal, Vitis 2024.2, GCC 13.3) y con `aarch64-linux-gnu-g++`.
+
+**Partes.**
+- Núcleo por posición (x, p), con los mismos nombres que la referencia: `gram` (A = SᴴS + λI, suma secuencial en l), `ldlh` (por columnas, 1/d una vez), `ldlh_ok` (pivotes finitos y > 0), `solve_u` (por bobina: adelante, D⁻¹, atrás) y `unfold_position` (las cuatro juntas). Arreglos de trabajo en la pila, con límites `MAX_L = 16` y `MAX_AF = 4` (unos 3 KiB; se cambian con `-DPS_SENSE_MAX_L` / `-DPS_SENSE_MAX_AF`).
+- Entrada: `gather_s` arma S[l][a] = s_l(x, p + a·n2) de mapas complejos `double` intercalados con índice [l][x][y] (el layout en memoria de un `complex128` de NumPy `smaps[l, x, y]`).
+- Escala y cuantización: `cordic_gain`, `coil_scales` (c_l = (1/g_l)·(1/K)), `quantize` (`rint(ldexp(v, shift))` con saturación a nb bits), `pack_word` ({im, re}).
+- Índices: `bitrev`, `log2_exact`, `word_index` (`pos_coil_a` y `coil_pos_a`).
+- Sesión: `build_buffer(dims, smaps, g, config, out, report)`. Pasada 1: U' en todas las posiciones válidas → máximo → E por `frexp`. Pasada 2, en el orden del stream (t1, t2) → (x = br(t1), p = br(t2)): recalcula U' (da los mismos bits), cuantiza y escribe directo en el buffer de 32 bits. Así no hace falta un temporal de 128 MiB para U' (el precio es calcular U dos veces). Las posiciones con LDLᴴ inválida (solo con λ = 0) quedan en 0 y no cuentan para E. `report`: E, máximo, pivotes mínimo y máximo, cantidad de inválidas y de saturadas.
+- Chequeos: dimensiones (potencias de 2 en n_ro y n2), parámetros (g_l > 0 y finitos, λ ≥ 0, nb en [2, 16]) y `fp_contract_off()` (abajo). Devuelve un `status`, no excepciones.
+
+**Cómo se verificó** (scratchpad, `check_ps_sense.py` + un arnés en C++; todavía no está en la regresión del módulo): 19 casos generados con las funciones de `unfold_ref.py` (`gram`, `ldlh`, `solve_U`, `scale_quantize`, `pack_hw`) y comparados **bit a bit**: U (los `double`, en las posiciones válidas), d, la máscara de válidas, E, el máximo, d_min / d_max, la cantidad de inválidas y de saturadas, K_12 y el buffer completo.
+- Casos: Af = 1, 2, 3 y 4; L = 1, 6, 8 y 16; λ = 0, 0,3 y 10⁻⁴·mediana; con y sin 1/K; nb = 16 y 12; los dos layouts; imágenes rectangulares (64 × 32, 16 × 128, 32 × 48 con Af = 3); mapas al azar, al azar con un disco (1687 de 2048 posiciones inválidas con λ = 0), mapas del fantoma 256 y **1024 × 1024 (tamaño real: 8 388 608 palabras)**, con y sin máscara; y dos casos con g elegido para que el máximo quede justo debajo de una potencia de 2 (rint da 2^(nb−1) y satura solo si esa componente es positiva: con los datos al azar pasó en una de las corridas, así que la saturación quedó probada una vez; ⏳ en la regresión, un caso armado a mano que sature siempre).
+- En la referencia, U se pone en 0 en las posiciones inválidas antes de `scale_quantize` (si no, `unfold_ref.py` mete NaN en el máximo). Es la misma regla que el C.
+- **Resultado: 19/19 idénticos**, en la PC con `-O2 -ffp-contract=off` y con `-O0 -g` (las flags del Makefile de gtest), y **en el A53**: binario de `aarch64-linux-gnu-g++ -O2 -ffp-contract=off -mcpu=cortex-a53 -static` corrido con `qemu-aarch64 -cpu cortex-a53`.
+- Tiempo de la sesión completa (1024 × 1024, dos pasadas): 0,7 s en la PC con `-O2`. En qemu tarda 7 s, pero eso no dice nada del A53 real: ⏳ medir en la placa.
+
+**FMA (H29).** GCC 13 para aarch64 junta `a*b + c` en un `fmadd` con `-O2` aunque se compile con `-std=c++17`: `ps_sense.o` tiene 12 instrucciones FMA sin `-ffp-contract=off` y 0 con la flag. Un FMA redondea una vez en vez de dos, así que cambia el último bit y se pierde el bit a bit. Por eso `build_buffer` empieza con `fp_contract_off()`: calcula a·a − (1 + 2⁻²⁹) con a = 1 + 2⁻³⁰, que da 0 sin FMA y 2⁻⁶⁰ con FMA. Si da distinto de 0 devuelve `status::fp_contract_on`. Probado: x86 con `-march=native -ffp-contract=fast` y aarch64 con `-O2` sin la flag, los dos lo rechazan.
+
+**Bare-metal:** `aarch64-none-elf-g++ -O2 -ffp-contract=off -mcpu=cortex-a53 -c` compila sin warnings; el texto ocupa 6,7 KiB y tiene 0 FMA. Compila también con `-Wpedantic -Wconversion -Wshadow -Wdouble-promotion` sin warnings.
+
+**Pendiente:**
+- Regresión del módulo (gtest + vectores, compilación cruzada, qemu): opciones planteadas a Julián, sin decidir.
+- Tiempo real en el A53.
+- Regla de λ (mediana sobre qué posiciones) y formato de los mapas cuando se calculen en el PS.
+- Los archivos de plantilla de `create_module` en `testbench/` (`ps_sense_tb.*`) usan `rtlsim` y `ps_sense_model`, que ya no existen: no compilan.

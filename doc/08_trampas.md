@@ -28,3 +28,4 @@
 | `run_plot_fft1d` con NBF del datapath | figuras 16 veces más chicas | corregido el 2026-10-17 (usa NBF_IN / NBF_OUT) |
 | Modo `DOUBLE` con twiddles cuantizados | `double` fallaba 5/8 | corregido el 2026-10-12 (twiddles exactos) |
 | Chequear el fin de línea con `file` | `file` no dice "CRLF" en los JSON; Python en modo texto convierte `\r\n` a `\n` sin avisar | contar con `grep -c $'\r$'` y abrir en binario (`'rb'`). Pasó con el JSON de regresión el 2026-10-17; se corrigió antes de entregar |
+| GCC para aarch64 con `-O2`: contrae `a*b + c` a FMA aunque sea `-std=c++17` | el código del PS deja de ser bit a bit igual a NumPy (último bit) | `-ffp-contract=off` siempre (y sin `-ffast-math`); `ps_sense::build_buffer` lo chequea en ejecución y devuelve `fp_contract_on` (2026-11-15, H29) |
