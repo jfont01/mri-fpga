@@ -57,9 +57,10 @@
 `define FFT1D_R22SDF_INVERSE 0
 `endif
 // Redondeo convergente en las mariposas que escalan y en la salida. Cae en el
-// camino de la BF2I escalada, por eso se mide aca. Default 0 (half-up).
+// camino de la BF2I escalada, por eso se mide aca. Default 1, igual que el RTL
+// (desde el 2026-11-15); 0 = half-up (referencia).
 `ifndef FFT1D_R22SDF_ROUND_CONV
-`define FFT1D_R22SDF_ROUND_CONV 0
+`define FFT1D_R22SDF_ROUND_CONV 1
 `endif
 // -----------------------------------------------------------------------------
 // fft1d_r22sdf_wrapper_impl

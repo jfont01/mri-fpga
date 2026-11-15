@@ -22,11 +22,12 @@
     0.9,
     0.9
   ],
-  "sqnr_db": 93.56,
+  "sqnr_db": 93.26,
   "e00_lsb": [
-    2.0,
+    0.0,
     0.0
   ],
+  "round_conv": 1,
   "spec": {
     "kind": "roundtrip",
     "image": "zoneplate",

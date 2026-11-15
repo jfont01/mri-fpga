@@ -20,13 +20,14 @@
   "peaks": [
     0.8011,
     0.9083,
-    0.9336
+    0.9335
   ],
-  "sqnr_db": 65.12,
+  "sqnr_db": 65.2,
   "e00_lsb": [
-    33.0,
-    33.0
+    -5.0,
+    -2.0
   ],
+  "round_conv": 1,
   "spec": {
     "kind": "roundtrip",
     "image": "shepp",

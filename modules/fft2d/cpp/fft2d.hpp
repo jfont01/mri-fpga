@@ -131,9 +131,10 @@
 #define FFT2D_INVERSE 1
 #endif
 // Redondeo convergente (empates al par) en las mariposas que escalan y en la
-// salida de los dos nucleos (fft1d_r22sdf, ROUND_CONV). Default 0: half-up.
+// salida de los dos nucleos (fft1d_r22sdf, ROUND_CONV). Default 1 (desde el
+// 2026-11-15); 0 = half-up.
 #ifndef FFT2D_ROUND_CONV
-#define FFT2D_ROUND_CONV 0
+#define FFT2D_ROUND_CONV 1
 #endif
 
 namespace fft2d {

@@ -136,10 +136,11 @@ namespace fft1d_r22sdf {
 
 /*
  * Redondeo convergente (empates al par) en las mariposas que escalan y en el
- * cast de salida. Mismo default que el RTL: 0 (half-up, con sesgo).
+ * cast de salida. Mismo default que el RTL: 1 (desde el 2026-11-15); 0 = half-up,
+ * con sesgo.
  */
 #ifndef FFT1D_R22SDF_ROUND_CONV
-#define FFT1D_R22SDF_ROUND_CONV 0
+#define FFT1D_R22SDF_ROUND_CONV 1
 #endif
 
 #define FFT1D_R22SDF_STRINGIFY_IMPL(x) #x

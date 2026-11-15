@@ -70,7 +70,7 @@ module fft1d_r22sdf_unit #(
   parameter        TW_IM_FILE = "tw_im.mem",
   parameter bit    TW_FROM_FILE = 1'b1,
   parameter bit    CMUL_PIPE = 1'b1,         // 1: registro antes del cast del cmul (+1 ciclo)
-  parameter bit    ROUND_CONV = 1'b0         // 1: redondeo convergente en las mariposas que escalan
+  parameter bit    ROUND_CONV = 1'b1         // 1: redondeo convergente en las mariposas que escalan; 0: half-up
 )(
   input  wire                i_clock,
   input  wire                i_rst,

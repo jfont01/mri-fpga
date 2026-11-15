@@ -22,13 +22,14 @@
   "peaks": [
     0.8822,
     0.6101,
-    0.6456
+    0.6455
   ],
-  "sqnr_db": 63.75,
+  "sqnr_db": 63.87,
   "e00_lsb": [
-    126.0,
-    112.0
+    7.0,
+    -9.0
   ],
+  "round_conv": 1,
   "spec": {
     "kind": "roundtrip",
     "image": "sine",

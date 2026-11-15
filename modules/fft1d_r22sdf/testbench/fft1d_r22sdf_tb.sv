@@ -60,9 +60,10 @@
 `define FFT1D_R22SDF_INVERSE 0
 `endif
 
-// Redondeo convergente en mariposas y salida (empates al par). Default 0.
+// Redondeo convergente en mariposas y salida (empates al par). Default 1, igual
+// que el RTL y el modelo; 0 = half-up.
 `ifndef FFT1D_R22SDF_ROUND_CONV
-`define FFT1D_R22SDF_ROUND_CONV 0
+`define FFT1D_R22SDF_ROUND_CONV 1
 `endif
 
 /*

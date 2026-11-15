@@ -42,7 +42,7 @@ module btfly_bf2ii #(
   parameter int DEPTH  = 32,
   parameter int ADDR_W = 5,
   parameter bit SCALE  = 1'b1,
-  parameter bit ROUND_CONV = 1'b0   // 1: redondeo convergente (empates al par) al escalar
+  parameter bit ROUND_CONV = 1'b1   // 1: redondeo convergente (empates al par) al escalar; 0: half-up
 )(
   input  wire                i_clock,
   input  wire                i_rst,     // sincrono, activo alto
