@@ -1,0 +1,18 @@
+# Archivos binarios: git no les cambia el fin de linea (aunque alguien clone con
+# core.autocrlf = true, p. ej. en Windows), no intenta mostrarlos como texto en
+# los diffs ni mezclarlos en un merge.
+#
+# A proposito NO hay reglas de texto (eol / text=auto): el repo tiene archivos
+# CRLF que se respetan tal cual (run_gtest.py, run_plot_fft1d.py, ...); una regla
+# de texto global los "normalizaria" y reescribiria enteros (ver doc/08_trampas.md).
+*.bin   binary
+*.npy   binary
+*.npz   binary
+*.mat   binary
+*.h5    binary
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.bit   binary
+*.xsa   binary
+*.elf   binary

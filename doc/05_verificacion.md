@@ -317,12 +317,20 @@ gen_unit[2].u_bf2i/r_addr_reg[1]     (fan-out 42, 0,501 ns)
 
 **Bare-metal:** `aarch64-none-elf-g++ -O2 -ffp-contract=off -mcpu=cortex-a53 -c` compila sin warnings; el texto ocupa 6,7 KiB y tiene 0 FMA. Compila también con `-Wpedantic -Wconversion -Wshadow -Wdouble-promotion` sin warnings.
 
+**Dos conceptos que usa esta verificación** (explicados a Julián el 2026-11-16):
+- **FMA** (*fused multiply-add*): una instrucción que calcula a·b + c con **un solo redondeo**, al final. Sin FMA son dos operaciones y dos redondeos: primero round(a·b), después round(… + c). El FMA es igual o más preciso, pero da **otro resultado** en el último bit, y la referencia (NumPy) hace cada operación por separado. Ejemplo verificado con fracciones exactas: con a = 1 + 2⁻³⁰, a·a = 1 + 2⁻²⁹ + 2⁻⁶⁰. Con dos redondeos, a·a − (1 + 2⁻²⁹) = 0 (el 2⁻⁶⁰ se pierde al redondear el producto); con FMA da 2⁻⁶⁰. El A53 tiene FMA (`fmadd`, ARMv8); el x86-64 base no (llegó con FMA3; hace falta `-mfma` o `-march`). La "contracción" es que el compilador junte por su cuenta a*b + c en un FMA; `-ffp-contract=off` la prohíbe.
+- **qemu**: emulador de código abierto. En modo **usuario** (`qemu-aarch64`, el que usamos) corre **un programa** de Linux para ARM en la PC: traduce las instrucciones ARM a x86 mientras corre (traducción binaria dinámica) y le pasa las llamadas al sistema (abrir archivos, imprimir) al Linux de la PC. Por eso el gtest se compila para "ARM con Linux" y estático (en la PC no hay bibliotecas ARM). El punto flotante de cada instrucción ARM se emula exacto (incluido el redondeo único de `fmadd`): por eso detecta lo del H29. No emula tiempos, cachés ni el entorno bare-metal. En modo **sistema** (`qemu-system-aarch64`; AMD mantiene uno para Zynq UltraScale+) emula una máquina entera y podría arrancar un firmware bare-metal; no lo usamos.
+
 **Regresión del módulo** (entrega D1-infra, 2026-11-15; decisiones de Julián: gtest con el patrón de la `fft2d`, `Makefile` propio para el A53 con qemu, borrar la plantilla de `create_module`):
 - `model/gen_ps_sense_vectors.py --from-json` escribe, por cada caso del JSON (`VEC_DIR` + `vec_gen`), `case.txt` (dimensiones, config y resultados esperados; los `double` en hex, exactos), los mapas, g y las salidas de referencia (U crudo, d, válidas, buffer). Usa `gram`, `ldlh`, `solve_U`, `scale_quantize` y `pack_hw` de `unfold_ref.py`, con mapas rectangulares. Determinista: regenerado da los mismos bytes.
 - Casos `g = sat`: el generador asegura que la componente de módulo máximo sea **positiva** (si no, niega los mapas: S → −S da U → −U exacto) y elige g para que el máximo quede en 1 − 2⁻¹⁷. Así rint da 2^(nb−1) y satura siempre (n_sat = 1 en `sat16` y `sat12_cpa`); el generador corta si no satura.
 - `testbench/ps_sense_gtest.cpp`: 9 tests por caso. Sin contracción a FMA; consistencia de `case.txt`; núcleo por posición bit a bit (validez, d, U); sesión completa bit a bit (E, máximo, pivotes, contadores, buffer); `cordic_gain`; `word_index` es una permutación en los dos layouts; `bitrev`; `quantize` (empates al par, saturación por arriba y no por abajo, `pack_word`); entradas inválidas (códigos de `status`, mapas en cero → todo inválido, buffer en 0, E = 0). Los vectores se cargan una vez adentro de los tests (no en `SetUpTestSuite`, §8). La carpeta sale de `PS_SENSE_VEC` (variable de entorno) o del define `PS_SENSE_VEC_DIR`.
 - JSON: 18 casos en `testbench/vec/` (11 MB, versionados) y 2 de 1024 × 1024 en `build/vec_full/` (unos 600 MB, sin versionar, con `"gtest": {"modes": []}` para que `run_gtest` los saltee). Un solo modo (`fixed`): el módulo es todo `double` y `run_gtest` solo acepta `fixed` y `double`; la etiqueta `[fixed]` no significa nada acá.
-- `modules/ps_sense/Makefile`: `make bm` (`libps_sense.a` con `aarch64-none-elf`, chequeo de 0 FMA con `objdump`), `make qemu` (el mismo gtest compilado para aarch64, estático, contra googletest compilado desde `/usr/src/googletest`, corrido con `qemu-aarch64 -cpu cortex-a53` sobre cada carpeta), `make host` (lo mismo en la PC con `-O2`), `make full` (genera los de 1024 y corre PC + qemu), `make clean` (solo lo suyo).
+- `modules/ps_sense/Makefile`, con los objetivos separados en **compilar** y **correr** (nombres desde el 2026-11-16, a pedido de Julián; antes `bm`, `qemu`, `host` y `full`):
+  - `compile-baremetal`: `build/baremetal/libps_sense.a` con `aarch64-none-elf` (lo que va a Vitis) e inspección del código con `objdump`: 0 FMA. No ejecuta nada (el bare-metal solo corre en la placa).
+  - `compile-a53-linux`: el mismo gtest para aarch64 con Linux, estático, contra googletest compilado desde `/usr/src/googletest`. `compile-host`: el gtest para la PC con `-O2`. `compile`: los tres.
+  - `run-qemu`: el binario de `compile-a53-linux` corrido con `qemu-aarch64 -cpu cortex-a53` sobre cada carpeta. `run-host`: lo mismo en la PC. `run-full`: genera los de 1024 y corre PC + qemu. `run`: `run-host` + `run-qemu`.
+  - `clean`: solo lo suyo.
 - `scripts/Makefile`: `-ffp-contract=off` en `CXXFLAGS` para todos los módulos. **No cambia nada en los otros módulos**: x86-64 base no tiene FMA, y además se comprobó compilando 28 builds existentes (4 por grupo: `cast` tb, `fft1d_r22sdf` gtest `fixed` / `double` y tb, `fft2d` gtest `fixed` / `double` y tb) con y sin la flag: los 56 objetos dan **código de máquina idéntico** (`objdump -d`).
 
 **Resultados (copia del repo en el scratchpad):**
@@ -330,11 +338,12 @@ gen_unit[2].u_bf2i/r_addr_reg[1]     (fan-out 42, 0,501 ns)
 | Qué | Resultado |
 |---|---|
 | `run_gtest --keep-going` | 18/18 casos, 162 tests |
-| `make host` (`-O2`) | 18/18 |
-| `make qemu` (A53) | 18/18 |
-| `make full` (1024 × 1024, PC y qemu) | 2/2 y 2/2 |
-| `make bm` | OK: 0 FMA, 6721 bytes de código |
-| En el repo de Julián (2026-11-16, sin el parche todavía) | `make bm` OK (0 FMA, 6721 bytes) y `make qemu` 18/18; `make full` falla porque falta el generador del parche |
+| `make run-host` (`-O2`) | 18/18 |
+| `make run-qemu` (A53) | 18/18 |
+| `make run-full` (1024 × 1024, PC y qemu) | 2/2 y 2/2 |
+| `case.txt` con CRLF (clon con `core.autocrlf = true`, como en Windows) | 18/18: `fscanf` toma el `\r` como espacio; los `.bin` quedan idénticos |
+| `make compile-baremetal` | OK: 0 FMA, 6721 bytes de código |
+| En el repo de Julián (2026-11-16, con los nombres viejos) | `bm` OK (0 FMA, 6721 bytes), `qemu` 18/18; con el parche del generador aplicado, `run_gtest` 18/18 y `full` 2/2 + 2/2 |
 | Mutaciones (9: reasociar una suma en `gram`, sacar el bit-reversal, saturación con un LSB de más, layouts cruzados, inválidas en el máximo, conjugado en la sustitución hacia atrás, λ a la mitad, 1/g·1/K reordenado, orden del producto en `ldlh`) | **9/9 detectadas** (de 2 a 18 casos fallan en cada una) |
 
 **Pendiente:**

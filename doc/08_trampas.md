@@ -24,7 +24,7 @@
 | Default de `TW_DIR` **con comillas** en los wrappers | `STRINGIFY` produce `""twiddles/n1024""` y no elabora si el JSON no pasa `TW_DIR` | corregido el 2026-10-17 (default sin comillas) |
 | Twiddles que no se cargan en síntesis | ROM en cero, multiplicadores optimizados y **menos de 16 DSP**: `MAX_DSP` pasa igual | revisar en el log de Vivado los avisos de `$readmem` y que el conteo sea **exactamente** 16 |
 | Nombres dentro de la unidad | `BF2II` es la **primera** mariposa | bit 2u = primera, 2u + 1 = segunda |
-| CRLF / LF mezclados | `patch` rechaza bloques | ⏳ `.gitattributes` con `eol=lf` |
+| CRLF / LF mezclados | `patch` rechaza bloques | pasar los parches como archivo y respetar el fin de línea de cada uno. `.gitattributes` (2026-11-16) solo marca los binarios (`*.bin binary`, ...): **a propósito sin `eol=lf` ni `text=auto`**, que normalizarían los 141 archivos CRLF reescribiéndolos enteros |
 | `run_plot_fft1d` con NBF del datapath | figuras 16 veces más chicas | corregido el 2026-10-17 (usa NBF_IN / NBF_OUT) |
 | Modo `DOUBLE` con twiddles cuantizados | `double` fallaba 5/8 | corregido el 2026-10-12 (twiddles exactos) |
 | Chequear el fin de línea con `file` | `file` no dice "CRLF" en los JSON; Python en modo texto convierte `\r\n` a `\n` sin avisar | contar con `grep -c $'\r$'` y abrir en binario (`'rb'`). Pasó con el JSON de regresión el 2026-10-17; se corrigió antes de entregar |

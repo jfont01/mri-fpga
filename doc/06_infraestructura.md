@@ -78,10 +78,15 @@ Orden típico: `rm -rf build && run_gtest --keep-going && run_regression_sim && 
 | Comando | Qué hace |
 |---|---|
 | `run_gtest --keep-going` | los 18 casos de `testbench/vec/` contra `unfold_ref.py`, bit a bit (un solo modo, `[fixed]`) |
-| `make bm` | `build/a53_bm/libps_sense.a` para Vitis (bare-metal) y chequeo de 0 FMA |
-| `make qemu` | el mismo gtest para el A53, en qemu, sobre todos los casos |
-| `make host` | el mismo gtest en la PC con `-O2` |
-| `make full` | genera los casos de 1024 × 1024 (`build/vec_full`, ~600 MB) y los corre en la PC y en qemu |
+| `make compile-baremetal` | **compila** `build/baremetal/libps_sense.a` para Vitis (A53 sin sistema operativo) e inspecciona que tenga 0 FMA; no ejecuta nada |
+| `make compile-a53-linux` | **compila** el gtest para el A53 con Linux (estático), el que usa `run-qemu` |
+| `make compile-host` | **compila** el gtest para la PC con `-O2` |
+| `make compile` | los tres |
+| `make run-host` | **corre** el gtest en la PC sobre los 18 casos |
+| `make run-qemu` | **corre** el gtest del A53 emulado por qemu sobre los 18 casos |
+| `make run-full` | genera los casos de 1024 × 1024 (`build/vec_full`, ~600 MB) y los **corre** en la PC y en qemu |
+| `make run` | `run-host` + `run-qemu` |
+| `make` | la ayuda (las mismas líneas del encabezado del Makefile) |
 
 Los vectores se regeneran con `python3 model/gen_ps_sense_vectors.py --from-json modules/ps_sense/testbench/ps_sense_tb_regression.json` (determinista: mismos bytes).
 

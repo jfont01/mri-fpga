@@ -70,7 +70,7 @@ Teoría de cada pieza: [teoria_sense.md](teoria_sense.md) (SENSE y el cálculo d
 - [x] Algoritmo: A = SᴴS + λI, A = LDLᴴ sin raíces, U por sustitución; Tikhonov λ = 10⁻⁴; U'' con g_l, 2^−E y 1/K_c adentro; buffer en el orden del stream de la `fft2d` (§4.10). Referencia: `model/unfold_ref.py`.
 - [x] `unfold_ref.py` a C++ (`modules/ps_sense/cpp/ps_sense.{hpp,cpp}`, 2026-11-15): 19 casos bit a bit (U, d, E, buffer), incluido 1024 × 1024, en la PC y en el A53 con qemu (§5.8). Compila bare-metal con `aarch64-none-elf-g++`.
 - [x] Hallazgo H29: GCC para aarch64 contrae a FMA con `-O2`; hace falta `-ffp-contract=off` (chequeado en ejecución).
-- [x] Infraestructura del código del PS (2026-11-15): `run_gtest` con vectores de `gen_ps_sense_vectors.py` (18 casos), `Makefile` del módulo (`bm`, `qemu`, `host`, `full`), `-ffp-contract=off` en `scripts/Makefile`, plantilla de `create_module` borrada. Todo verde; mutaciones 9/9 (§5.8, §6.4).
+- [x] Infraestructura del código del PS (2026-11-15): `run_gtest` con vectores de `gen_ps_sense_vectors.py` (18 casos), `Makefile` del módulo (`compile-baremetal`, `compile-a53-linux`, `compile-host`, `run-host`, `run-qemu`, `run-full`), `-ffp-contract=off` en `scripts/Makefile`, plantilla de `create_module` borrada. Todo verde; mutaciones 9/9 (§5.8, §6.4).
 - [ ] Integrar `libps_sense.a` en la app de Vitis (bare-metal): flags del compilador, pila, cómo llegan los mapas a la DDR.
 - [ ] Medir el tiempo en el A53 (estimado: menos de 1 s para 172 Mflop).
 - [ ] Mapas de sensibilidad: algoritmo (RSS o ESPIRiT con las líneas ACS) y máscara del objeto.
