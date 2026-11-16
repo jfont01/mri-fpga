@@ -1,0 +1,17 @@
+maps phantom_mask
+n_ro 64
+n_pe 64
+L 8
+af 2
+lam 0x1.a36e2eb1c432dp-14
+k_iters 12
+k_cordic 0x1.a5921373ef77ep+0
+nb 16
+layout 1
+E 12
+max_abs 0x1.44180ef7395e8p+11
+d_min 0x1.a36e2eb1c432dp-14
+d_max 0x1.00068db8bac74p+0
+n_invalid 0
+n_sat 0
+words 32768

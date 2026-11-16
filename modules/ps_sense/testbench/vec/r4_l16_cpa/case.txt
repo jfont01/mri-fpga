@@ -1,0 +1,17 @@
+maps rand
+n_ro 16
+n_pe 64
+L 16
+af 4
+lam 0x0.0p+0
+k_iters 12
+k_cordic 0x1.a5921373ef77ep+0
+nb 16
+layout 1
+E 10
+max_abs 0x1.1a6f678f72d71p+9
+d_min 0x1.cfa668b4e1d05p+2
+d_max 0x1.d9a5a5544fd5ep+5
+n_invalid 0
+n_sat 0
+words 16384

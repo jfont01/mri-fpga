@@ -1,0 +1,17 @@
+maps rand_disk
+n_ro 64
+n_pe 64
+L 8
+af 2
+lam 0x1.90ad611eb08bep-10
+k_iters 12
+k_cordic 0x1.a5921373ef77ep+0
+nb 16
+layout 0
+E 10
+max_abs 0x1.b27864b18a83ep+9
+d_min 0x1.90ad611eb08bep-10
+d_max 0x1.517ddf2a5e2abp+5
+n_invalid 0
+n_sat 0
+words 32768

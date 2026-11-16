@@ -1,0 +1,17 @@
+maps rand
+n_ro 32
+n_pe 32
+L 8
+af 2
+lam 0x0.0p+0
+k_iters 0
+k_cordic 0x0.0p+0
+nb 12
+layout 0
+E 11
+max_abs 0x1.9a7efefa4434cp+10
+d_min 0x1.a1f6428348b8fp+1
+d_max 0x1.44d38a9e6dc11p+5
+n_invalid 0
+n_sat 0
+words 8192

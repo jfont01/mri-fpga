@@ -307,7 +307,7 @@ gen_unit[2].u_bf2i/r_addr_reg[1]     (fan-out 42, 0,501 ns)
 - Sesión: `build_buffer(dims, smaps, g, config, out, report)`. Pasada 1: U' en todas las posiciones válidas → máximo → E por `frexp`. Pasada 2, en el orden del stream (t1, t2) → (x = br(t1), p = br(t2)): recalcula U' (da los mismos bits), cuantiza y escribe directo en el buffer de 32 bits. Así no hace falta un temporal de 128 MiB para U' (el precio es calcular U dos veces). Las posiciones con LDLᴴ inválida (solo con λ = 0) quedan en 0 y no cuentan para E. `report`: E, máximo, pivotes mínimo y máximo, cantidad de inválidas y de saturadas.
 - Chequeos: dimensiones (potencias de 2 en n_ro y n2), parámetros (g_l > 0 y finitos, λ ≥ 0, nb en [2, 16]) y `fp_contract_off()` (abajo). Devuelve un `status`, no excepciones.
 
-**Cómo se verificó** (scratchpad, `check_ps_sense.py` + un arnés en C++; todavía no está en la regresión del módulo): 19 casos generados con las funciones de `unfold_ref.py` (`gram`, `ldlh`, `solve_U`, `scale_quantize`, `pack_hw`) y comparados **bit a bit**: U (los `double`, en las posiciones válidas), d, la máscara de válidas, E, el máximo, d_min / d_max, la cantidad de inválidas y de saturadas, K_12 y el buffer completo.
+**Primera verificación** (2026-11-15, scratchpad, `check_ps_sense.py` + un arnés en C++, antes de que existiera la regresión del módulo): 19 casos generados con las funciones de `unfold_ref.py` (`gram`, `ldlh`, `solve_U`, `scale_quantize`, `pack_hw`) y comparados **bit a bit**: U (los `double`, en las posiciones válidas), d, la máscara de válidas, E, el máximo, d_min / d_max, la cantidad de inválidas y de saturadas, K_12 y el buffer completo.
 - Casos: Af = 1, 2, 3 y 4; L = 1, 6, 8 y 16; λ = 0, 0,3 y 10⁻⁴·mediana; con y sin 1/K; nb = 16 y 12; los dos layouts; imágenes rectangulares (64 × 32, 16 × 128, 32 × 48 con Af = 3); mapas al azar, al azar con un disco (1687 de 2048 posiciones inválidas con λ = 0), mapas del fantoma 256 y **1024 × 1024 (tamaño real: 8 388 608 palabras)**, con y sin máscara; y dos casos con g elegido para que el máximo quede justo debajo de una potencia de 2 (rint da 2^(nb−1) y satura solo si esa componente es positiva: con los datos al azar pasó en una de las corridas, así que la saturación quedó probada una vez; ⏳ en la regresión, un caso armado a mano que sature siempre).
 - En la referencia, U se pone en 0 en las posiciones inválidas antes de `scale_quantize` (si no, `unfold_ref.py` mete NaN en el máximo). Es la misma regla que el C.
 - **Resultado: 19/19 idénticos**, en la PC con `-O2 -ffp-contract=off` y con `-O0 -g` (las flags del Makefile de gtest), y **en el A53**: binario de `aarch64-linux-gnu-g++ -O2 -ffp-contract=off -mcpu=cortex-a53 -static` corrido con `qemu-aarch64 -cpu cortex-a53`.
@@ -317,8 +317,25 @@ gen_unit[2].u_bf2i/r_addr_reg[1]     (fan-out 42, 0,501 ns)
 
 **Bare-metal:** `aarch64-none-elf-g++ -O2 -ffp-contract=off -mcpu=cortex-a53 -c` compila sin warnings; el texto ocupa 6,7 KiB y tiene 0 FMA. Compila también con `-Wpedantic -Wconversion -Wshadow -Wdouble-promotion` sin warnings.
 
+**Regresión del módulo** (entrega D1-infra, 2026-11-15; decisiones de Julián: gtest con el patrón de la `fft2d`, `Makefile` propio para el A53 con qemu, borrar la plantilla de `create_module`):
+- `model/gen_ps_sense_vectors.py --from-json` escribe, por cada caso del JSON (`VEC_DIR` + `vec_gen`), `case.txt` (dimensiones, config y resultados esperados; los `double` en hex, exactos), los mapas, g y las salidas de referencia (U crudo, d, válidas, buffer). Usa `gram`, `ldlh`, `solve_U`, `scale_quantize` y `pack_hw` de `unfold_ref.py`, con mapas rectangulares. Determinista: regenerado da los mismos bytes.
+- Casos `g = sat`: el generador asegura que la componente de módulo máximo sea **positiva** (si no, niega los mapas: S → −S da U → −U exacto) y elige g para que el máximo quede en 1 − 2⁻¹⁷. Así rint da 2^(nb−1) y satura siempre (n_sat = 1 en `sat16` y `sat12_cpa`); el generador corta si no satura.
+- `testbench/ps_sense_gtest.cpp`: 9 tests por caso. Sin contracción a FMA; consistencia de `case.txt`; núcleo por posición bit a bit (validez, d, U); sesión completa bit a bit (E, máximo, pivotes, contadores, buffer); `cordic_gain`; `word_index` es una permutación en los dos layouts; `bitrev`; `quantize` (empates al par, saturación por arriba y no por abajo, `pack_word`); entradas inválidas (códigos de `status`, mapas en cero → todo inválido, buffer en 0, E = 0). Los vectores se cargan una vez adentro de los tests (no en `SetUpTestSuite`, §8). La carpeta sale de `PS_SENSE_VEC` (variable de entorno) o del define `PS_SENSE_VEC_DIR`.
+- JSON: 18 casos en `testbench/vec/` (11 MB, versionados) y 2 de 1024 × 1024 en `build/vec_full/` (unos 600 MB, sin versionar, con `"gtest": {"modes": []}` para que `run_gtest` los saltee). Un solo modo (`fixed`): el módulo es todo `double` y `run_gtest` solo acepta `fixed` y `double`; la etiqueta `[fixed]` no significa nada acá.
+- `modules/ps_sense/Makefile`: `make bm` (`libps_sense.a` con `aarch64-none-elf`, chequeo de 0 FMA con `objdump`), `make qemu` (el mismo gtest compilado para aarch64, estático, contra googletest compilado desde `/usr/src/googletest`, corrido con `qemu-aarch64 -cpu cortex-a53` sobre cada carpeta), `make host` (lo mismo en la PC con `-O2`), `make full` (genera los de 1024 y corre PC + qemu), `make clean` (solo lo suyo).
+- `scripts/Makefile`: `-ffp-contract=off` en `CXXFLAGS` para todos los módulos. **No cambia nada en los otros módulos**: x86-64 base no tiene FMA, y además se comprobó compilando 28 builds existentes (4 por grupo: `cast` tb, `fft1d_r22sdf` gtest `fixed` / `double` y tb, `fft2d` gtest `fixed` / `double` y tb) con y sin la flag: los 56 objetos dan **código de máquina idéntico** (`objdump -d`).
+
+**Resultados (copia del repo en el scratchpad):**
+
+| Qué | Resultado |
+|---|---|
+| `run_gtest --keep-going` | 18/18 casos, 162 tests |
+| `make host` (`-O2`) | 18/18 |
+| `make qemu` (A53) | 18/18 |
+| `make full` (1024 × 1024, PC y qemu) | 2/2 y 2/2 |
+| `make bm` | OK: 0 FMA, 6721 bytes de código |
+| Mutaciones (9: reasociar una suma en `gram`, sacar el bit-reversal, saturación con un LSB de más, layouts cruzados, inválidas en el máximo, conjugado en la sustitución hacia atrás, λ a la mitad, 1/g·1/K reordenado, orden del producto en `ldlh`) | **9/9 detectadas** (de 2 a 18 casos fallan en cada una) |
+
 **Pendiente:**
-- Regresión del módulo (gtest + vectores, compilación cruzada, qemu): opciones planteadas a Julián, sin decidir.
 - Tiempo real en el A53.
 - Regla de λ (mediana sobre qué posiciones) y formato de los mapas cuando se calculen en el PS.
-- Los archivos de plantilla de `create_module` en `testbench/` (`ps_sense_tb.*`) usan `rtlsim` y `ps_sense_model`, que ya no existen: no compilan.

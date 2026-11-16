@@ -73,6 +73,18 @@ modules/<mod>/
 
 Orden típico: `rm -rf build && run_gtest --keep-going && run_regression_sim && run_regression_vm`.
 
+**`modules/ps_sense`** (software del PS, sin RTL; desde 2026-11-15): no tiene sim, vm ni síntesis. Desde la carpeta del módulo:
+
+| Comando | Qué hace |
+|---|---|
+| `run_gtest --keep-going` | los 18 casos de `testbench/vec/` contra `unfold_ref.py`, bit a bit (un solo modo, `[fixed]`) |
+| `make bm` | `build/a53_bm/libps_sense.a` para Vitis (bare-metal) y chequeo de 0 FMA |
+| `make qemu` | el mismo gtest para el A53, en qemu, sobre todos los casos |
+| `make host` | el mismo gtest en la PC con `-O2` |
+| `make full` | genera los casos de 1024 × 1024 (`build/vec_full`, ~600 MB) y los corre en la PC y en qemu |
+
+Los vectores se regeneran con `python3 model/gen_ps_sense_vectors.py --from-json modules/ps_sense/testbench/ps_sense_tb_regression.json` (determinista: mismos bytes).
+
 **Al pasarle comandos a Julián, usar SIEMPRE estas funciones** (no `python3 ../../scripts/python/...`). gtest no depende de sim (genera su propio estímulo); los plots sí leen los vectores de sim.
 
 ### 6.5 Convenciones del JSON
@@ -98,7 +110,8 @@ build/<CASE>/simulation/vectors/
 
 ### 6.7 `scripts/Makefile` (C++)
 
-- `-std=c++17 -O0 -g -Wall -Wextra`. `HLS_AP_DIR = $RTLSIM_ROOT/include` (los `ap_fixed` están en el repo).
+- `-std=c++17 -O0 -g -Wall -Wextra -ffp-contract=off`. `HLS_AP_DIR = $RTLSIM_ROOT/include` (los `ap_fixed` están en el repo).
+- `-ffp-contract=off` desde el 2026-11-15 (H29): no cambia el código de máquina de ningún módulo existente (56 objetos comparados, [05 §5.8](05_verificacion.md)); lo necesita `ps_sense`.
 - Compila todo en un solo comando.
 - **Bug encontrado el 2026-10-17:** el binario no dependía de `DEFINES`. Si se cambiaba un parámetro de un caso sin cambiar su nombre ni tocar fuentes, `make` reusaba el binario viejo y **se probaba la configuración anterior sin ningún aviso**. Tampoco seguía los headers que no figuran en `EXTRA_HEADERS`, como `fft1d_stimulus.hpp`.
 - **Arreglo** (entrega `makefile_fix`, 2026-10-17):

@@ -1,0 +1,17 @@
+maps phantom
+n_ro 64
+n_pe 64
+L 8
+af 2
+lam 0x0.0p+0
+k_iters 12
+k_cordic 0x1.a5921373ef77ep+0
+nb 16
+layout 0
+E 12
+max_abs 0x1.56687e349f7d2p+11
+d_min 0x1.0297c726fc60fp-1
+d_max 0x1.0000000000003p+0
+n_invalid 0
+n_sat 0
+words 32768
