@@ -31,7 +31,11 @@ CPPFLAGS += $(addprefix -I,$(SRC_DIRS))
 CPPFLAGS += $(DEFINES)
 CPPFLAGS += $(EXTRA_CPPFLAGS)
 
-CXXFLAGS := -std=c++17 -O0 -g -Wall -Wextra
+# -ffp-contract=off: que el compilador no junte a*b + c en un FMA (redondea una
+# vez en vez de dos y cambia el ultimo bit). En la PC con -O0 y sin -march no
+# cambia nada (x86-64 base no tiene FMA), pero el codigo del PS (ps_sense) se
+# exige bit a bit contra NumPy y en el A53 si pasa (bitacora H29).
+CXXFLAGS := -std=c++17 -O0 -g -Wall -Wextra -ffp-contract=off
 
 LDFLAGS := $(EXTRA_LDFLAGS)
 

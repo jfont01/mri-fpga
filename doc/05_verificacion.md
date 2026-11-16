@@ -334,6 +334,7 @@ gen_unit[2].u_bf2i/r_addr_reg[1]     (fan-out 42, 0,501 ns)
 | `make qemu` (A53) | 18/18 |
 | `make full` (1024 × 1024, PC y qemu) | 2/2 y 2/2 |
 | `make bm` | OK: 0 FMA, 6721 bytes de código |
+| En el repo de Julián (2026-11-16, sin el parche todavía) | `make bm` OK (0 FMA, 6721 bytes) y `make qemu` 18/18; `make full` falla porque falta el generador del parche |
 | Mutaciones (9: reasociar una suma en `gram`, sacar el bit-reversal, saturación con un LSB de más, layouts cruzados, inválidas en el máximo, conjugado en la sustitución hacia atrás, λ a la mitad, 1/g·1/K reordenado, orden del producto en `ldlh`) | **9/9 detectadas** (de 2 a 18 casos fallan en cada una) |
 
 **Pendiente:**
