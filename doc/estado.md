@@ -2,7 +2,7 @@
 
 *Parte de la bitácora de la tesis. Índice general: [bitacora.md](bitacora.md).*
 
-*Última actualización: 2026-11-15 (D1: U en C++ y su regresión).* **Este es el archivo que se actualiza siempre**: cada vez que se cierra una tarea, una decisión o un resultado, se marca acá (y el detalle va al archivo de la sección que corresponda).
+*Última actualización: 2026-11-16 (revisión de la documentación traída de la PC con WSL2 y cabos sueltos cerrados en la PC con Ubuntu).* **Este es el archivo que se actualiza siempre**: cada vez que se cierra una tarea, una decisión o un resultado, se marca acá (y el detalle va al archivo de la sección que corresponda).
 
 Marcas: ✅ hecho y verificado · 🟡 estimado o provisorio (cuenta en papel, fantoma, NumPy ideal) · ⏳ pendiente · — no aplica.
 
@@ -30,8 +30,8 @@ Teoría de cada pieza: [teoria_sense.md](teoria_sense.md) (SENSE y el cálculo d
 | **Memoria y *corner-turn*** (URAM o DDR por bloques; cantidad de carriles) | 🟡 cuentas | — (ideal en el modelo) | ⏳ | ⏳ | ⏳ | [02](02_arquitectura.md), [07](07_integracion.md) |
 | **Mapas de sensibilidad** (PS) | 🟡 solo mapas sintéticos | ⏳ | — (software) | — | ⏳ | [teoria_sense §6](teoria_sense.md) |
 | **Cálculo de U** (PS: LDLᴴ, Tikhonov, escalas, buffer) | ✅ con el fantoma | ✅ `modules/ps_sense`, bit a bit con `unfold_ref.py`: regresión de 18 casos + 2 de 1024 × 1024, en la PC y en el A53 (qemu) | — (software) | — | ⏳ tiempo en el A53 | [04 §4.10](04_precision.md), [05 §5.8](05_verificacion.md), [teoria_sense](teoria_sense.md) |
-| **MAC de desplegado** | ✅ con el fantoma | ⏳ (bit-exacto en Python: `mac_cordic_fxp.py`) | ⏳ no empezó | ⏳ | ⏳ | [04 §4.9](04_precision.md) |
-| **CORDIC de magnitud** | ✅ n = 12, G = 5 | ⏳ (bit-exacto en Python) | ⏳ | ⏳ | ⏳ | [04 §4.11](04_precision.md), [teoria_cordic](teoria_cordic.md) |
+| **MAC de desplegado** | ✅ con el fantoma; anchos de D2 ✅ (§4.13) | ⏳ D2 en diseño (bit-exacto en Python: `mac_cordic_fxp.py`) | ⏳ no empezó | ⏳ | ⏳ | [04 §4.9, §4.13](04_precision.md), [diseño D2](diseno_unfold_cordic.md) |
+| **CORDIC de magnitud** | ✅ n = 12, G = 5; anchos ✅ (§4.13) | ⏳ D2 en diseño (bit-exacto en Python) | ⏳ | ⏳ | ⏳ | [04 §4.11, §4.13](04_precision.md), [teoria_cordic](teoria_cordic.md), [diseño D2](diseno_unfold_cordic.md) |
 | **Reordenamiento de la imagen de salida** (bit-reversed en x y p) | 🟡 | — | ⏳ | ⏳ | ⏳ | [04 §4.11](04_precision.md) |
 | **Integración PS–PL** (DMA, AXI, DDR, Vivado, Vitis) | 🟡 cuentas | — | ⏳ wrappers | ⏳ | 🟡 loopback v0 y 1 puerto medido | [07](07_integracion.md) |
 | **Validación con datos reales** (fastMRI) | ⏳ | — | — | — | — | [04 §4.4, §4.8](04_precision.md) |
@@ -61,7 +61,8 @@ Teoría de cada pieza: [teoria_sense.md](teoria_sense.md) (SENSE y el cálculo d
 - [x] Reparto de la escala: máscaras 801 / 384 (provisorias) y la regla "dividir lo justo y al principio" para la ida y vuelta.
 - [x] Chequeo de tamaño completo (1024 × 512, 8 bobinas) contra Python: 0 diferencias (con *half-up*).
 - [ ] Ese mismo chequeo con `ROUND_CONV = 1` (`fft2d_check_full.py` / `fft2d_dump`).
-- [ ] Decidir la memoria del *corner-turn* y la cantidad de carriles (depende de la medición 4b en placa).
+- [ ] Decidir la memoria del *corner-turn* y la cantidad de carriles (depende de la medición 4b en placa). Una bobina (2 MiB) entra justo en las 64 URAM, pero un ping-pong de bobinas completas (4 MiB) no: transpuesta *in situ*, por bloques o en DDR ([02](02_arquitectura.md), estrategia 1).
+- [ ] Revisar `modules/tile_transpose` (2026-08-05), candidato para el *corner-turn* que la bitácora no mencionaba: transpuesta por tiles en BRAM con ping-pong; la dirección de lectura es un intercambio de bits del contador. Tiene RTL, modelo y wrappers, pero su JSON de regresión está vacío (0 casos) y no hay `build/`. Ojo: los puertos son de `2*NB_SAMPLE` bits con `NB_SAMPLE = 32` descrito como "{imag, real} de 16 bits": confirmar si van dos muestras por palabra.
 - [ ] RTL: dos núcleos + controlador de memoria + *corner-turn*.
 - [ ] vm de la `fft2d` (incluidos los casos de ida y vuelta) y síntesis e implementación.
 
@@ -80,9 +81,10 @@ Teoría de cada pieza: [teoria_sense.md](teoria_sense.md) (SENSE y el cálculo d
 
 - [x] Escalas, formato de U'' (16 bits), exponente común por sesión, acumulador de NB_U + 20 bits, suma independiente del orden (§4.9).
 - [x] Modelo bit-exacto en Python del MAC + salida + CORDIC (`model/mac_cordic_fxp.py`).
-- [ ] Modelo C++ y su gtest contra Python.
+- [x] D2, teoría (2026-11-16, §4.13): P de 36 bits (H31), M de 17 + G = 22 bits (suficiente y mínimo), CORDIC de 23 bits, redondeo *half-up* por defecto con `ROUND_CONV` (el modo mueve la media 0,016 LSB). Decisiones de Julián: dos módulos (`unfold` y `cordic_mag`), modelo rtlsim de un carril, *half-up* + parámetro, corregir antes `mac_cordic_fxp.py`. Diseño y propuesta en **[diseno_unfold_cordic.md](diseno_unfold_cordic.md)**. ⏳ **Próximo paso (en la PC con WSL2):** que Julián confirme los puntos P1–P7 de ese archivo (sección 3); después, el parche de `mac_cordic_fxp.py`.
+- [ ] Modelo C++ y su gtest contra Python (D2). Antes, alinear los defaults de `model/mac_cordic_fxp.py` (`OutCfg`: G = 3, W_M = 20) con §4.11 (G = 5, W_M = 17 + G = 22), y corregir su docstring, que repite la escala sin K_n (m̂ / K_n, ver §4.11).
 - [ ] RTL con M = 4 carriles (presupuesto: 10,5 ms con M = 4).
-- [ ] Cómo traer U'' de la DDR (32 MiB por trama = 640 MB/s a 20 fps) y en qué orden (`pos_coil_a` o `coil_pos_a`).
+- [ ] Cómo traer U'' de la DDR (32 MiB por trama × 20 fps = 640 MiB/s = 671 MB/s) y en qué orden (`pos_coil_a` o `coil_pos_a`).
 - [ ] vm, síntesis e implementación.
 
 ### CORDIC de magnitud
@@ -96,7 +98,7 @@ Teoría de cada pieza: [teoria_sense.md](teoria_sense.md) (SENSE y el cálculo d
 - [x] v0: DMA en lazo DDR → AXIS FIFO → DDR a 100 MHz, `memcmp` OK.
 - [x] Barrido de ancho de banda de un puerto HP: 1586 MB/s (99,1 % del teórico), N½ ≈ 3 KiB, el *flush* de caché es el 19 % del tiempo.
 - [ ] 4b: ancho de banda **agregado** con varios puertos HP en paralelo.
-- [ ] Verificar a qué velocidad configura la DDR el PS (2400 o 2133 MT/s).
+- [ ] Verificar a qué velocidad configura la DDR el PS (2400 o 2133 MT/s). **🟡 H30 (2026-11-16): muy probablemente 2133 MT/s (17,07 GB/s).** En los archivos de diseño de v0: el Tcl pide `DDR4_2400R` (controlador a 600 MHz), pero el hwh y lo que escribe el FSBL (`psu_init.c`) dan DPLL = 33,333 MHz × 64 / 2 = 1066,7 MHz, controlador = DPLL / 2 = 533,33 MHz, y con PHY : controlador = 2 : 1 la DRAM queda a 1066,7 MHz. `psu_init.html`: DDR_CTRL pedido 600, real 533,328. Falta: leer `DPLL_CTRL` (0xFD1A002C) y `DDR_CTRL` (0xFD1A0080) en la placa (JTAG, o en el paso 4b) y decidir si se reconfigura el DPLL.
 - [ ] v1: núcleo FFT en el datapath (DDR → DMA → FFT → DMA → DDR).
 - [ ] FFT 2D en placa, después la cadena completa con el PS calculando U.
 - [ ] Medir fps reales y comparar la imagen contra la referencia de Python.
@@ -134,4 +136,5 @@ Movido del §10 de la bitácora (2026-11-15); las notas en cursiva son el estado
 - **Los coeficientes de unfolding (32 MiB por trama)** pueden ser el mayor consumidor de ancho de banda.
 - **El ancho de entrada** depende de un dato que todavía no tenemos (el SNR de fastMRI).
 - **El sesgo del redondeo** en 16 bits: ¿cuánto pesa en la imagen final? *Resuelto con el redondeo convergente (§4.6): desaparece, y con 16 bits el error rms baja de ~1,0 a ~0,66 LSB.*
-- **El ancho de banda real de DDR4 para la PL**: el pico teórico según DS987 es 19,2 GB/s (el 17,07 de antes parece ser DDR4-2133). Falta medir el agregado con varios puertos HP (§7); la fase de FFT con P = 4 necesita ~6,4 GB/s.
+- **El ancho de banda real de DDR4 para la PL**: el pico teórico según DS987 es 19,2 GB/s (el 17,07 de antes parece ser DDR4-2133). Falta medir el agregado con varios puertos HP (§7); la fase de FFT con P = 4 necesita ~6,4 GB/s. *H30 (2026-11-16, 🟡): nuestros diseños dejan la DDR, muy probablemente, a 2133 MT/s, así que el pico es 17,07 GB/s (37 % con P = 4, en vez de 33 %).*
+- **Qué significa "20 fps a 1024 × 1024"** (2026-11-16). Weiger 2000 hace SENSE en tiempo real con 128 × 96 y 13–35 ms por imagen, y ningún escáner cartesiano adquiere 512 líneas de phase-encode cada 50 ms. Conviene presentarlo como **throughput de reconstrucción** (cuántas imágenes por segundo puede reconstruir el sistema), no como adquisición en tiempo real. Las matrices *multicoil* de fastMRI son más chicas que 1024 × 1024 (⏳ verificar con los datos).

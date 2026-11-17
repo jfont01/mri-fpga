@@ -1,5 +1,9 @@
 # SENSE en el FPGA: ecuaciones en limpio
 
+> **Nota (2026-11-16).** Este archivo es un *export* histórico (2026-10-24) del documento de claude.ai; no se mantiene. Lo reemplaza [teoria_sense.md](teoria_sense.md) (y [teoria_cordic.md](teoria_cordic.md) para el paso 5). Tiene dos errores conocidos:
+> - En §4, el lado izquierdo de la ecuación del MAC es **m̂ / K_c**, no m̂: U″ trae adentro 1/K_c y lo deshace el CORDIC (teoria_sense §5.2, 04 §4.11).
+> - La tabla final quedó cortada en la fila "salida".
+
 Oct 24, 2026 · @jfont
 
 Cada ecuación de la reconstrucción, en el orden en que viaja una trama, con lo que significa cada símbolo y los números de nuestro sistema.

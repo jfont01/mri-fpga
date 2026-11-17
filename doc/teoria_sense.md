@@ -66,7 +66,18 @@ $$
 
 Nosotros usamos $\Psi = I$ (bobinas con ruido independiente e igual), que es el caso más simple; ⏳ revisarlo con datos reales.
 
-**El costo de acelerar:** cuanto más parecidas son las filas de $S$ (bobinas que ven parecido a los dos píxeles superpuestos), peor condicionada está $S^{\mathsf{H}}S$ y más se amplifica el ruido. Pruessmann lo mide con el **factor g** (*g-factor*) por píxel. ⏳ La fórmula exacta se toma del paper (captura) cuando la usemos con datos reales.
+**El costo de acelerar:** cuanto más parecidas son las filas de $S$ (bobinas que ven parecido a los dos píxeles superpuestos), peor condicionada está $S^{\mathsf{H}}S$ y más se amplifica el ruido. Pruessmann lo mide con el **factor g** (*g-factor*) por píxel. La SNR de la imagen SENSE, comparada con la de una adquisición completa, pierde dos cosas: $\sqrt{A_f}$ porque se midieron $A_f$ veces menos filas, y $g$ por la geometría de las bobinas:
+
+$$
+\mathrm{SNR}_{\text{SENSE}} = \frac{\mathrm{SNR}_{\text{full}}}{g\,\sqrt{A_f}},
+\qquad
+g_\rho = \sqrt{\left[\left(S^{\mathsf{H}} \Psi^{-1} S\right)^{-1}\right]_{\rho\rho}\,\left[S^{\mathsf{H}} \Psi^{-1} S\right]_{\rho\rho}} \;\ge\; 1
+$$
+
+donde $\rho$ es cada uno de los $A_f$ píxeles verdaderos de la posición plegada. Fuentes: Brown, Cheng y Haacke, ec. 28.46–28.47 (usan $B$ por $S$ y $R$ por $A_f$), y Weiger, Pruessmann y Boesiger 2000 (`books/papers/mri/`).
+
+- Con $\Psi = I$, $g$ sale de lo que **ya calcula el PS**: $A = S^{\mathsf{H}}S$ y su inversa (la diagonal de $A^{-1}$ es la varianza del ruido de $\hat{\mathbf{m}}$, porque $U U^{\mathsf{H}} = A^{-1}$). **Verificado (NumPy, 2026-11-16):** $g \ge 1$ y $\operatorname{diag}(U U^{\mathsf{H}}) = \operatorname{diag}\big((S^{\mathsf{H}}S)^{-1}\big)$ en 2000 casos al azar ($L = 8$, $A_f = 2$).
+- ⏳ Con $\lambda > 0$ la covarianza de $\hat{\mathbf{m}}$ pasa a ser $U_\lambda U_\lambda^{\mathsf{H}}$, que ya no es $(S^{\mathsf{H}}S + \lambda I)^{-1}$: hay que verificar en NumPy qué $g$ usar antes de usarlo para elegir $\lambda$.
 
 ## 4. Regularización (Tikhonov)
 
@@ -139,13 +150,19 @@ $$
 - $E$: un exponente común por sesión, para que $U''$ entre en 16 bits.
 - $K_c$: la ganancia del CORDIC ([teoria_cordic.md](teoria_cordic.md)).
 
-La PL calcula, en cada píxel plegado y para cada uno de los 2 píxeles verdaderos:
+En cada píxel plegado y para cada uno de los 2 píxeles verdaderos, la imagen es:
 
 $$
 \hat{m}\big(x,\; p + 512\,a\big) = 2^{\,S_1 + S_2 - 19} \sum_{l} U'(x, p, a, l)\; A_l(x, p)
 $$
 
-donde $A_l$ es la salida de la IFFT 2D (en Q1.15) y la potencia de 2 deshace el escalado de la FFT (§4.9). $U''$ son 2 × 8 coeficientes complejos de 16 + 16 bits por posición: **32 MiB** en DDR, guardados en el mismo orden bit-reversed en que sale la IFFT 2D (así el MAC no reordena nada).
+donde $A_l$ es la salida de la IFFT 2D (en Q1.15) y la potencia de 2 deshace el escalado de la FFT (§4.9). Lo que **calcula la PL** es la misma suma, pero con $U''$, que trae adentro $2^{-E}$ y $1/K_c$:
+
+$$
+\frac{\hat{m}\big(x,\; p + 512\,a\big)}{K_c} = 2^{\,S_1 + S_2 - 19 + E} \sum_{l} U''(x, p, a, l)\; A_l(x, p)
+$$
+
+El $1/K_c$ no se corrige: el CORDIC calcula la magnitud multiplicando por su ganancia $K_c$, así que a la salida queda $|\hat{m}|$ en la escala correcta ($\approx |\hat{m}| \cdot 2^{F_{\text{OUT}}}$, con el corrimiento $D = 49 - S - E - F_{\text{OUT}}$ de §4.11). **Verificado (NumPy, `mac_cordic_fxp.py`, 2026-11-16):** el lado derecho difiere de $\hat{m}$ en un 39 % ($1 - 1/K_{12}$) y de $\hat{m}/K_{12}$ en $3\cdot10^{-5}$ (la cuantización de $U''$; $5\cdot10^{-5}$ con otra semilla en la PC con WSL2); a la salida del CORDIC, el error contra $|\hat{m}|\cdot 2^{F_{\text{OUT}}}$ tiene media $+0{,}01$ LSB (la escala es la correcta). *(Corrección del 2026-11-16: antes este párrafo decía que la PL calcula $\hat{m}$, sin el $1/K_c$.)* $U''$ son 2 × 8 coeficientes complejos de 16 + 16 bits por posición: **32 MiB** en DDR, guardados en el mismo orden bit-reversed en que sale la IFFT 2D (así el MAC no reordena nada).
 
 ## 6. Los mapas de sensibilidad (pendiente)
 
@@ -172,11 +189,13 @@ $$
 | Imagen plegada por bobina | 512 × 1024 |
 | Posiciones plegadas | 524 288 (cada una con un $U$ de 2 × 8) |
 | MAC por trama | 1024 × 512 × 16 = 8,39 M productos complejos |
-| $U''$ | 32 MiB por sesión, leído entero en cada trama (640 MB/s a 20 fps) |
+| $U''$ | 32 MiB por sesión, leído entero en cada trama (32 MiB × 20 fps = 640 MiB/s = 671 MB/s) |
 | $\lambda$ | $10^{-4}$ × mediana de $\operatorname{diag}(S^{\mathsf{H}}S)$ (propuesta, a confirmar con fastMRI) |
 
 ## Referencias
 
-- K. P. Pruessmann, M. Weiger, M. B. Scheidegger, P. Boesiger, *SENSE: Sensitivity Encoding for Fast MRI*, MRM 1999.
+- K. P. Pruessmann, M. Weiger, M. B. Scheidegger, P. Boesiger, *SENSE: Sensitivity Encoding for Fast MRI*, MRM 1999 (⏳ no está en `books/`).
+- M. Weiger, K. P. Pruessmann, P. Boesiger, *Cardiac Real-Time Imaging Using SENSE*, MRM 43:177–184, 2000 (`books/papers/mri/`): la fórmula de SNR con $g$ y $\sqrt{R}$.
+- R. W. Brown, Y.-C. N. Cheng, E. M. Haacke et al., *Magnetic Resonance Imaging: Physical Principles and Sequence Design*, 2.ª ed., cap. 28, §28.4, ec. 28.42–28.47 (`books/`).
 - Akçakaya et al., *Magnetic Resonance Image Reconstruction: Theory, Methods and Applications*; *Parallel Imaging in Clinical MR Applications*; Paul y Mathew, *Regularized Image Reconstruction in Parallel MRI with MATLAB*; Liang y Lauterbur, *Principles of MRI: A Signal Processing Perspective* (`books/`).
 - Watkins, *Fundamentals of Matrix Computations*; Golub y Van Loan, *Matrix Computations*: factorización LDLᴴ (`books/`).

@@ -164,13 +164,15 @@ Leída de la Tabla 1 de He y Torkelson:
 | Arquitectura | Multiplicadores | Sumadores | Memoria | Control |
 |---|---|---|---|---|
 | R2MDC | $2(\log_4 N - 1)$ | $4 \log_4 N$ | $3N/2 - 2$ | simple |
-| R2SDF | $\log_2 N - 1$ | $2 \log_2 N$ | $N - 1$ | simple |
+| R2SDF | $2(\log_4 N - 1) = \log_2 N - 2$ | $4 \log_4 N = 2 \log_2 N$ | $N - 1$ | simple |
 | R4SDF | $\log_4 N - 1$ | $8 \log_4 N$ | $N - 1$ | medio |
 | R4MDC | $3(\log_4 N - 1)$ | $8 \log_4 N$ | $5N/2 - 4$ | simple |
 | R4SDC | $\log_4 N - 1$ | $3 \log_4 N$ | $2N - 2$ | complejo |
 | **R2²SDF** | $\boldsymbol{\log_4 N - 1}$ | $4 \log_4 N$ | $\boldsymbol{N - 1}$ | **simple** |
 
 El R2²SDF tiene el mínimo de multiplicadores y de memoria, con control simple; solo el R4SDC usa menos sumadores, a cambio de control complejo y el doble de memoria.
+
+*Corrección (2026-11-16):* la fila R2SDF decía $\log_2 N - 1$ multiplicadores; la tabla dice $2(\log_4 N - 1) = \log_2 N - 2$ (con $N = 1024$: 8; el que iría antes de la última etapa multiplica solo por $1$ o $-j$, así que no se cuenta). Se leyó de la **imagen** de la Tabla 1 (p. 770 de Proc. IPPS '96, renderizada con `pdftoppm`), porque la capa de texto del PDF pierde las filas R2SDF y R4SDF; coincide con el texto de la §II. Verificado de nuevo en la PC con Ubuntu: $2(\log_4 1024 - 1) = 8 = \log_2 1024 - 2$. La Figura 4 del paper confirma que la entrada va a BF2I y que el $-j$ está en BF2II: al revés que los nombres de nuestro RTL (§4).
 
 ### 7.2 Las que implementamos
 
@@ -204,7 +206,7 @@ $$
 
 ## Referencias
 
-- S. He, M. Torkelson, *A New Approach to Pipeline FFT Processor*, Proc. IPPS, 1996: ecuaciones 1–6, figuras 3–5, tabla 1.
-- M. Garrido, *A Survey on Pipelined FFT Hardware Architectures*, 2022: familias SDF, SDC, MDC y MDF (`books/papers/fft/`).
+- S. He, M. Torkelson, *A New Approach to Pipeline FFT Processor*, Proc. IPPS '96, pp. 766–770 (`books/papers/fft/`): ecuaciones 1–6, figuras 3–5, tabla 1.
+- M. Garrido, *A Survey on Pipelined FFT Hardware Architectures*, J. Signal Process. Syst. 94:1345–1364, 2022 (publicado online en 2021), doi 10.1007/s11265-021-01655-1 (`books/papers/fft/`): familias SDF, SDC, MDC y MDF; la §5.1 (MDF) es la que sirve para P > 1.
 - Proakis y Manolakis, *Tratamiento digital de señales*: DFT, FFT radix-2, DIT y DIF (`books/`).
 - AMD UG579 (DSP48E2): multiplicador 27 × 18, cascada `PCIN`, registros AREG/BREG/MREG/PREG.

@@ -16,7 +16,7 @@ SQNR = 10 · log10( Σ |X_ref[k]|² / Σ |X_hw[k] − X_ref[k]|² )   [dB]
 - Cuantizar uniformemente con N bits una senoidal a fondo de escala da `6,02·N + 1,76 dB`, o sea ~6 dB por bit. Verificado en NumPy: 49,93 / 74,03 / 98,09 dB con 8, 12 y 16 bits, contra 49,92 / 74,00 / 98,08 de la fórmula.
 - Si la señal está *A* dB por debajo del fondo de escala, la SQNR baja *A* dB, porque el error es el mismo y la señal es más chica. Por eso importan el PAR del estímulo y el escalado.
 
-**SNR contra SQNR.** El SNR mide la señal contra el ruido **físico** de la adquisición: térmico, del paciente y de la electrónica de las bobinas, gaussiano en k-space. La SQNR mide la señal contra el error que agrega **nuestra aritmética**. En SENSE el SNR además cae por el submuestreo: `SNR_SENSE = SNR_full / (g·√R)`, con `g ≥ 1` el factor geométrico (Pruessmann 1999; la notación exacta hay que verificarla en el paper). Como los dos ruidos son independientes, sus potencias se suman:
+**SNR contra SQNR.** El SNR mide la señal contra el ruido **físico** de la adquisición: térmico, del paciente y de la electrónica de las bobinas, gaussiano en k-space. La SQNR mide la señal contra el error que agrega **nuestra aritmética**. En SENSE el SNR además cae por el submuestreo: `SNR_SENSE = SNR_full / (g·√R)`, con `g ≥ 1` el factor geométrico y R = Af (verificado en Weiger, Pruessmann y Boesiger 2000, `books/papers/mri/`, y en Brown ec. 28.36; la fórmula de g está en [teoria_sense §3](teoria_sense.md)). Como los dos ruidos son independientes, sus potencias se suman:
 
 ```
 1 / SNR_total = 1 / SNR_térmico + 1 / SQNR      (en potencia, no en dB)
@@ -280,7 +280,7 @@ Con un exponente común por sesión, U'' = U'·2^−E con las componentes en [�
 
 El error de U solo sube 6,02 dB por bit, como tiene que ser. **Propuesta: NB_U = 16** (re + im en una palabra de 32 bits; entra en el puerto de 27 bits del DSP48E2 con A_l de 16 bits en el de 18). En memoria: Af·L·T = 8 388 608 complejos = **32 MiB**, leídos una vez por trama: **671 MB/s** a 20 fps.
 
-**(3) Acumulación.** Producto complejo de 16 × NB_U bits y suma de 8 bobinas: cota de peor caso **NB_U + 20 bits** (36 con NB_U = 16; los datos usan 29). Refinada el 2026-10-21: la cota exacta es NB_A + NB_U + 3 = **35 bits** (cada parte de un producto complejo es < 2^31 porque +2^15 no es representable; por 8 bobinas, < 2^34). Entra con margen en el acumulador de 48 bits del DSP48E2. La suma en enteros es exacta, así que **el resultado no depende del orden de las bobinas** (verificado: natural, inverso y permutado, idénticos): el modelo del MAC se puede escribir sin haber elegido la memoria.
+**(3) Acumulación.** Producto complejo de 16 × NB_U bits y suma de 8 bobinas: cota de peor caso **NB_U + 20 bits** (36 con NB_U = 16; los datos usan 29). Refinada el 2026-10-21: la cota exacta es NB_A + NB_U + 3 = **35 bits** (cada parte de un producto complejo es < 2^31 porque +2^15 no es representable; por 8 bobinas, < 2^34). *Corrección (2026-11-16, §4.13): vale para la parte real; la imaginaria, ur·ai + ui·ar, llega a **+2^31 exacto** con las cuatro en −2^15 (2^30 + 2^30), así que P_im llega a 2^34 y hacen falta **36 bits**: la cota original NB_U + 20 era la correcta. Es un caso de esquina (U'' y A en −2^15 − j2^15 en las 8 bobinas), pero el hardware lo tiene que soportar.* Entra con margen en el acumulador de 48 bits del DSP48E2. La suma en enteros es exacta, así que **el resultado no depende del orden de las bobinas** (verificado: natural, inverso y permutado, idénticos): el modelo del MAC se puede escribir sin haber elegido la memoria.
 - Si la suma parcial se guarda redondeada (acumular bobina por bobina con el acumulador en memoria), con punto binario fijo para la cota y sin saturación **sigue sin depender del orden**: redondear a una grilla conmuta con sumar múltiplos de la grilla. Lo que cuesta es precisión: W = 20 bits pierde 1,83 dB, **W = 24 pierde 0,011 dB**, W = 28 nada. Ese acumulador (Af·T complejos de 24–32 bits) es un dato para el paso 6.
 - Corrección: antes había dicho que redondear las sumas parciales haría depender el resultado del orden. Los números muestran que no, mientras no sature.
 
@@ -340,14 +340,16 @@ El error de U solo sube 6,02 dB por bit, como tiene que ser. **Propuesta: NB_U =
 `model/mac_cordic_fxp.py` (modelo bit-exacto del PL después de la fft2d, con self-test) y `model/mac_output_study.py`, sección D.
 
 **Cadena:**
-1. P = Σ_l U''_q·A_l, exacto (35 bits como máximo; usa 29).
+1. P = Σ_l U''_q·A_l, exacto (36 bits como máximo, por la parte imaginaria: §4.13; usa 29).
 2. M = sat_{17+G}(redondeo half-up de P / 2^(D−G)): G bits de guarda.
 3. CORDIC vectoring sobre (|Re M|, |Im M|) con n iteraciones y corrimientos aritméticos: si y ≥ 0, x += y>>i y y −= x>>i; si no, al revés. x_n = K_n·|M|, con K_n = Π sqrt(1 + 2^−2i).
 4. Salida u16 = redondeo de x_n / 2^G.
 
-**Escala:** m̂ = 2^(S−19+E)·P·2^−30, así que **salida ≈ |m̂|·2^F_OUT con D = 49 − S − E − F_OUT** (D = 13 con S = 6, E = 15, F_OUT = 15: UQ1.15; el máximo del fantoma da 32 938, o sea 1,005). D lo fija el PS por sesión; con datos reales la escala de la imagen no se conoce de antemano y hay que calibrarla (prescan o primera trama).
+**Escala:** con 1/K_n adentro de U'', lo que da el MAC es m̂ / K_n = 2^(S−19+E)·P·2^−30; el CORDIC lo vuelve a multiplicar por K_n, así que **salida ≈ |m̂|·2^F_OUT con D = 49 − S − E − F_OUT** (D = 13 con S = 6, E = 15, F_OUT = 15: UQ1.15; el máximo del fantoma da 32 938, o sea 1,005). D lo fija el PS por sesión; con datos reales la escala de la imagen no se conoce de antemano y hay que calibrarla (prescan o primera trama).
 
 **Ganancia del CORDIC:** 1/K_n se pliega en U'' (lo multiplica el PS), así que no hay multiplicador en el PL. E baja de 16 a 15.
+
+*Corrección (2026-11-16):* la línea *Escala* decía m̂ = 2^(S−19+E)·P·2^−30; con 1/K_n plegado ese lado izquierdo es m̂ / K_n. Solo cambia la notación: D y la salida no cambian. Verificado en NumPy con `mac_cordic_fxp.py` (U' al azar, L = 8, S = 6, E = 15, n = 12, G = 5): 2^(S−19+E)·P·2^−30 difiere de m̂ en un 39 % (1 − 1/K_n) y de m̂ / K_n en 3·10⁻⁵ (5·10⁻⁵ con otra semilla en la PC con WSL2); la salida del CORDIC contra |m̂|·2^F_OUT tiene media +0,01 LSB.
 
 **Error del CORDIC:**
 - Residuo angular ≤ |v|·(1 − cos(atan 2^−(n−1))) ≈ |v|·2^−(2n−1): 1 LSB a fondo de escala con n = 8, 0,008 LSB con n = 12.
@@ -427,3 +429,36 @@ pico de cualquier etapa interna  ≤  máx( pico de la entrada , pico de la sali
 - **Con redondeo convergente** (2026-10-26, entrega 2 del paso B): `rt64_shepp_conv`, `rt64_shepp_full_conv`, `rt256_shepp_conv` y `rt256_sine_rot25_conv`. Con `ROUND_CONV = 1` en el caso, el generador hace también la ida con convergente (si no, el sesgo de la ida seguiría en (0, 0)). Resultados en §4.6.
 - El error de la ida y vuelta viene casi todo de la ida: la vuelta sola da entre 10,5 y 18,5 dB más (salvo la *zone plate*, donde las dos son iguales).
 - Verificado en el repo (2026-10-25): gtest 28/28 (168 tests), sim de los 6 casos `rt*` 6/6, plot 6/6. Los casos de antes no cambian: estímulos idénticos byte a byte y plots idénticos (texto y PNG). Falta el vm: el RTL de la `fft2d` todavía no existe.
+
+### 4.13 D2: anchos, saturación y redondeo de la cadena MAC → CORDIC (2026-11-16) ✅ NumPy
+
+Antes de escribir los modelos C++ del MAC y del CORDIC (paso D2; decisiones de Julián del 2026-11-16: dos módulos, `unfold` y `cordic_mag`; modelo rtlsim de un carril; *half-up* con parámetro `ROUND_CONV`; corregir antes `mac_cordic_fxp.py`). Todo con enteros exactos en NumPy (scratchpad).
+
+**Acumulador P (36 bits).** Con A y U'' en 16 bits con signo (rango [−2^15, 2^15 − 1]), por cada producto complejo:
+- parte real ur·ar − ui·ai ∈ [−(2^31 − 2^15), 2^31 − 2^15] (máximo con ur = ar = −2^15 y ui·ai = −2^15·(2^15 − 1));
+- parte imaginaria ur·ai + ui·ar ∈ [−(2^31 − 2^16), **+2^31**] (las cuatro en −2^15).
+
+Con L = 8: P_re cabe en 35 bits con signo y **P_im necesita 36** (llega a 2^34). Verificado recorriendo las 16 combinaciones de extremos. El DSP48E2 acumula en 48 bits, así que no cuesta nada; lo que fija el ancho es la entrada del redondeo.
+
+**M de 17 + G bits es suficiente y es el mínimo.** La salida (u16) satura cuando K·|M| / 2^G ≥ 2^16 − ½, o sea |M| ≥ 0,607·2^(16+G). Saturar cada componente de M en [−2^(16+G), 2^(16+G) − 1] (17 + G bits) solo toca valores cuya salida ya satura, así que no cambia nada. Con un bit menos (máximo 2^(15+G) − 1 = 0,5·2^(16+G)) se recortarían valores que no saturan la salida: 17 + G = 22 bits es el mínimo con G = 5.
+
+**Anchos internos del CORDIC** (n = 12, G = 5; entrada |Re M|, |Im M| ≤ 2^21, 22 bits sin signo): recorriendo 200 001 ángulos con radio 2^21 y √2·2^21, y la esquina (−2^21, −2^21):
+- x llega a 4 883 994 = K·√2·2^21 (< 2^23): **23 bits sin signo**;
+- y queda en [−2^21, 2^21]: **23 bits con signo**.
+
+Coincide con los "~23 bits" de [teoria_cordic](teoria_cordic.md).
+
+**Redondeo: *half-up* contra convergente.** Error de la salida contra la ideal K·|P| / 2^D (en LSB de u16), 400 000 píxeles con fase al azar, D = 13, G = 5, n = 12:
+
+| Redondeo (P → M / salida) | Rango completo: media | rms | máx | Fondo (0–100 LSB): media | rms | máx |
+|---|---|---|---|---|---|---|
+| *half-up* / *half-up* | +0,025 | 0,295 | 0,79 | +0,098 | 0,311 | 0,82 |
+| convergente / convergente | +0,009 | 0,294 | 0,72 | +0,082 | 0,306 | 0,78 |
+| *half-up* / convergente | +0,009 | 0,294 | 0,72 | +0,082 | 0,306 | 0,78 |
+| ideal (rint de la referencia) | 0,000 | 0,289 | 0,50 | 0,000 | 0,289 | 0,50 |
+
+- El modo de redondeo mueve la media **0,016 LSB**, y casi todo es del redondeo de la salida (el de P → M descarta 8 bits y los empates son raros). El resto del sesgo (+0,08 en el fondo) es del propio CORDIC (los corrimientos truncan) y no depende del modo.
+- No pasa lo que pasaba en la FFT (§4.6), donde se descartaba 1 bit por etapa y el empate era 1 de cada 2 muestras.
+- **Decisión (Julián, 2026-11-16): *half-up* por defecto, con un parámetro `ROUND_CONV`** para poder cambiarlo.
+- Contexto: G = 0 da media +1,53 y máximo 10,6 LSB; G = 3, +0,16 y 1,4; G = 5, +0,026 y 0,73; G = 6, +0,010 y 0,60.
+

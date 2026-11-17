@@ -1,6 +1,6 @@
 # Bitácora técnica — Reconstrucción SENSE en tiempo real sobre Kria KV260
 
-*Tesis de grado de Ingeniería Biomédica (UNC). Última actualización: 2026-11-15.*
+*Tesis de grado de Ingeniería Biomédica (UNC). Última actualización: 2026-11-16.*
 
 Esta carpeta junta el contexto de la tesis, la teoría, las decisiones de diseño, los resultados medidos, la infraestructura y los pendientes. Tiene dos usos:
 
@@ -18,6 +18,7 @@ Desde el 2026-11-15 está separada en archivos. Este es el índice. La numeraci�
 | Entender la teoría de **SENSE y el cálculo de U** | [teoria_sense.md](teoria_sense.md) |
 | Entender la teoría de la **FFT R2²SDF**, la IFFT, la 2D y las arquitecturas comparadas | [teoria_fft.md](teoria_fft.md) |
 | Entender el **CORDIC** de magnitud | [teoria_cordic.md](teoria_cordic.md) |
+| **Seguir con D2** (modelos C++ del MAC y del CORDIC) | [diseno_unfold_cordic.md](diseno_unfold_cordic.md) |
 
 ## Mapa de archivos
 
@@ -31,6 +32,7 @@ Desde el 2026-11-15 está separada en archivos. Este es el índice. La numeraci�
 | [06_infraestructura.md](06_infraestructura.md) | entorno, árbol del repo, estructura de un módulo, comandos, JSON, vectores, Makefile | §6 |
 | [07_integracion.md](07_integracion.md) | plataforma, puertos HP, DDR, DMA, block design, Vivado y Vitis, restricciones de integración, decisiones de sistema, bring-up en placa | §7 |
 | [08_trampas.md](08_trampas.md) | trampas conocidas | §8 |
+| [diseno_unfold_cordic.md](diseno_unfold_cordic.md) | diseño del MAC de desplegado y del CORDIC (paso D2): decisiones, propuesta pendiente, anchos, interfaces, plan de verificación y cómo retomar | — |
 | [estado.md](estado.md) | tabla de estado por bloque, desglose de tareas, roadmap, riesgos | (era §9 y §10) |
 | [bibliografia.md](bibliografia.md) | bibliografía | §11 |
 | [registro.md](registro.md) | registro de cambios (el más nuevo arriba), versiones por entrega, plan y pendientes anteriores | §12 |

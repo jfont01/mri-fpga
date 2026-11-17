@@ -14,9 +14,11 @@
   - carga Vivado/Vitis (`VIVADO_SETTINGS_64_SH`, `VITIS_SETTINGS_64_SH`);
   - carga `module_utils.sh`, `flist_utils.sh`, `regression_utils.sh` y `xsim_utils.sh`.
 - `help_env` lista los comandos.
-- **Claude Code en VS Code (2026-10-25, migración desde claude.ai):** la bitácora pasa a vivir en el repo, en `doc/bitacora.md`, y esa copia es la fuente de verdad. `CLAUDE.md` en la raíz tiene las reglas de trabajo y el índice de la bitácora. `.claude/settings.json` bloquea `make qspi` y pide confirmación para `xsdb`, `xsct`, `git commit` y `git push`; es un resguardo, no una barrera: la protección real sigue siendo `CONFIRM_QSPI=NO`. Los manuales están en `books/amd-docs/` (no hay `.txt`: se busca con `pdftotext -layout`). Cada llamada de Claude a la terminal es una shell nueva: el entorno se carga en el mismo comando.
+- **Claude Code en VS Code (2026-10-25, migración desde claude.ai):** la bitácora pasa a vivir en el repo, en `doc/bitacora.md`, y esa copia es la fuente de verdad. `CLAUDE.md` en la raíz tiene las reglas de trabajo y el índice de la bitácora. `.claude/settings.json` bloquea `make qspi` y pide confirmación para `xsdb`, `xsct`, `git commit` y `git push`; es un resguardo, no una barrera: la protección real sigue siendo `CONFIRM_QSPI=NO`. Los manuales están en `books/amd-docs/` (no hay `.txt`: se busca con `pdftotext -layout`; detalle por PC en §6.2). Cada llamada de Claude a la terminal es una shell nueva: el entorno se carga en el mismo comando.
+- **PDF:** `pdftotext` y `pdftoppm` (poppler-utils 24.02; instalados en la PC con Ubuntu, verificado el 2026-11-16). Las tablas y figuras que la capa de texto pierde (pasó con la Tabla 1 de He y Torkelson) se miran como imagen: `pdftoppm -f 5 -l 5 -r 300 -png <pdf> <prefijo>` (página 5).
+- **Dos PC (2026-11-16):** Ubuntu nativo (esta, con la placa) y Windows con WSL2. El repo se sincroniza por git; lo que no está versionado (los PDF, `build/`, los proyectos de Vivado/Vitis de `bringup/`) hay que copiarlo a mano.
 
-### 6.2 Árbol del repositorio (`mri-fpga/`, 2026-10-17)
+### 6.2 Árbol del repositorio (`mri-fpga/`, actualizado el 2026-11-16)
 
 ```
 books/           libros en PDF (+ papers/fft, papers/mri, amd-docs/ con los manuales de AMD, Xilinx DSP Workbook)
@@ -25,21 +27,36 @@ bringup/
   v0/            loopback DMA (Tcl de proyecto y block design, firmware)
   v1/, v1.1/     hardware/, firmware/, results/, Makefile                    (v1.1: 250 MHz; estado a confirmar)
 doc/             la bitácora separada por archivos (índice: bitacora.md; teoría en teoria_*.md)
-model/           cfxp.py, fxp.py   (modelos de punto fijo en Python)
+model/           modelos y estudios en Python: bit a bit (fft1d_r22sdf_fxp.py, mac_cordic_fxp.py, unfold_ref.py),
+                 referencia (fft2d_ref.py), generadores (gen/, gen_fft2d_stim.py, gen_ps_sense_vectors.py),
+                 estudios (*_study.py, fft1d_scaling_bound.py), cfxp.py / fxp.py
 modules/         btfly_sdf, cast, cmul, cmul_karatsuba, delay_line,
-                 fft1d_r2, fft1d_r2sdf, fft1d_r22sdf, tile_transpose
+                 fft1d_r2, fft1d_r2sdf, fft1d_r22sdf, tile_transpose (2026-08: RTL y modelo, regresión vacía),
+                 fft2d (modelo C++ ciclo a ciclo; rtl/fft2d.v es la plantilla vacía),
+                 ps_sense (software del PS, 2026-11-15; sin RTL), unfold (plantilla vacía de create_module, 2026-10-25)
 rtlsim/          rtlsim.hpp, rtlsim_core.hpp, rtlsim_trace.hpp, include/ (ap_fixed de Vitis HLS)
 scripts/         Makefile, set_env.sh, lint_waivers.txt,
                  python/ (runners + venv), shell/ (utilidades), tcl/ (xsim, synth, impl)
-CLAUDE.md
+CLAUDE.md, .gitattributes (binarios, 2026-11-16), .gitignore (*.pdf, build/, amd/, ...)
 ```
 
-**Documentación disponible para consultar.** Desde la migración a Claude Code (2026-10-25), Claude lee directamente `books/` y `doc/` del repo. Verificado: los 76 PDF abren y 75 tienen texto; `books/papers/fft/patent_7415584.pdf` está escaneado (se ve como imagen, no se puede buscar). Los `.doc` del DSP Workbook se leen convirtiéndolos con libreoffice.
+**Documentación disponible para consultar.** Desde la migración a Claude Code (2026-10-25), Claude lee directamente `books/` y `doc/` del repo. Los PDF **no están versionados** (`*.pdf` en `.gitignore`; las excepciones son los libros y papers que se agregaron antes de esa regla y PG151): cada PC tiene su copia.
+
+**Ruta única para las dos PC: `books/amd-docs/`** (la que dice `CLAUDE.md`). En la PC con WSL2 los manuales quedaron en `doc/amd/`, que git ignora (`amd/` en `.gitignore`): hay que moverlos a `books/amd-docs/`. Al citar, poner la versión del documento: los PDF son de varias versiones (p. ej. UG1085 v2.5 de 2025, DS987 v1.6 de 2026, UG579 v1.11 de 2021, UG573 v1.14 de 2025, los de Vivado 2026.1) y las herramientas, 2024.2.
+
+| PC | Dónde y cuántos | Qué falta |
+|---|---|---|
+| **Ubuntu nativo** (verificado el 2026-11-16) | 76 PDF en `books/`, todos abren y 75 tienen texto (`books/papers/fft/patent_7415584.pdf` está escaneado). `books/amd-docs/`: **31** — UG1085 (TRM), UG579 (DSP), UG573 (memorias), UG572 (clocking), UG949 (metodología), UG896 (IP), UG994/995 (IP integrator), UG1037 (AXI), UG1118 (IP propio), UG984, DS987 (K26), datasheets del KV260 y del Zynq UltraScale+ (DS891), PG021, PG022, PG034, PG035, PG037, PG059, PG065, PG078, PG085, **PG109 (FFT)**, PG125, PG144, PG151, PG164, PG201, PG247, WP417. Libros (13), papers (7) y el Xilinx DSP Workbook (25, incluido `notes/TheCORDICAlgorithmXilinx.pdf`) | DS925, UG1400, UG1137, UG1089 (están en la otra PC: copiarlos). UG1209 no existe en PDF: solo en línea (ver abajo) |
+| **Windows con WSL2** (según la revisión del 2026-11-16) | 52 PDF: 31 en `doc/amd/` (con DS925, UG1400, UG1137 y UG1089) y 21 en `books/` (libros, papers y PG151 en `books/amd-docs/`) | PG109 y el Xilinx DSP Workbook (copiarlos de esta PC). UG1209: solo en línea |
+
+**UG1209** (*Zynq UltraScale+ MPSoC Embedded Design Tutorial*) AMD lo publica solo en HTML, sin PDF (Julián, 2026-11-16): <https://docs.amd.com/r/en-US/ug1209-embedded-design-tutorial/Zynq-UltraScale-MPSoC-Embedded-Design-Tutorial-UG1209>. Al citarlo, poner la URL y la fecha de consulta.
+
+Los `.doc` del DSP Workbook se leen convirtiéndolos con libreoffice.
 
 | Dónde | Qué hay |
 |---|---|
-| Repo `books/amd-docs/` | UG1085 (TRM), UG579 (DSP), UG573 (memorias), UG572 (clocking), UG949 (metodología), UG896 (IP), UG994/995 (IP integrator), UG1037 (AXI), UG1118 (IP propio), UG984, DS987 (K26), datasheets del KV260 y del Zynq UltraScale+, PG021, PG022, PG034, PG035, PG037, PG059, PG065, PG078, PG085, PG109 (FFT), PG125, PG144, PG151, PG164, PG201, PG247, WP417. **No están en el repo** (solo estaban en el proyecto de claude.ai): DS925, UG1400, UG1137, UG1089, UG1209 |
-| Repo `books/` | Parhami (*Computer Arithmetic*), Khan (*Digital Design of Signal Processing Systems*), Gonzalez & Woods (*Digital Image Processing*), Watkins y Golub & Van Loan (*Matrix Computations*), Akçakaya et al. (*MR Image Reconstruction*), Brown, Cheng & Haacke (*MRI: Physical Principles*), *MRI From Picture to Proton*, *Parallel Imaging in Clinical MR Applications*, Nishimura (*Principles of MRI*), Liang & Lauterbur (*Principles of MRI: A Signal Processing Perspective*), Paul & Mathew (*Regularized Image Reconstruction in Parallel MRI with MATLAB*), Proakis & Manolakis (*Tratamiento digital de señales*), PG151 (Divider Generator) |
+| `books/` | Parhami (*Computer Arithmetic*), Khan (*Digital Design of Signal Processing Systems*), Gonzalez & Woods (*Digital Image Processing*), Watkins y Golub & Van Loan (*Matrix Computations*), Akçakaya et al. (*MR Image Reconstruction*), Brown, Cheng & Haacke (*MRI: Physical Principles*), *MRI From Picture to Proton*, *Parallel Imaging in Clinical MR Applications*, Nishimura (*Principles of MRI*), Liang & Lauterbur (*Principles of MRI: A Signal Processing Perspective*), Paul & Mathew (*Regularized Image Reconstruction in Parallel MRI with MATLAB*), Proakis & Manolakis (*Tratamiento digital de señales*) |
+| `books/papers/` | `fft/`: He & Torkelson 1996, Garrido 2022 (survey; online 2021), Mukherjee & Choudhury 2018 (FFT 2D), WiMAX, un review de deep learning (no citar), una patente escaneada. `mri/`: Weiger, Pruessmann & Boesiger 2000 |
 
 ### 6.3 Estructura de un módulo
 

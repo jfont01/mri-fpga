@@ -91,12 +91,12 @@ El orden bit-reversed de cada pasada es una permutación: la pasada 2 trabaja co
 *Detalle:* [02](02_arquitectura.md).
 
 **H20. Los coeficientes de desplegado pesan el doble que las imágenes** (2026-10-21)
-U'' son 32 MiB por trama (640 MB/s a 20 fps), contra 16 MiB de imágenes plegadas. Es el mayor riesgo de ancho de banda.
+U'' son 32 MiB por trama (32 MiB × 20 fps = 640 MiB/s = 671 MB/s), contra 16 MiB de imágenes plegadas. Es el mayor riesgo de ancho de banda.
 *Detalle:* [02](02_arquitectura.md), [04 §4.10](04_precision.md).
 
 **H21. El pico de la DDR es 19,2 GB/s, no 17,07** (2026-10-17)
 DS987: DDR4-2400 de 64 bits. El 17,07 que se venía usando coincide con una DDR4-2133. ⏳ Verificar a qué velocidad la configura el PS.
-*Detalle:* [02](02_arquitectura.md).
+*Detalle:* [02](02_arquitectura.md). → Ver H30: nuestros diseños la configuran, muy probablemente, a 2133.
 
 **H22. Un puerto HP rinde el 99 % del teórico, pero las transferencias chicas no** (bring-up, antes del 2026-10-10)
 1586 MB/s de 1600 a 100 MHz con 128 bits; la mitad del pico se alcanza recién con ~3 KiB (N½), y el *flush* de caché es el 19 % del tiempo.
@@ -105,6 +105,20 @@ DS987: DDR4-2400 de 64 bits. El 17,07 que se venía usando coincide con una DDR4
 **H23. El núcleo acepta huecos entre tramas, pero no dentro de una trama** (2026-10-26)
 Verificado en el RTL con 0, 1, 3, 5 y 100 ciclos entre tramas. Dentro de una trama, si `i_valid` cae, se reinicia el contador de la primera etapa.
 *Consecuencia:* entre el DMA y el núcleo hace falta una FIFO de una fila entera. *Detalle:* [05 §5.7](05_verificacion.md), [07 §5](07_integracion.md).
+
+**H30. La DDR de nuestros diseños corre, muy probablemente, a 2133 MT/s y no a 2400** (2026-11-16) 🟡
+Se pidió DDR4-2400 (`PSU__DDRC__SPEED_BIN = DDR4_2400R`, controlador a 600 MHz), pero Vivado dejó el controlador en 533,33 MHz. La cuenta, con la referencia de 33,333 MHz:
+
+```
+VCO del DPLL   = 33,333 MHz × 64 (FBDIV)   = 2133,3 MHz
+DPLL           = 2133,3 / 2 (DIV2)         = 1066,7 MHz
+controlador    = 1066,7 / 2 (DIVISOR0)     =  533,33 MHz
+DRAM (PHY 2:1) = 2 × 533,33                = 1066,7 MHz  →  2133 MT/s × 8 B = 17,07 GB/s
+```
+
+La relación PHY : controlador es 2 : 1 (UG1085 v2.5, `MEMC_FREQ_RATIO = 2`, §17; divisor en la Figura 37-6, cap. 37). Para 2400 haría falta el controlador a 600 MHz. El DPLL también alimenta TOPSW_MAIN (533,33 MHz), lo que probablemente explica por qué Vivado lo dejó así.
+*Cómo se vio:* en la PC con WSL2 (revisión de la documentación), en `bringup/v0/build_block_design.tcl` y en los hwh de v0, v1 y v1.1. En la PC con Ubuntu (2026-11-16) se confirmó con los archivos generados de v0, que no están versionados: el hwh (`FBDIV = 64`, `DIV2 = 1`, `DDR_CTRL__DIVISOR0 = 2`, `DDR_CTRL__ACT_FREQMHZ = 533.328003`, `SRCSEL = DPLL`, `PSS_REF_CLK = 33.333`), **lo que escribe el FSBL** (`psu_init.c`: `DPLL_CTRL` ← `0x14000`, o sea FBDIV = 0x40 y DIV2 = 1; `DDR_CTRL` ← DIVISOR0 = 2, SRCSEL = DPLL) y el resumen `psu_init.html` (DDR_CTRL: pedido 600, real 533,328).
+*Consecuencia:* el presupuesto se hace con 17,07 GB/s (la fase de FFT con P = 4 usa el 37 %; contra 19,2 sería el 33 %). ⏳ Confirmarlo en la placa (leer `DPLL_CTRL` y `DDR_CTRL` por JTAG, o en el paso 4b) y decidir si se reconfigura el DPLL. *Detalle:* [02](02_arquitectura.md), [07 §1](07_integracion.md).
 
 ## SENSE, desplegado y CORDIC
 
@@ -119,6 +133,10 @@ Donde los mapas se anulan, SᴴS es singular. Con Tikhonov λ = 10⁻⁴ no hay 
 **H26. La magnitud mejora la SNR, y el CORDIC con n = 12 y 5 bits de guarda la calcula con menos de 1 LSB de error** (2026-10-21)
 De 51,03 dB (complejo) a 51,99 dB (magnitud): se descarta la parte del error en cuadratura. Más iteraciones sin bits de guarda empeoran (n = 16 sin guarda: 15 LSB).
 *Detalle:* [04 §4.11](04_precision.md), [teoria_cordic](teoria_cordic.md).
+
+**H31. La parte imaginaria del MAC llega a 2^34: el acumulador necesita 36 bits, no 35** (2026-11-16)
+En un producto complejo de 16 × 16 bits, ur·ai + ui·ar vale +2^31 exacto cuando las cuatro son −2^15; la parte real no pasa de 2^31 − 2^15. Con 8 bobinas, P_im llega a 2^34. La "cota refinada" de 35 bits (§4.9, 2026-10-21) solo valía para la parte real. Se vio recorriendo las 16 combinaciones de extremos en NumPy, al preparar los anchos de D2.
+*Consecuencia:* P de 36 bits a la entrada del redondeo (en el DSP48E2 sobra: acumula en 48). *Detalle:* [04 §4.9 y §4.13](04_precision.md).
 
 ## Infraestructura y verificación
 

@@ -13,7 +13,7 @@ Todo lo que se sabe (y lo que falta saber) para llevar el diseño a la KV260. Lo
 | Board part | `xilinx.com:kv260_som:part0:1.4`, conector `som240_1_connector` | `config.mk` |
 | Recursos de la PL | 117 120 LUT, 234 240 FF, 1248 DSP48E2 | DS987, tabla 5 |
 | Memoria en chip | BRAM + URAM ≈ 2,88 MiB (las 64 URAM288 son 2,25 MiB) | DS987, UG573 |
-| DDR4 | 4 GB, 64 bits, 2400 Mb/s → **19,2 GB/s de pico teórico** (⏳ confirmar a qué velocidad la configura el PS) | DS987 |
+| DDR4 | 4 GB, 64 bits. La hoja de datos da 2400 Mb/s → **19,2 GB/s de pico teórico**. **En nuestros diseños (v0, v1, v1.1), muy probablemente 2133 MT/s → 17,07 GB/s** (H30, 🟡): se pidió `DDR4_2400R`, pero el controlador quedó en 533,33 MHz (DPLL 33,333 × 64 / 2 = 1066,7 MHz, controlador / 2, PHY : controlador = 2 : 1). ⏳ Confirmarlo en la placa (`DPLL_CTRL`, `DDR_CTRL`) | DS987 (v1.6); DS925, tabla 30 (DDR4 hasta 2400 en SFVC784, −2LE); UG1085 (v2.5) §17 (`MEMC_FREQ_RATIO`) y cap. 37 (Figura 37-6); los hwh y el `psu_init.c` de v0 |
 | CPU | 4 × Cortex-A53 a 1333 MHz (block design de v1.1) | PG201, Tcl de v1.1 |
 
 ## 2. Caminos entre la PL y la DDR
@@ -68,7 +68,7 @@ Verificadas en simulación:
 |---|---|---|---|
 | Cantidad de carriles | presupuesto de 50 ms por trama | P = 4 FFT y M = 4 MAC dan 21 ms; con M = 1 no entra | [02](02_arquitectura.md) |
 | *Corner-turn* | ancho de banda agregado (4b) | URAM en chip (dos puertos: se escribe por filas y se lee por columnas) o DDR por bloques grandes (N½ ≈ 3 KiB) | [02](02_arquitectura.md), §7 |
-| Tráfico de U'' | ancho de banda agregado | 32 MiB por trama (640 MB/s a 20 fps). Opciones: guardar S y resolver el 2 × 2 en la PL (16 MiB), submuestrear los mapas e interpolar, bajar la precisión de U'' | [02](02_arquitectura.md), [04 §4.9](04_precision.md) |
+| Tráfico de U'' | ancho de banda agregado | 32 MiB por trama (32 MiB × 20 fps = 640 MiB/s = 671 MB/s). Opciones: guardar S y resolver el 2 × 2 en la PL (16 MiB), submuestrear los mapas e interpolar, bajar la precisión de U'' | [02](02_arquitectura.md), [04 §4.9](04_precision.md) |
 | Orden de la imagen de salida | eficiencia de las ráfagas en DDR | reordenar en el PS o escribir con direcciones bit-reversed | [04 §4.11](04_precision.md) |
 | Puertos HP | caminos independientes al DDRC | HP0 y HP3, lecturas y escrituras separadas | §2 |
 

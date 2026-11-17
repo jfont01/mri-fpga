@@ -99,5 +99,5 @@ Por eso más iteraciones no siempre es mejor: con $n = 16$ y sin bits de guarda 
 ## Referencias
 
 - J. E. Volder, *The CORDIC Trigonometric Computing Technique*, IRE Trans. Electronic Computers, 1959.
-- B. Parhami, *Computer Arithmetic: Algorithms and Hardware Designs*, capítulo de CORDIC (`books/`).
-- Xilinx DSP Workbook, *The CORDIC Algorithm* (`books/Xilinix DSP Workbook training material/notes/TheCORDICAlgorithmXilinx.pdf`).
+- B. Parhami, *Computer Arithmetic: Algorithms and Hardware Designs*, cap. 22, *The CORDIC Algorithms* (`books/`). Cita a R. Andraka, *A survey of CORDIC algorithms for FPGA based computers*, 1998: conviene conseguirlo.
+- Xilinx DSP Workbook, *The CORDIC Algorithm* (`books/Xilinix DSP Workbook training material/notes/TheCORDICAlgorithmXilinx.pdf`). Está en la PC con Ubuntu, **sin versionar** (`*.pdf` está en `.gitignore`; de esa carpeta git solo tiene `Xilinx_DSP_Primer/`: modelos `.mdl` y sus datos, entre ellos `CORDIC_Mag/`). En la PC con WSL2 falta: copiarlo (2026-11-16).
