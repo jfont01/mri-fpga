@@ -364,7 +364,11 @@ El error de U solo sube 6,02 dB por bit, como tiene que ser. **Propuesta: NB_U =
 | **12** | **5** | **0,81** | **0,31** | +0,09 | **51,96** |
 | 16 | 0 | 15,17 | 7,35 | +5,69 | 50,34 |
 
-Referencias: |m̂| exacta 51,99 dB; el redondeo ideal a u16 tiene rms 0,289 LSB. **Propuesta: n = 12, G = 5** (error < 1 LSB, residuo angular despreciable aun a fondo de escala), M de 22 bits y unos 24 sumadores de ~23 bits.
+Referencias: |m̂| exacta 51,99 dB; el redondeo ideal a u16 tiene rms 0,289 LSB.
+
+*Reproducibilidad (2026-11-17, H32):* la tabla es con la `fft2d` en *half-up*. Desde el 2026-11-15 `mac_output_study.py` hereda `ROUND_CONV = 1` y da otros números (n = 12, G = 5: máx 0,80, rms 0,309, media +0,093, SNR 52,01 dB; |m̂| exacta 52,03 y m̂ complejo 51,12 dB). Con `ROUND_CONV = 0` inyectado en `fft2d_mask_study.CORE` reproduce la tabla exacta (verificado antes y después del parche de D2 a `mac_cordic_fxp.py`).
+
+**Propuesta: n = 12, G = 5** (error < 1 LSB, residuo angular despreciable aun a fondo de escala), M de 22 bits y unos 24 sumadores de ~23 bits.
 
 **La magnitud sube la SNR** de 51,03 dB (m̂ complejo) a 51,99 dB: con un objeto real, descarta la componente del error en cuadratura, donde |m| ≫ ruido. En el fondo (m = 0) queda |ruido| ≈ 30 LSB de u16 (distribución de Rayleigh), así que la salida de 16 bits resuelve el piso de ruido.
 

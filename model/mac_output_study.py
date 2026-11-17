@@ -152,7 +152,7 @@ def main() -> int:
             np.array_equal(to_image(Pi), Pn_i.transpose(0, 2, 1).reshape(n1, -1))
         print(f"  layout {layout}: P en orden hardware == P en orden natural: {same}")
     print(f"  bits de P usados: {int(max(np.abs(Pr).max(), np.abs(Pi).max())).bit_length() + 1} "
-          f"(cota exacta 16 + 16 + 3 = 35)")
+          f"(cota exacta 16 + 16 + 1 + 3 = 36: P_im llega a 2^34, H31)")
 
     # ------------------------------------------------------------------ D
     F_OUT = 15

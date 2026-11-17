@@ -4,7 +4,7 @@
 
 *Creado el 2026-11-16, en la PC con Ubuntu, al terminar la teoría de D2. El trabajo sigue en la PC con WSL2: ver "Cómo retomar" al final.*
 
-**Estado:** teoría hecha y verificada en NumPy (§4.13). Cuatro decisiones tomadas; la interfaz, el pipeline y la forma del modelo están **propuestos y falta que Julián los confirme** (sección 3). No hay código todavía.
+**Estado (2026-11-17):** teoría hecha y verificada en NumPy (§4.13). Cuatro decisiones tomadas; la interfaz, el pipeline y la forma del modelo están **propuestos y falta que Julián los confirme** (sección 3: el 2026-11-17 el mensaje con las respuestas llegó con el lugar vacío, "[tus respuestas]", así que siguen pendientes). **Paso 1 del plan (parche de `mac_cordic_fxp.py`) hecho y verificado en el scratchpad** (sección 5); falta que Julián lo aplique. No hay código C++ ni RTL todavía.
 
 ---
 
@@ -42,6 +42,8 @@ Lo que propuso Claude el 2026-11-16, con la recomendación. **⏳ Julián tiene 
 | P5 | Tipos del modelo | **enteros de 64 bits + chequeo de rango** contra el ancho del RTL (si los anchos están bien, el modelo es exacto; si no, el test lo detecta); en `run_gtest`, **solo el modo `fixed`** | `ap_int` con los anchos del RTL (envuelve sin avisar) |
 | P6 | Cómo se crean los módulos | Julián crea `cordic_mag` con `create_module` (como `ps_sense`); `unfold` ya existe (plantilla vacía) | — |
 | P7 | Cómo se entrega el código | ⏳ sin decidir: directo en `modules/unfold/` y `modules/cordic_mag/`, o todo por parche | — |
+
+*Nota (2026-11-17):* `CLAUDE.md` ya dice "las entregas y git los manejo yo; pasame el parche como archivo", lo que apunta a **todo por parche** en P7, salvo que Julián autorice escribir directo (como en D1 con `ps_sense`). Falta que lo confirme.
 
 ## 4. Especificación (según la propuesta)
 
@@ -81,7 +83,11 @@ Error de la cadena (n = 12, G = 5, *half-up*): media +0,025 LSB, rms 0,295, máx
 
 ## 5. Plan de verificación
 
-1. **Parche de `mac_cordic_fxp.py`:** defaults G = 5 y W_M = 17 + G; opción `round_conv`; docstring con la escala m̂ / K_n; el self-test prueba la esquina de 36 bits (P_im = 2^34). Verificar que el self-test siga pasando y que `mac_output_study.py` dé los mismos números de §4.11 (pasando G y W_M explícitos).
+1. ✅ **Parche de `mac_cordic_fxp.py`** (2026-11-17, `d2_mac_cordic_fxp.patch`, verificado en el scratchpad; falta aplicarlo): defaults G = 5 y W_M = 17 + G; opción `round_conv`; docstring con la escala m̂ / K_n; el self-test prueba la esquina de 36 bits (P_im = 2^34). Verificar que el self-test siga pasando y que `mac_output_study.py` dé los mismos números de §4.11 (pasando G y W_M explícitos).
+   - **Qué hace el parche.** `OutCfg`: G = 5, N_IT = 12, W_OUT = 16 y **W_M = None → W_OUT + 1 + G** (= 17 + G = 22; es la cuenta de §4.13 escrita en general: la salida satura con |M| ≥ 0,607·2^(W_OUT+G)); explícito se respeta. Redondeo por paso, con dos campos nuevos al final: **`ROUND_CONV_M`** (P → M, el `ROUND_CONV` de `unfold`) y **`ROUND_CONV_OUT`** (x_n → salida, el de `cordic_mag`), los dos en 0 (*half-up*). `round_shift(x, s, conv)` con empates al par igual que `cast.v` / `fft1d_r22sdf_fxp._cast`: m + (r > h) + (r == h)·lsb(m). Dos funciones que espejan los módulos: `p_to_m` (paso 2) y `m_to_out` (pasos 3 y 4); `output_stage` las compone. `round_shift` da `OverflowError` si el corrimiento a la izquierda (s ≤ 0) o el + 2^(s−1) no entran en int64 (numpy envolvería sin avisar). Docstring: rangos exactos de P (H31), NB_P = NB_A + NB_U + 1 + ⌈log₂L⌉, por qué W_M es suficiente y mínimo, y la escala m̂ / K_n = 2^(S−19+E)·P·2^−30 → salida ≈ |m̂|·2^F_OUT. En `mac_output_study.py`, solo la etiqueta "cota exacta 16 + 16 + 3 = 35" pasa a 36 (H31).
+   - **Self-test (24 chequeos, todos OK):** defaults; MAC exacto; rango del producto por los 16 vértices (es multilineal, así que los extremos están en los vértices: es una prueba, no una muestra); esquina H31 con `mac()` (P_re = 0, P_im = 2^34, 36 bits); `round_shift` contra `Fraction` exacto en los dos modos, s = 1 … 58, con empates forzados; s ≤ 0 y el desborde; CORDIC en todo el rango de M (±2^21) con n = 8, 12, 16; saturación: con W_M = 22 recorta 156 424 valores de Re M y la salida es idéntica a la de W_M = 40, con W_M = 21 cambian 130 957 salidas (22 es el mínimo); escala con U' al azar (S = 6, E = 12, D = 16): 2^(S−19+E)·P·2^−30 difiere de m̂ / K_n en 5·10⁻⁵ y de m̂ en 0,393 = 1 − 1/K_n, salida − |m̂|·2^F_OUT con media +0,032 LSB; cadena contra K_n·|P|·2^−D: media +0,033, rms 0,295, máx 0,69 LSB; los 4 modos de redondeo van a su paso, y convergente/convergente baja la media 0,0157 LSB (§4.13: 0,016).
+   - **Mutaciones 9/9 detectadas** (banderas cruzadas o ignoradas, W_M − 1, empates al impar, `>=` en el convergente, corrimiento a la izquierda perdido, saturación a W_M − 1, signo de P_im, *half-up* → *floor*).
+   - **`mac_output_study.py`, antes y después del parche: salida idéntica** (salvo el tiempo y la etiqueta). **Ojo (H32):** desde el 2026-11-15 el estudio hereda `ROUND_CONV = 1` de la `fft2d` y ya no da la tabla de §4.11 (n = 12, G = 5: 0,80 / 0,309 / +0,093 / 52,01 dB, en vez de 0,81 / 0,31 / +0,09 / 51,96). Con la `fft2d` en *half-up* (`CORE` con `ROUND_CONV = 0`, inyectado desde un script del scratchpad) **reproduce la tabla de §4.11 exacta, antes y después del parche**.
 2. **Generador de vectores** desde el JSON de cada módulo (como `gen_ps_sense_vectors.py`), con `mac_cordic_fxp.py` como referencia.
 3. **Casos de `unfold`:** al azar; la esquina de 2^34; s de −5 a 58 (incluidos 0 y los extremos); saturación positiva y negativa de M; huecos en `i_valid`; varias posiciones seguidas; `ROUND_CONV` 0 y 1; otros L y AF.
 4. **Casos de `cordic_mag`:** todo el rango; las esquinas ±2^21; cero y los ejes; saturación de la salida; `ROUND_CONV`; n/G = 8/4 y 16/0 para reproducir la tabla de §4.11.
@@ -93,5 +99,5 @@ Error de la cadena (n = 12, G = 5, *half-up*): media +0,025 LSB, rms 0,295, máx
 1. En la PC con Ubuntu, antes de irse: commitear `doc/`, aplicar el parche de `CLAUDE.md` y hacer `git push`.
 2. En la PC con WSL2: `git stash push -- doc/` (la revisión de allá ya está rehecha acá), `git pull`, y mover los manuales: `mkdir -p books/amd-docs && mv doc/amd/*.pdf books/amd-docs/`.
 3. Leer `doc/estado.md` y este archivo.
-4. Confirmar o cambiar los puntos P1–P7 de la sección 3, y anotarlo acá (sección 2) y en `estado.md`.
-5. Seguir el plan de la sección 5, empezando por el parche de `mac_cordic_fxp.py`.
+4. Confirmar o cambiar los puntos P1–P7 de la sección 3, y anotarlo acá (sección 2) y en `estado.md`. *(2026-11-17: sigue pendiente.)*
+5. Seguir el plan de la sección 5. *(2026-11-17: paso 1 hecho; falta aplicar `d2_mac_cordic_fxp.patch`. El paso 2, el generador de vectores, depende de P2–P5.)*
