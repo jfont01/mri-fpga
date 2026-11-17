@@ -57,6 +57,7 @@ A 200 MHz, una muestra o un MAC por ciclo:  41,9 ms / P    y    41,9 ms / M
 
 - **Los coeficientes son el doble que las imágenes**: 32 MiB × 20 fps = 640 MiB/s = 671 MB/s.
 - Formas de bajarlos: guardar S y resolver el 2 × 2 en la PL (16 MiB); submuestrear los mapas, que son suaves, e interpolar; o reducir la precisión de U.
+  - *⚠ A revisar (2026-11-17):* los 16 MiB de "guardar S" no cierran. S restringido a una posición plegada son L·Af = 16 complejos, igual que U'' (en total, L·N·N = Af·L·T = 8 388 608 complejos), así que a igual precisión ocupa lo mismo, y además habría que resolver el 2 × 2 en la PL en cada trama. Falta ver de dónde salía el número (¿menos bits para S?).
 - Con P = 4 y 16 bits, y antes de contar los coeficientes, el sistema usaba ~80 % de un puerto HP y ~37 % de la DDR4. DS987 especifica 4 GB de DDR4 de 64 bits a 2400 Mb/s: **19,2 GB/s de pico teórico** (17,88 GiB/s).
   - La cifra de 17,07 GB/s usada antes coincide con el pico teórico de una DDR4-2133 (2133,3 MT/s × 8 B = 17,07 GB/s). Probablemente es una cuenta con 2133 MT/s y no una medición.
   - **H30 (2026-11-16, 🟡):** nuestros diseños configuran la DDR, muy probablemente, a **2133 MT/s**: se pidió 2400, pero el controlador quedó en 533,33 MHz (DPLL = 33,333 MHz × 64 / 2 = 1066,7 MHz; controlador = DPLL / 2; PHY : controlador = 2 : 1). Así que el 17,07 GB/s es, en la práctica, el pico de nuestros diseños. Se vio en el Tcl, en los hwh y en lo que escribe el FSBL (`psu_init.c`); ⏳ falta leerlo en la placa ([hallazgos](hallazgos.md), [07 §1](07_integracion.md)).

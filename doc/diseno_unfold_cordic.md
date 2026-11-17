@@ -4,7 +4,7 @@
 
 *Creado el 2026-11-16, en la PC con Ubuntu, al terminar la teoría de D2. El trabajo sigue en la PC con WSL2: ver "Cómo retomar" al final.*
 
-**Estado (2026-11-17):** teoría hecha y verificada en NumPy (§4.13). Once decisiones tomadas: las 4 del 2026-11-16 y, el 2026-11-17, P1–P7 de la sección 3 (P4, D por puerto, después de explicar qué es D). `modules/cordic_mag` creado con `create_module` (2026-11-17). **Propuesta del modelo C++ de `cordic_mag` en §4.5, ⏳ a confirmar (C1–C8).** **Paso 1 del plan (parche de `mac_cordic_fxp.py`) hecho, verificado y aplicado** (sección 5; commit `5c614a0`). No hay código C++ ni RTL todavía.
+**Estado (2026-11-17):** teoría hecha y verificada en NumPy (§4.13). Once decisiones tomadas: las 4 del 2026-11-16 y, el 2026-11-17, P1–P7 de la sección 3 (P4, D por puerto, después de explicar qué es D). `modules/cordic_mag` creado con `create_module` (2026-11-17). Modelo C++ de `cordic_mag` (§4.5, C1–C8 confirmados): `cpp/cordic_mag.hpp` escrito y verificado contra el Python con un arnés del scratchpad (2026-11-17); faltan el generador de vectores, el gtest y el tb. **Paso 1 del plan (parche de `mac_cordic_fxp.py`) hecho, verificado y aplicado** (sección 5; commit `5c614a0`). No hay código C++ ni RTL todavía.
 
 ---
 
@@ -30,9 +30,10 @@ con s = D − G (D lo fija el PS por sesión; G = 5 bits de guarda) y la salida 
 | 4 | **Corregir `model/mac_cordic_fxp.py` antes de usarlo como referencia** (por parche) | sus defaults (`OutCfg`: G = 3, W_M = 20) no son los elegidos (G = 5, W_M = 22) y su docstring tiene la escala sin K |
 | 5 (P1, 2026-11-17) | **P de 36 bits** | H31; no tocar `ps_sense` (verificado con −2^15); en el DSP48E2 no cuesta nada |
 | 6 (P2, 2026-11-17) | **Interfaz de `unfold`: una muestra de bobina por ciclo, AF productos en paralelo, huecos permitidos, los AF resultados juntos** | la propuesta de la sección 3 |
-| 7 (P3, 2026-11-17) | **Latencias provisorias: `unfold` 4 ciclos después de la última bobina, `cordic_mag` N_IT + 2 = 14** | se revisan si el RTL no cierra a 200 MHz |
+| 7 (P3, 2026-11-17) | **Latencias provisorias: `unfold` 4 ciclos después de la última bobina, `cordic_mag` N_IT + 2 = 14** | se revisan si el RTL no cierra a 200 MHz. *Aclaración (2026-11-17): esos números cuentan registros. Con la convención de la FFT (`LatencyMatchesFormula`: ciclo del bucle en que se ve la salida menos el ciclo en que se puso la entrada), `cordic_mag` tiene 14 registros y **`LATENCY` = N_IT + 1 = 13**; lo de `unfold` se cuenta igual cuando se diseñe su modelo.* |
 | 8 (P5, 2026-11-17) | **Modelo C++ con enteros de 64 bits y chequeo de rango contra los anchos del RTL; `run_gtest` solo en modo `fixed`** | `ap_int` envolvería sin avisar; la referencia es el Python bit a bit |
 | 9 (P6, 2026-11-17) | **Julián crea `cordic_mag` con `create_module`**; `unfold` ya existe | — |
+| 12 (2026-11-17) | **Modelo de `cordic_mag`: C1–C8 de §4.5 tal como se propusieron** | — |
 | 10 (P7, 2026-11-17) | **El código se muestra completo en el chat, archivo por archivo, para que Julián lo lea antes**; para aplicarlo, el parche como archivo (regla de `CLAUDE.md`: copiar del chat rompe los CRLF), verificado en el scratchpad | Julián quiere leerlo antes de que entre al repo |
 | 11 (P4, 2026-11-17) | **D por puerto: `i_d`, 6 bits, constante durante la sesión** (s = D − G de −5 a 58) | E sale de los mapas de cada sesión, F_OUT es la calibración de brillo y S puede pasar a ser de ejecución; un parámetro obligaría a resintetizar |
 
@@ -83,7 +84,8 @@ Error de la cadena (n = 12, G = 5, *half-up*): media +0,025 LSB, rms 0,295, máx
 - **Parámetros:** `NB_M` = 22, `G` = 5, `N_IT` = 12, `NB_OUT` = 16, `ROUND_CONV` = 0. Derivado: ancho interno NB_M + 1 = 23.
 - **Puertos:** `i_valid`, `i_m` (re, im de NB_M bits), `o_valid`, `o_mag` (NB_OUT bits sin signo).
 - **Comportamiento:** x₀ = |Re M|, y₀ = |Im M|; en cada iteración i: si y ≥ 0, x += y >> i e y −= x >> i; si no, al revés (los dos lados con los valores de antes; `>>` aritmético). Salida: sat_u(round(x_n / 2^G)).
-- **Pipeline:** valor absoluto → N_IT iteraciones → salida: latencia N_IT + 2. Un dato por ciclo, huecos permitidos.
+- **Pipeline:** valor absoluto → N_IT iteraciones → salida: N_IT + 2 = 14 registros, `LATENCY` = 13 con la convención de la FFT. Un dato por ciclo, huecos permitidos.
+- **Para el RTL:** σ tiene que ser exactamente "y ≥ 0", o sea el bit de signo de y. Con "y > 0" cambia x_n en los vectores sobre un eje: (1, 0) da x_n = 12 con y ≥ 0 y 1 con y > 0 (el *floor* de un negativo es −1). Se vio con un mutante del modelo C++ (2026-11-17).
 
 ### 4.5 Modelo C++ de `cordic_mag`: propuesta (2026-11-17) ⏳ a confirmar
 
@@ -92,7 +94,7 @@ La plantilla de `create_module` no tiene archivos de más: los runners exigen `c
 | # | Punto | Propuesta |
 |---|---|---|
 | C1 | Flujo de vectores | `model/gen_cordic_mag_vectors.py --from-json` escribe por caso `testbench/vec/<caso>/` (versionado, como `ps_sense`): `case.txt` (configuración con la que se generó), `m.bin` (int32 [n][re, im]), `xn_ref.bin` y `out_ref.bin` (int32 [n]), con `mac_cordic_fxp.m_to_out`. Un header común, `testbench/cordic_mag_stimulus.hpp`, lee el caso y arma el estímulo ciclo a ciclo con huecos; lo usan el tb (sim → vectores del vm) y el gtest. |
-| C2 | Parámetros (macros `CORDIC_MAG_*`) | `NB_OUT` = 16, `G` = 5, `N_IT` = 12, `NB_M` = NB_OUT + 1 + G (= 22, misma regla que el Python), `ROUND_CONV` = 0. Locales: `NB_W` = NB_M + 1 = 23 (x e y), `LATENCY` = N_IT + 2. En el RTL, en ese orden, para que `NB_M` se pueda derivar de los anteriores. |
+| C2 | Parámetros (macros `CORDIC_MAG_*`) | `NB_OUT` = 16, `G` = 5, `N_IT` = 12, `NB_M` = NB_OUT + 1 + G (= 22, misma regla que el Python), `ROUND_CONV` = 0. Locales: `NB_W` = NB_M + 1 = 23 (x e y), `N_STAGES` = N_IT + 2 = 14 registros, `LATENCY` = N_STAGES − 1 = 13 (convención de la FFT; ver decisión 7). En el RTL, en ese orden, para que `NB_M` se pueda derivar de los anteriores. |
 | C3 | Puertos | `i_valid`, `i_m_re`, `i_m_im` (NB_M con signo), `o_valid`, `o_mag` (NB_OUT sin signo); `int64_t` (P5). Sin reset, como la FFT: registros con valor inicial 0. |
 | C4 | Pipeline | 14 registros: \|·\| → N_IT iteraciones → redondeo y saturación. Un `valid` por etapa; los datos se cargan solo con su `valid` (*clock enable*): `o_mag` mantiene el último valor entre salidas. Importa porque el vm compara todos los ciclos, válidos o no. |
 | C5 | Chequeos de rango (P5) | `i_m` en NB_M bits con signo; x en [0, 2^NB_W) e y en NB_W bits con signo en cada iteración; si no, excepción con ciclo, etapa y valor. `static_assert` de los parámetros y de que `>>` sea aritmético (en C++17 es de la implementación). |
@@ -101,6 +103,8 @@ La plantilla de `create_module` no tiene archivos de más: los runners exigen `c
 | C8 | `N_CYCLES` | 0 = automático en el tb (como la `fft2d`): entradas + huecos + LATENCY + cola. Para el vm se resuelve en el paso del RTL. |
 
 Orden del código en el chat (decisión 10): `cpp/cordic_mag.hpp` → generador → `cordic_mag_stimulus.hpp` y gtest → tb y JSON.
+
+**`cpp/cordic_mag.hpp` (2026-11-17), verificado con un arnés del scratchpad y aplicado en el repo** (por Claude, a pedido de Julián, junto con `cpp/cordic_mag.cpp`: el `.cpp` de la plantilla definía fuera de línea las mismas funciones que el modelo nuevo define en el header, así que con el header solo no compilaba; sin commitear; recompilado desde el repo y comparado de nuevo contra el Python: 20 000 valores con 30 % de huecos, 0 diferencias) (todavía no con `run_gtest`): el modelo con huecos al azar contra `mac_cordic_fxp.m_to_out`, 6 configuraciones (default; `ROUND_CONV` = 1; n/G = 8/4; 16/0; NB_OUT = 12 con convergente; NB_M = 24) × (sin huecos y con 35 % de huecos con basura en `i_m`), unos 29 000 valores por corrida (todo el rango, esquinas y ejes, valores chicos, el borde de saturación y unos 3 800 empates del redondeo de salida): **0 diferencias en `o_mag` y en x_n, latencia exacta (13; 9 con n = 8; 17 con n = 16) y `o_mag` quieto entre salidas**. Sin *warnings* con los flags del proyecto (`-O0 -Wall -Wextra`). Mutaciones: 9 de 9 detectadas (convergente ignorado, empate al impar, y con el x nuevo, σ con y > 0, sin *clock enable*, sin saturar, latencia + 1, rango de y angosto, valor absoluto saturado); dos mutantes que había escrito mal resultaron equivalentes (σ con y > 0 solo en x: con y = 0 da lo mismo; sin *clock enable* solo en el registro de salida: el último x ya se mantiene).
 
 ### 4.4 Consecuencias para el sistema (van a [07 §5](07_integracion.md) cuando se confirme)
 
@@ -120,10 +124,42 @@ Orden del código en el chat (decisión 10): `cpp/cordic_mag.hpp` → generador 
 5. **Punta a punta con el fantoma:** `unfold` → `cordic_mag` contra `output_stage` de Python, bit a bit.
 6. Después, con el RTL: sim y vm (el modelo genera los vectores), síntesis e implementación.
 
-## 6. Cómo retomar (en la PC con WSL2)
+## 6. Cómo retomar (en la PC con Ubuntu, después del 2026-11-17)
 
-1. En la PC con Ubuntu, antes de irse: commitear `doc/`, aplicar el parche de `CLAUDE.md` y hacer `git push`.
-2. En la PC con WSL2: `git stash push -- doc/` (la revisión de allá ya está rehecha acá), `git pull`, y mover los manuales: `mkdir -p books/amd-docs && mv doc/amd/*.pdf books/amd-docs/`.
-3. Leer `doc/estado.md` y este archivo.
-4. Confirmar o cambiar los puntos P1–P7 de la sección 3, y anotarlo acá (sección 2) y en `estado.md`. *(2026-11-17: confirmados todos salvo P4.)*
-5. Seguir el plan de la sección 5. *(2026-11-17: paso 1 hecho y commiteado (`5c614a0`). Orden acordado para seguir: primero `cordic_mag`, que no depende de P4 (Julián lo crea con `create_module`); antes del código, el diseño del modelo en el chat (clase, pipeline, JSON, formato de vectores, casos); después, archivo por archivo en el chat: modelo `cpp/cordic_mag.hpp`, generador de vectores, gtest; verificado en el scratchpad y entregado como parche. Después `unfold`, con P4 cerrado, y la prueba punta a punta.)*
+**Dónde quedó (2026-11-17, PC con WSL2, rama `new-IT`, todo commiteado y con `push`):**
+- Paso 1 del plan: `model/mac_cordic_fxp.py` corregido (`5c614a0`).
+- P1–P7 (decisiones 5 a 11) y C1–C8 (decisión 12, §4.5) confirmados.
+- `modules/cordic_mag` creado con `create_module` (`d514191`) y su modelo C++, `cpp/cordic_mag.{hpp,cpp}`, escrito y verificado contra el Python con un arnés del scratchpad (el arnés no está en el repo: se reemplaza con el gtest).
+- Falta, en este orden: generador `model/gen_cordic_mag_vectors.py` → `testbench/cordic_mag_stimulus.hpp` y `testbench/cordic_mag_gtest.cpp` → `testbench/cordic_mag_tb.cpp` (sim) y el JSON con los casos de C7 → `run_gtest` en la copia y el parche. Después, `unfold` (con la latencia contada con la convención de la FFT) y la prueba punta a punta.
+
+**Pasos:**
+1. En la PC con Ubuntu: `git checkout new-IT && git pull`. No hay nada que mover (los manuales ya están en `books/amd-docs/` en las dos PC).
+2. Abrir Claude Code en la raíz del repo y pegarle el prompt de abajo.
+
+**Prompt para retomar:**
+
+```
+Leé CLAUDE.md, doc/estado.md y doc/diseno_unfold_cordic.md (sobre todo §2, §4.3, §4.5, §5 y §6).
+Venimos de la PC con WSL2 (2026-11-17) y seguimos con D2 en el módulo cordic_mag.
+
+Estado: model/mac_cordic_fxp.py ya está corregido (paso 1) y el modelo C++
+modules/cordic_mag/cpp/cordic_mag.{hpp,cpp} está commiteado (CORDIC vectoring, 14 registros,
+LATENCY = 13 con la convención de la FFT, clock enable por etapa, int64 con chequeo de rango).
+Se verificó contra mac_cordic_fxp.m_to_out con un arnés del scratchpad, que no está en el repo.
+Decisiones vigentes: P1–P7 y C1–C8 (§2 y §4.5 del diseño).
+
+Cómo seguimos (decisión 10): me mostrás cada archivo completo en el chat, de a uno, ya verificado
+en una copia del repo en el scratchpad; yo lo leo y al final me pasás el parche como archivo.
+Teoría antes que código y explicame en el chat qué hacés y por qué.
+
+Próximo paso: el generador de vectores model/gen_cordic_mag_vectors.py (C1 y C7), después
+testbench/cordic_mag_stimulus.hpp y testbench/cordic_mag_gtest.cpp (C6), después el tb y el JSON.
+
+Antes de arrancar: cargá el entorno, corré python3 model/mac_cordic_fxp.py (tiene que dar
+"== OK") y compilá el modelo de cordic_mag con los flags del proyecto para ver que esta PC
+está igual que la otra. Nada de placa.
+
+Pendientes que no hay que perder: H32 (los estudios del fantoma heredan ROUND_CONV = 1),
+el "16 MiB" de guardar S en doc/02_arquitectura.md, y contar la latencia de unfold con la
+convención de la FFT cuando diseñemos su modelo.
+```

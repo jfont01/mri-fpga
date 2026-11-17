@@ -2,7 +2,7 @@
 
 *Parte de la bitácora de la tesis. Índice general: [bitacora.md](bitacora.md).*
 
-*Última actualización: 2026-11-17 (D2: P1–P7 confirmados; `cordic_mag` creado; propuesta del modelo C++ de `cordic_mag`).* **Este es el archivo que se actualiza siempre**: cada vez que se cierra una tarea, una decisión o un resultado, se marca acá (y el detalle va al archivo de la sección que corresponda).
+*Última actualización: 2026-11-17 (D2: P1–P7 y C1–C8 confirmados; modelo C++ de `cordic_mag` escrito y verificado con un arnés).* **Este es el archivo que se actualiza siempre**: cada vez que se cierra una tarea, una decisión o un resultado, se marca acá (y el detalle va al archivo de la sección que corresponda).
 
 Marcas: ✅ hecho y verificado · 🟡 estimado o provisorio (cuenta en papel, fantoma, NumPy ideal) · ⏳ pendiente · — no aplica.
 
@@ -31,7 +31,7 @@ Teoría de cada pieza: [teoria_sense.md](teoria_sense.md) (SENSE y el cálculo d
 | **Mapas de sensibilidad** (PS) | 🟡 solo mapas sintéticos | ⏳ | — (software) | — | ⏳ | [teoria_sense §6](teoria_sense.md) |
 | **Cálculo de U** (PS: LDLᴴ, Tikhonov, escalas, buffer) | ✅ con el fantoma | ✅ `modules/ps_sense`, bit a bit con `unfold_ref.py`: regresión de 18 casos + 2 de 1024 × 1024, en la PC y en el A53 (qemu) | — (software) | — | ⏳ tiempo en el A53 | [04 §4.10](04_precision.md), [05 §5.8](05_verificacion.md), [teoria_sense](teoria_sense.md) |
 | **MAC de desplegado** | ✅ con el fantoma; anchos de D2 ✅ (§4.13) | ⏳ D2 en diseño (bit-exacto en Python: `mac_cordic_fxp.py`, con el parche de D2) | ⏳ no empezó | ⏳ | ⏳ | [04 §4.9, §4.13](04_precision.md), [diseño D2](diseno_unfold_cordic.md) |
-| **CORDIC de magnitud** | ✅ n = 12, G = 5; anchos ✅ (§4.13) | ⏳ D2 en diseño (bit-exacto en Python) | ⏳ | ⏳ | ⏳ | [04 §4.11, §4.13](04_precision.md), [teoria_cordic](teoria_cordic.md), [diseño D2](diseno_unfold_cordic.md) |
+| **CORDIC de magnitud** | ✅ n = 12, G = 5; anchos ✅ (§4.13) | 🟡 `cordic_mag.hpp` escrito, verificado con un arnés contra el Python; falta el gtest (D2) | ⏳ | ⏳ | ⏳ | [04 §4.11, §4.13](04_precision.md), [teoria_cordic](teoria_cordic.md), [diseño D2](diseno_unfold_cordic.md) |
 | **Reordenamiento de la imagen de salida** (bit-reversed en x y p) | 🟡 | — | ⏳ | ⏳ | ⏳ | [04 §4.11](04_precision.md) |
 | **Integración PS–PL** (DMA, AXI, DDR, Vivado, Vitis) | 🟡 cuentas | — | ⏳ wrappers | ⏳ | 🟡 loopback v0 y 1 puerto medido | [07](07_integracion.md) |
 | **Validación con datos reales** (fastMRI) | ⏳ | — | — | — | — | [04 §4.4, §4.8](04_precision.md) |
@@ -81,12 +81,12 @@ Teoría de cada pieza: [teoria_sense.md](teoria_sense.md) (SENSE y el cálculo d
 
 - [x] Escalas, formato de U'' (16 bits), exponente común por sesión, acumulador de NB_U + 20 bits, suma independiente del orden (§4.9).
 - [x] Modelo bit-exacto en Python del MAC + salida + CORDIC (`model/mac_cordic_fxp.py`).
-- [x] D2, teoría (2026-11-16, §4.13): P de 36 bits (H31), M de 17 + G = 22 bits (suficiente y mínimo), CORDIC de 23 bits, redondeo *half-up* por defecto con `ROUND_CONV` (el modo mueve la media 0,016 LSB). Decisiones de Julián: dos módulos (`unfold` y `cordic_mag`), modelo rtlsim de un carril, *half-up* + parámetro, corregir antes `mac_cordic_fxp.py`. Diseño y propuesta en **[diseno_unfold_cordic.md](diseno_unfold_cordic.md)**. 2026-11-17: P1–P7 confirmados (P4: D por puerto; el código se muestra en el chat antes de entregarlo) y `modules/cordic_mag` creado. ⏳ **Próximo paso:** que Julián confirme la propuesta del modelo C++ de `cordic_mag` (C1–C8, [diseño D2](diseno_unfold_cordic.md) §4.5); después, el código archivo por archivo.
+- [x] D2, teoría (2026-11-16, §4.13): P de 36 bits (H31), M de 17 + G = 22 bits (suficiente y mínimo), CORDIC de 23 bits, redondeo *half-up* por defecto con `ROUND_CONV` (el modo mueve la media 0,016 LSB). Decisiones de Julián: dos módulos (`unfold` y `cordic_mag`), modelo rtlsim de un carril, *half-up* + parámetro, corregir antes `mac_cordic_fxp.py`. Diseño y propuesta en **[diseno_unfold_cordic.md](diseno_unfold_cordic.md)**. 2026-11-17: P1–P7 confirmados (P4: D por puerto; el código se muestra en el chat antes de entregarlo) y `modules/cordic_mag` creado. C1–C8 del modelo de `cordic_mag` confirmados; `cpp/cordic_mag.{hpp,cpp}` escritos, verificados contra el Python con un arnés (0 diferencias, 9/9 mutaciones; [diseño D2](diseno_unfold_cordic.md) §4.5) y **aplicados en el repo** (sin commitear). ⏳ **Próximo paso (en la PC con Ubuntu; cómo retomar y prompt en [diseño D2](diseno_unfold_cordic.md) §6):** generador de vectores (`model/gen_cordic_mag_vectors.py`), después `cordic_mag_stimulus.hpp` y el gtest; el parche, al final, con todo verificado con `run_gtest`.
 - [x] D2, paso 1 (2026-11-17): parche de `model/mac_cordic_fxp.py` (`d2_mac_cordic_fxp.patch`, aplicado en `5c614a0`): defaults G = 5 y W_M = W_OUT + 1 + G = 22, `ROUND_CONV_M` y `ROUND_CONV_OUT`, `p_to_m` y `m_to_out` (los dos módulos), docstring con m̂ / K_n y H31; self-test 24/24, mutaciones 9/9, `mac_output_study.py` idéntico antes y después (detalle en [diseño D2](diseno_unfold_cordic.md) §5).
 - [ ] Modelo C++ y su gtest contra Python (D2).
 - [ ] RTL con M = 4 carriles (presupuesto: 10,5 ms con M = 4).
 - [ ] **H32:** los estudios del fantoma (`fft2d_mask_study.py`, `mac_unfold_study.py`, `mac_output_study.py`) heredan `ROUND_CONV = 1` desde el 2026-11-15 (por el código: `CORE` no lo fija), así que no reproducen sus tablas (§4.8–4.11, *half-up*); corrido y comprobado solo con `mac_output_study.py`. Decidir: fijarles *half-up* (como se hizo con `fft_rounding_study` y `fft2d_roundtrip_study`), agregarles una opción, o rehacer las tablas con convergente.
-- [ ] Cómo traer U'' de la DDR (32 MiB por trama × 20 fps = 640 MiB/s = 671 MB/s) y en qué orden (`pos_coil_a` o `coil_pos_a`).
+- [ ] Cómo traer U'' de la DDR (32 MiB por trama × 20 fps = 640 MiB/s = 671 MB/s) y en qué orden (`pos_coil_a` o `coil_pos_a`). No entra en el chip: BRAM + URAM del XCK26 son 2,88 MiB (DS987 v1.6, *Programmable Logic*, tabla 5: 144 × 36 Kb y 64 × 288 Kb). Se lee entero en cada trama, en secuencia y en el orden en que lo consume el MAC. ⚠ Revisar la opción "guardar S y resolver el 2 × 2 en la PL (16 MiB)" de [02](02_arquitectura.md): S restringido a una posición plegada también son L·Af = 16 complejos, igual que U'' (8 388 608 en los dos casos), así que a igual precisión no ahorra memoria (2026-11-17).
 - [ ] vm, síntesis e implementación.
 
 ### CORDIC de magnitud

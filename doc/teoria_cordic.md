@@ -14,7 +14,7 @@ $$
 |\hat{m}| = \sqrt{\mathrm{re}^2 + \mathrm{im}^2}
 $$
 
-Un píxel por ciclo (8,39 M por trama a 200 MHz) con multiplicadores y raíz cuadrada es caro. El CORDIC la calcula **solo con sumas y corrimientos**, y la latencia es un ciclo por iteración en un pipeline desenrollado.
+Un píxel por ciclo (1 048 576 por trama: 5,2 ms a 200 MHz) con multiplicadores y raíz cuadrada es caro. *(Corregido el 2026-11-17: decía 8,39 M por trama, que es la cantidad de productos del MAC, Af·L·T, no de píxeles.)* El CORDIC la calcula **solo con sumas y corrimientos**, y la latencia es un ciclo por iteración en un pipeline desenrollado.
 
 ## 2. La idea: girar el vector hasta el eje x
 
@@ -58,6 +58,31 @@ $$
 
 $K_n$ es una constante (no depende del vector). **En nuestro diseño no se corrige en la PL:** el PS ya multiplica $U''$ por $1/K_n$ (§4.11, [teoria_sense.md §5.2](teoria_sense.md)), así que la salida del CORDIC ya está en escala. **Verificado (NumPy):** $K_8 = 1{,}646744$, $K_{12} = 1{,}646760$, $K_{16} = 1{,}646760$.
 
+### Ejemplo paso a paso (2026-11-17)
+
+Con el modelo entero (`mac_cordic_fxp.cordic_mag`, n = 12, G = 5): un píxel de magnitud 5000 (en LSB de M, o sea 156,25 LSB de salida) con ángulo 53,13°. Como el PS ya plegó 1/K, M llega como (3000, 4000)/K = (1822, 2429), de largo 3036,4.
+
+| i | giro | x | y | ángulo que falta |
+|---|---|---|---|---|
+| — | — | 1822 | 2429 | 53,13° |
+| 0 | −45° | 4251 | 607 | 8,13° |
+| 1 | −26,57° | 4554 | −1518 | −18,43° |
+| 2 | +14,04° | 4934 | −380 | −4,40° |
+| 3 | +7,13° | 4982 | 236 | 2,71° |
+| 4 | −3,58° | 4996 | −75 | −0,86° |
+| 5 | +1,79° | 4999 | 81 | 0,93° |
+| 6 | −0,90° | 5000 | 3 | 0,03° |
+| 7 | −0,45° | 5000 | −36 | −0,41° |
+| 8 | +0,22° | 5001 | −17 | −0,20° |
+| 9 | +0,11° | 5002 | −8 | −0,09° |
+| 10 | +0,06° | 5003 | −4 | −0,05° |
+| 11 | +0,03° | 5004 | −2 | −0,02° |
+
+- El ángulo que falta cambia de signo y se achica; y va a cero.
+- x crece de 3036 a ~5000 = K·3036: la ganancia K = 1,64676 se cancela con el 1/K que puso el PS, y x termina en la magnitud de verdad.
+- En las últimas iteraciones x sube de 5000 a 5004 aunque la rotación ya casi no lo cambia: es el **truncamiento**. Con y negativo, y >> i redondea hacia −∞ (−17 >> 8 = −1, no 0), así que x −= (y >> i) suma 1 en cada paso. Por eso los G bits de guarda: 4 LSB de M son 4/32 = 0,125 LSB de salida.
+- Salida: round(5004 / 32) = 156; la ideal es 156,25.
+
 ## 4. Cuánto se equivoca
 
 Hay dos errores:
@@ -92,7 +117,7 @@ Por eso más iteraciones no siempre es mejor: con $n = 16$ y sin bits de guarda 
 
 ## 6. En hardware
 
-- **Pipeline desenrollado:** $n = 12$ etapas, cada una con 2 sumadores/restadores de ~23 bits ($17 + G$ más el crecimiento) y corrimientos fijos (cableado). Unos **24 sumadores**, **ningún DSP**, latencia de 12 ciclos, un píxel por ciclo.
+- **Pipeline desenrollado:** $n = 12$ etapas, cada una con 2 sumadores/restadores de ~23 bits ($17 + G$ más el crecimiento) y corrimientos fijos (cableado). Unos **24 sumadores**, **ningún DSP**, un píxel por ciclo. En el diseño de D2 ([diseno_unfold_cordic.md](diseno_unfold_cordic.md) §4.3 y §4.5) son 14 registros (valor absoluto, 12 iteraciones, salida): `LATENCY` = 13 con la convención de la FFT.
 - El signo de $y$ decide si cada etapa suma o resta (un mux por bit, o el sumador/restador con el signo como control).
 - Alternativas descartadas o no estudiadas: multiplicadores + raíz (2 DSP y una raíz iterativa), aproximaciones tipo *alpha max plus beta min* (más baratas pero con error de algunos %).
 
