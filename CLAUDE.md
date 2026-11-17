@@ -20,6 +20,7 @@ pendientes. Al empezar una sesión, leé `doc/estado.md` y el archivo que corres
 | Infraestructura y comandos §6.4 | `doc/06_infraestructura.md` |
 | Integración: AXI, DDR, DMA, Vivado, Vitis, bring-up (§7) | `doc/07_integracion.md` |
 | Trampas conocidas (§8) | `doc/08_trampas.md` |
+| Diseño del MAC de desplegado y del CORDIC (paso D2): decisiones, propuesta pendiente, cómo retomar | `doc/diseno_unfold_cordic.md` |
 | Registro de cambios (el más nuevo arriba) | `doc/registro.md` |
 
 Si algo de este archivo contradice a la bitácora, vale la bitácora (y avisame).
@@ -46,7 +47,7 @@ La descripción del proyecto en claude.ai está desactualizada (dice 512 × 512)
 - Ecuaciones en formato legible: en palabras y en bloques aparte, no símbolos apretados en
   una línea.
 - Con notación de papers, pedirme capturas en vez de suponer los símbolos de memoria.
-- Citar documento y capítulo de AMD/Xilinx (UG579, UG573, UG1085, DS987, PG021, ...).
+- Citar documento, versión y capítulo de AMD/Xilinx (UG579, UG573, UG1085, DS987, PG021, ...).
   Los manuales están en `books/amd-docs/` (ver abajo).
 - No darme la razón por darla. Si me equivoco, decilo.
 - Usar mis funciones de entorno (`run_gtest`, `run_regression_sim`, ...), no
@@ -63,7 +64,9 @@ La descripción del proyecto en claude.ai está desactualizada (dice 512 × 512)
 
 ## Entorno y comandos
 
-- Linux (Ubuntu nativo), backend de simulación XSim. El entorno se carga con
+- Linux: Ubuntu nativo (la PC con la placa) o Windows con WSL2; backend de simulación XSim.
+  Lo que no está versionado (PDF, `build/`, proyectos de `bringup/`) puede ser distinto en
+  cada PC. El entorno se carga con
   `source scripts/set_env.sh` (necesita `FPGA_MRI_ROOT`; yo uso la función `fpga_mri_set`).
   Activa el venv de `scripts/python/venv` y carga Vivado/Vitis si están.
 - **Cada llamada a la terminal es una shell nueva.** Si las funciones no están, cargar el
@@ -84,6 +87,9 @@ La descripción del proyecto en claude.ai está desactualizada (dice 512 × 512)
   `mac_cordic_fxp.py`, `unfold_ref.py`; referencia: `fft2d_ref.py`), generadores en
   `model/gen/`, estímulos de la `fft2d` con `model/gen_fft2d_stim.py --from-json ...`.
 - Twiddles: `gen_twiddles_r22sdf.py` (reproduce byte a byte las ROM existentes).
+- `modules/ps_sense` es software del PS (sin RTL ni sim): `run_gtest`, y desde su carpeta
+  `make compile` (incluye el bare-metal para Vitis) y `make run` / `make run-full` (PC y qemu).
+  Siempre con `-ffp-contract=off` (H29).
 
 ## Placa: reglas de seguridad
 
@@ -128,8 +134,11 @@ La descripción del proyecto en claude.ai está desactualizada (dice 512 × 512)
 
 ## Documentación
 
-- `books/amd-docs/`: manuales de AMD/Xilinx y datasheets. Para buscar, `pdftotext -layout`
-  (no hay versiones `.txt` guardadas); el PDF para tablas y figuras.
+- `books/amd-docs/`: manuales de AMD/Xilinx y datasheets; la misma ruta en las dos PC. No están
+  versionados (`*.pdf` en `.gitignore`) y no son el mismo juego en cada PC (qué falta en cada una:
+  `doc/06_infraestructura.md` §6.2). Para buscar, `pdftotext -layout` (no hay versiones `.txt`
+  guardadas); las tablas y figuras que la capa de texto pierde, como imagen con
+  `pdftoppm -f <pág> -l <pág> -r 300 -png <pdf> <prefijo>`.
 - `books/`: libros y papers (`books/papers/fft`, `books/papers/mri`). `doc/`: documentación
   propia (la bitácora separada por archivos, con la teoría en `doc/teoria_*.md`).
 - Bibliografía de la tesis: `doc/bibliografia.md`.
