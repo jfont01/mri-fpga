@@ -1,0 +1,9 @@
+{
+  "regression_dir": "build/synthesis",
+  "defaults": {
+    "PART_NAME": "xck26-sfvc784-2LV-c",
+    "CLOCK_PERIOD_NS": 5.000,
+    "CLOCK_UNCERTAINTY_NS": 0.05
+  },
+  "cases": []
+}
