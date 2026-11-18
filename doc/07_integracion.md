@@ -64,6 +64,8 @@ Verificadas en simulación:
 
 ## 6. Decisiones de sistema pendientes
 
+*Diagrama de la arquitectura objetivo (2026-11-18): [`doc/arquitectura_objetivo.drawio`](arquitectura_objetivo.drawio): dominios PS y PL, interfaces (HP0 y HP1 para lecturas, HP3 para escrituras, HPM0_LPD para AXI-Lite, pl_clk0, IRQ), regiones de la DDR, los dos SmartConnect, los tres DMA, `fft2d` (2 núcleos por pasada y el corner-turn por decidir), `coil_reorder`, `unfold` × 2, `mag_mux`, `cordic_mag`, memorias en chip y el estado de cada bloque. Los nombres `sense_pl_top`, `sense_ctrl`, `coil_reorder` y `mag_mux` son propuestos.*
+
 | Decisión | De qué depende | Opciones | Detalle |
 |---|---|---|---|
 | Cantidad de carriles | presupuesto de 50 ms por trama | P = 4 FFT y M = 4 MAC dan 21 ms; con M = 1 no entra | [02](02_arquitectura.md) |
