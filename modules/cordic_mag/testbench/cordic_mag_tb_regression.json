@@ -1,8 +1,34 @@
 {
   "regression_dir": "build",
   "defaults": {
-    "N_CYCLES": 16,
-    "auto_defines": true
+    "modes": ["fixed"],
+    "auto_defines": true,
+    "N_CYCLES": 0
   },
-  "cases": []
+  "cases": [
+    { "name": "def_rand", "VEC_DIR": "testbench/vec/def_rand", "GAP_PCT": 30, "GAP_SEED": 1,
+      "vec_gen": { "seed": 1, "parts": ["rand:3000"] } },
+    { "name": "def_nosat", "VEC_DIR": "testbench/vec/def_nosat",
+      "vec_gen": { "seed": 2, "parts": ["nosat:3000"] } },
+    { "name": "def_edges", "VEC_DIR": "testbench/vec/def_edges", "GAP_PCT": 20, "GAP_SEED": 3,
+      "vec_gen": { "seed": 3, "parts": ["grid", "lines", "small", "sat_edge:1500"] } },
+    { "name": "def_ties", "VEC_DIR": "testbench/vec/def_ties",
+      "vec_gen": { "seed": 4, "parts": ["ties:1000", "sat_edge:500"] } },
+    { "name": "conv_ties", "VEC_DIR": "testbench/vec/conv_ties", "ROUND_CONV": 1, "GAP_PCT": 10, "GAP_SEED": 5,
+      "vec_gen": { "seed": 5, "parts": ["ties:1000", "sat_edge:500"] } },
+    { "name": "conv_mix", "VEC_DIR": "testbench/vec/conv_mix", "ROUND_CONV": 1, "GAP_PCT": 30, "GAP_SEED": 6,
+      "vec_gen": { "seed": 6, "parts": ["rand:2000", "nosat:2000", "grid", "lines", "small"] } },
+    { "name": "burst", "VEC_DIR": "testbench/vec/burst", "GAP_PCT": 80, "GAP_SEED": 7,
+      "vec_gen": { "seed": 7, "parts": ["rand:500", "nosat:500", "grid", "lines"] } },
+    { "name": "n8_g4", "VEC_DIR": "testbench/vec/n8_g4", "N_IT": 8, "G": 4, "GAP_PCT": 25, "GAP_SEED": 8,
+      "vec_gen": { "seed": 8, "parts": ["rand:2000", "nosat:2000", "grid", "lines", "small", "sat_edge:1000", "ties:600"] } },
+    { "name": "n16_g0", "VEC_DIR": "testbench/vec/n16_g0", "N_IT": 16, "G": 0, "GAP_PCT": 25, "GAP_SEED": 9,
+      "vec_gen": { "seed": 9, "parts": ["rand:2000", "nosat:2000", "grid", "lines", "small", "sat_edge:1000"] } },
+    { "name": "out12", "VEC_DIR": "testbench/vec/out12", "NB_OUT": 12, "GAP_PCT": 25, "GAP_SEED": 10,
+      "vec_gen": { "seed": 10, "parts": ["rand:2000", "nosat:2000", "grid", "lines", "small", "sat_edge:1000", "ties:600"] } },
+    { "name": "out12_conv", "VEC_DIR": "testbench/vec/out12_conv", "NB_OUT": 12, "ROUND_CONV": 1,
+      "vec_gen": { "seed": 11, "parts": ["rand:2000", "nosat:2000", "grid", "lines", "small", "sat_edge:1000", "ties:600"] } },
+    { "name": "nbm24", "VEC_DIR": "testbench/vec/nbm24", "NB_M": 24, "GAP_PCT": 20, "GAP_SEED": 12,
+      "vec_gen": { "seed": 12, "parts": ["rand:2000", "nosat:1000", "grid", "lines", "small", "sat_edge:500"] } }
+  ]
 }

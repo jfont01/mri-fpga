@@ -1,0 +1,14 @@
+nb_out 12
+g 5
+n_it 12
+nb_m 18
+round_conv 1
+n 10766
+seed 11
+parts rand:2000,nosat:2000,grid,lines,small,sat_edge:1000,ties:600
+shuffle 1
+x_sat 131056
+n_sat 2227
+n_ties 917
+n_ties_even 415
+n_zero 226

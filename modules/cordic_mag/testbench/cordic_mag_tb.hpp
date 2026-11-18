@@ -8,7 +8,7 @@ namespace cordic_mag_tb {
 
 struct tb_args {
     std::filesystem::path case_dir {"."};
-    int n_cycles {16};
+    int n_cycles {0};        // 0: automatico (entradas + huecos + LATENCY + cola)
 };
 
 tb_args parse_args(int argc, char** argv);

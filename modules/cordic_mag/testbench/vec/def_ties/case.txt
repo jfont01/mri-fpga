@@ -1,0 +1,14 @@
+nb_out 16
+g 5
+n_it 12
+nb_m 22
+round_conv 0
+n 1976
+seed 4
+parts ties:1000,sat_edge:500
+shuffle 1
+x_sat 2097136
+n_sat 481
+n_ties 1028
+n_ties_even 517
+n_zero 0
