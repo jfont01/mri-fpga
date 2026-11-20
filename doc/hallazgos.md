@@ -119,6 +119,9 @@ DRAM (PHY 2:1) = 2 × 533,33                = 1066,7 MHz  →  2133 MT/s × 8 B 
 La relación PHY : controlador es 2 : 1 (UG1085 v2.5, `MEMC_FREQ_RATIO = 2`, §17; divisor en la Figura 37-6, cap. 37). Para 2400 haría falta el controlador a 600 MHz. El DPLL también alimenta TOPSW_MAIN (533,33 MHz), lo que probablemente explica por qué Vivado lo dejó así.
 *Cómo se vio:* en la PC con WSL2 (revisión de la documentación), en `bringup/v0/build_block_design.tcl` y en los hwh de v0, v1 y v1.1. En la PC con Ubuntu (2026-11-16) se confirmó con los archivos generados de v0, que no están versionados: el hwh (`FBDIV = 64`, `DIV2 = 1`, `DDR_CTRL__DIVISOR0 = 2`, `DDR_CTRL__ACT_FREQMHZ = 533.328003`, `SRCSEL = DPLL`, `PSS_REF_CLK = 33.333`), **lo que escribe el FSBL** (`psu_init.c`: `DPLL_CTRL` ← `0x14000`, o sea FBDIV = 0x40 y DIV2 = 1; `DDR_CTRL` ← DIVISOR0 = 2, SRCSEL = DPLL) y el resumen `psu_init.html` (DDR_CTRL: pedido 600, real 533,328).
 *Consecuencia:* el presupuesto se hace con 17,07 GB/s (la fase de FFT con P = 4 usa el 37 %; contra 19,2 sería el 33 %). ⏳ Confirmarlo en la placa (leer `DPLL_CTRL` y `DDR_CTRL` por JTAG, o en el paso 4b) y decidir si se reconfigura el DPLL. *Detalle:* [02](02_arquitectura.md), [07 §1](07_integracion.md).
+**H34. El XCK26 en el SFVC784 tiene 186 pines de I/O de PL: un arnés de síntesis con los buses enteros de `unfold` no entra** (2026-11-19)
+`unfold` con los defaults tiene 195 bits de puertos. *Cómo se vio:* el agente del RTL de `unfold` lo contó por banco (HD 43/44/45: 24 + 24 + 22; HP 64/65/66: 42 + 42 + 32) y Claude lo confirmó contando los pines `IO_*` de PL en `data/parts/.../ibis/pkg/xck26_sfvc784.pkg` de Vivado 2024.2: 186.
+*Consecuencia:* los arneses de `unfold` serializan la entrada (16 bits por ciclo) y pliegan la salida con XOR (43 pines); los de módulos futuros con buses anchos van igual (o se implementan fuera de contexto).
 
 ## SENSE, desplegado y CORDIC
 
@@ -138,6 +141,10 @@ De 51,03 dB (complejo) a 51,99 dB (magnitud): se descarta la parte del error en 
 En un producto complejo de 16 × 16 bits, ur·ai + ui·ar vale +2^31 exacto cuando las cuatro son −2^15; la parte real no pasa de 2^31 − 2^15. Con 8 bobinas, P_im llega a 2^34. La "cota refinada" de 35 bits (§4.9, 2026-10-21) solo valía para la parte real. Se vio recorriendo las 16 combinaciones de extremos en NumPy, al preparar los anchos de D2.
 *Consecuencia:* P de 36 bits a la entrada del redondeo (en el DSP48E2 sobra: acumula en 48). *Detalle:* [04 §4.9 y §4.13](04_precision.md).
 
+**H33. El corner-turn in situ es una permutación de bits de la dirección, y con dos carriles alcanza con dos bancos por paridad** (2026-11-19)
+Para transponer una bobina de 512 × 1024 en el mismo buffer en el que se lee la anterior, la dirección de cada trama es una permutación de los 19 bits del contador: con un carril, una rotación de 10 bits por trama (período 19); con dos carriles por pasada, otra permutación de bits (período 34). Las dos direcciones de un ciclo difieren en un solo bit, así que la paridad de la dirección las manda siempre a bancos distintos: cada banco recibe una lectura (puerto A) y una escritura (puerto B, con *byte write enable*) por ciclo, que es lo que da la URAM. Se vio simulando en NumPy a tamaño real (21 tramas transpuestas bien, 0 conflictos de banco en 40 tramas).
+*Consecuencia:* el corner-turn entra en las 64 URAM sin ping-pong y sin tráfico extra en la DDR. *Detalle:* [02](02_arquitectura.md), estrategia 1.
+
 ## Infraestructura y verificación
 
 **H27. El vm no detecta twiddles de un ancho equivocado** (2026-10-17)
@@ -154,5 +161,5 @@ Con `-O2`, `aarch64-none-elf-g++` (GCC 13.3, Vitis 2024.2) junta `a*b + c` en `f
 
 **H32. Los estudios del fantoma ya no reproducen sus tablas: heredan `ROUND_CONV = 1`** (2026-11-17)
 `fft2d_mask_study.py` arma la `fft2d` con `CORE`, que no fija `ROUND_CONV`, así que desde que el default pasó a 1 (2026-11-15) `fft2d_mask_study`, `mac_unfold_study` y `mac_output_study` corren con redondeo convergente, y sus tablas de §4.8–4.11 son *half-up*. Se vio al verificar el parche de D2: `mac_output_study.py` daba 52,01 dB en vez de 51,96 (m̂ complejo 51,12 en vez de 51,03), igual antes y después del parche; con `ROUND_CONV = 0` inyectado en `CORE` reproduce la tabla de §4.11 exacta. Los otros dos no se corrieron: que hereden el modo sale de leer el código (importan `Chain` de `fft2d_mask_study`). Los estudios de redondeo (`fft_rounding_study`, `fft2d_roundtrip_study`) sí fijan *half-up*.
-*Consecuencia:* las diferencias son chicas (+0,05 a +0,09 dB) y no cambian ninguna decisión, pero un estudio corrido hoy no coincide con la bitácora. Pendiente decidir cómo se arregla ([estado](estado.md)). *Detalle:* [04 §4.11](04_precision.md).
+*Consecuencia:* las diferencias son chicas (+0,05 a +0,09 dB) y no cambian ninguna decisión, pero un estudio corrido hoy no coincide con la bitácora. Decisión de Julián (2026-11-18): rehacer las tablas de §4.8–4.11 con convergente ([estado](estado.md)). *Detalle:* [04 §4.11](04_precision.md).
 

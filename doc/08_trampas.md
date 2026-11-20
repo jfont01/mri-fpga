@@ -17,6 +17,7 @@
 | Redondeo *half-up* al escalar y a la salida | sesgo +¼ LSB por etapa que escala y en la salida; en 2D se concentra (fila p = 0, píxel (0, 0) de la ida y vuelta) | `ROUND_CONV = 1` en `cast` y en el núcleo (2026-10-26); **default en el núcleo y la `fft2d` desde el 2026-11-15**; los casos `_halfup` lo conservan como referencia |
 | Parche con archivos CRLF copiado del chat | se pierden los `\r`: el parche no aplica o mezcla fines de línea | entregar el parche como archivo y aplicarlo con `git apply <archivo>` |
 | `cast` con NBF_OUT > NBF_IN | X | ⏳ `$fatal` |
+| `cast` sin saturación (NBI_OUT ≥ NBI_IN) y NB_OUT > NB_IN + 2 | X en los bits altos: `shifted_word` tiene NB_IN + 2 bits y `cast.v:134` toma `[NB_OUT-1:0]` (XSim avisa *VRFC 10-3705 select index out of bounds*). Ej.: NB_IN = 12, NBF_IN = 5, NB_OUT = 17, NBF_OUT = 0. Encontrado por el agente del RTL de `cordic_mag` (2026-11-19), confirmado por Claude leyendo el código; no afecta a ninguna instancia actual | ⏳ extender el signo o `$fatal`. `cordic_mag` no usa `cast` (su redondeo es sin signo) |
 | iverilog ignora `$fatal` en elaboración | el diseño inválido corre | doble `$fatal` (`generate` + `initial`) |
 | N no potencia de 2 (o N < 4) | basura silenciosa | corta con `$fatal` / `static_assert` (desde `fft_n512`; antes exigía potencia de 4) |
 | Máscara en hex en el JSON | Verilog no la entiende | decimal (784) |
