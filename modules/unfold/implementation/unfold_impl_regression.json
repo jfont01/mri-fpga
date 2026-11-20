@@ -2,8 +2,32 @@
   "regression_dir": "build/implementation",
   "defaults": {
     "PART_NAME": "xck26-sfvc784-2LV-c",
-    "CLOCK_PERIOD_NS": 5.000,
-    "CLOCK_UNCERTAINTY_NS": 0.05
+    "CLOCK_PERIOD_NS": 5.0,
+    "CLOCK_UNCERTAINTY_NS": 0.05,
+    "limits": {
+      "MAX_DSP": 8
+    }
   },
-  "cases": []
+  "cases": [
+    {
+      "name": "def_l8_af2",
+      "L": 8,
+      "AF": 2,
+      "NB_A": 16,
+      "NB_U": 16,
+      "G": 5,
+      "NB_D": 6,
+      "ROUND_CONV": 0
+    },
+    {
+      "name": "def_l8_af2_conv",
+      "L": 8,
+      "AF": 2,
+      "NB_A": 16,
+      "NB_U": 16,
+      "G": 5,
+      "NB_D": 6,
+      "ROUND_CONV": 1
+    }
+  ]
 }
