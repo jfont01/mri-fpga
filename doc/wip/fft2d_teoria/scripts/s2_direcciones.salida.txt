@@ -1,0 +1,38 @@
+1) Tamano completo: 512 x 1024, direccion de 19 bits, palabra de 18
+  [OK ] A: periodo de la rotacion = 19 (19)
+  [OK ] A (rotacion): generador == W_0 o Q^j en 40 bobinas 
+  [OK ] A (rotacion): el lector recibe exactamente t = Q(s) en 40 bobinas 
+   B: Q es permutacion de bits + XOR (d = 0x0); periodo 4; src = [18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8]
+  [OK ] B: generador == W_0 o Q^j en 8 bobinas 
+  [OK ] B: el lector recibe exactamente t = Q(s) en 8 bobinas 
+   B + fftshift: Q es permutacion de bits + XOR (d = 0x1); periodo 8; src = [18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8]
+  [OK ] B + fftshift: generador == W_0 o Q^j en 16 bobinas 
+  [OK ] B + fftshift: el lector recibe exactamente t = Q(s) en 16 bobinas 
+
+2) Por que hace falta el byte write enable (opcion A, un periodo de 19 bobinas)
+   adelanto 1: sin BWE, medias palabras sin leer que se pisarian por bobina: [262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 262144, 0]
+  [OK ] sin BWE hay pisadas en alguna bobina (adelanto 1) 
+   adelanto 1023: sin BWE, medias palabras sin leer que se pisarian por bobina: [0, 262144, 0, 262144, 0, 262144, 0, 262144, 0, 262144, 0, 262144, 0, 262144, 0, 262144, 0, 262144, 0]
+  [OK ] sin BWE hay pisadas en alguna bobina (adelanto 1023) 
+
+3) Tamano chico con datos reales contra el modelo C++ de la fft2d
+   opcion A: adelanto maximo 94 (N1 + N2 - 2 = 94)
+  [OK ] opcion A, 64x32, 24 bobinas, adelanto 0: salida == modelo C++ fft2d bit a bit (0 distintas)
+  [OK ] opcion A, 64x32, 24 bobinas, adelanto 1: salida == modelo C++ fft2d bit a bit (0 distintas)
+  [OK ] opcion A, 64x32, 24 bobinas, adelanto 63: salida == modelo C++ fft2d bit a bit (0 distintas)
+  [OK ] opcion A, 64x32, 24 bobinas, adelanto 94: salida == modelo C++ fft2d bit a bit (0 distintas)
+  [OK ] opcion A, 64x32, 24 bobinas, adelanto 95: (fuera de la ventana) la salida DIFIERE del modelo (1472 distintas)
+   opcion B: adelanto maximo 94 (N1 + N2 - 2 = 94)
+  [OK ] opcion B, 64x32, 24 bobinas, adelanto 0: salida == modelo C++ fft2d bit a bit (0 distintas)
+  [OK ] opcion B, 64x32, 24 bobinas, adelanto 1: salida == modelo C++ fft2d bit a bit (0 distintas)
+  [OK ] opcion B, 64x32, 24 bobinas, adelanto 63: salida == modelo C++ fft2d bit a bit (0 distintas)
+  [OK ] opcion B, 64x32, 24 bobinas, adelanto 94: salida == modelo C++ fft2d bit a bit (0 distintas)
+  [OK ] opcion B, 64x32, 24 bobinas, adelanto 95: (fuera de la ventana) la salida DIFIERE del modelo (2313 distintas)
+   opcion B + fftshift: adelanto maximo 93 (N1 + N2 - 2 = 94)
+  [OK ] opcion B + fftshift x, 64x32, 24 bobinas, adelanto 0: salida == modelo C++ fft2d bit a bit (0 distintas)
+  [OK ] opcion B + fftshift x, 64x32, 24 bobinas, adelanto 1: salida == modelo C++ fft2d bit a bit (0 distintas)
+  [OK ] opcion B + fftshift x, 64x32, 24 bobinas, adelanto 63: salida == modelo C++ fft2d bit a bit (0 distintas)
+  [OK ] opcion B + fftshift x, 64x32, 24 bobinas, adelanto 93: salida == modelo C++ fft2d bit a bit (0 distintas)
+  [OK ] opcion B + fftshift x, 64x32, 24 bobinas, adelanto 94: (fuera de la ventana) la salida DIFIERE del modelo (3070 distintas)
+
+== OK

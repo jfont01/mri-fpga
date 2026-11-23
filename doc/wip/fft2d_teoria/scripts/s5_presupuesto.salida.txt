@@ -1,0 +1,46 @@
+== Tiempos (un carril por bloque)
+  bobina: 524288 ciclos = 2.621 ms; trama en regimen 8T = 20.97 ms; arranque 9T = 23.59 ms
+  unfold, un carril: 4194304 ciclos = 20.97 ms
+  solapado: 47.7 tramas/s maximo; a 20 fps queda 29.0 ms de margen por trama
+
+== Trafico por puerto HP con las fases solapadas (tasas pico de cada stream)
+  HP0 (Port3) lecturas: k-space + A_l      1.60 GB/s  (50.0 % de 3.20 GB/s)
+  HP1 (Port4) lecturas: U''                1.60 GB/s  (50.0 % de 3.20 GB/s)
+  HP3 (Port5) escrituras: A_l + imagen     0.90 GB/s  (28.1 % de 3.20 GB/s)
+  total 4.10 GB/s = 24.0 % de 17.07 GB/s (2133) / 21.4 % de 19,2
+  por trama: k-space 16 MiB + A_l 16 MiB escrita + 16 MiB leida + U'' 32 MiB + imagen 2 MiB = 82 MiB; a 20 fps = 1.72 GB/s promedio
+
+== Memoria en la DDR
+  k-space (anillo de 3 tramas)         48 MiB
+  A_l (3 buffers)                      48 MiB
+  U'' (sesion)                         32 MiB
+  imagen (2 buffers)                    4 MiB
+  total                               132 MiB de 4096 (DDR del SoM)
+
+== BRAM (todo lo que no es el corner-turn), RAMB36 de 1K x 36
+  nucleos FFT (lineas de retardo en LUTRAM, ROM en LUT; medido)    0
+  FIFO de entrada del k-space (2 filas: 2048 x 32 b)               2
+  FIFO de salida de la fft2d hacia S2MM (4096 x 32 b)              4
+  coil reorder, B = 1024 (2 x 8 x 1024 x 32 b)                    16
+  FIFO de U'' (1024 x 64 b)                                        2
+  escritura de la imagen (2 x 2 KiB)                               1
+  FIFO de salida de la imagen                                      1
+  DMA / DataMover (estimado, sin verificar)                        8
+  total                                                           34 de 144 (24 %)
+
+== URAM y DSP
+  corner-turn: 2^19 muestras x 32 b = 2 MiB = 64 URAM288 (2 muestras por palabra de 72 b) = 100 %
+  con 1 muestra por palabra: 128 URAM (no entra)
+  DSP: 2 nucleos x 16 + unfold 8 + cordic 0 = 40 de 1248 (3.2 %)
+  LUTRAM de los nucleos: (1023 + 511) x 40 b = 61 Kb de 3500
+
+== Alternativas al corner-turn en URAM
+  DDR por bloques: +1.60 GB/s en la fase FFT (+0.80 GB/s escritura, +0.80 GB/s lectura); total 5.70 GB/s = 33 % de 17,07
+    tile 16 x 64: rafaga 4 KiB (eficiencia con N1/2 = 3 KiB: 57 %), buffers 2*16 filas + 2*64 columnas = 384 KiB = 12 URAM o 96 RAMB36
+    tile 32 x 128: rafaga 16 KiB (eficiencia con N1/2 = 3 KiB: 84 %), buffers 2*32 filas + 2*128 columnas = 768 KiB = 24 URAM o 192 RAMB36
+    tile 64 x 64: rafaga 16 KiB (eficiencia con N1/2 = 3 KiB: 84 %), buffers 2*64 filas + 2*64 columnas = 768 KiB = 24 URAM o 192 RAMB36
+  tile_transpose TILE = 64: rafaga 256 B -> 8 % (N1/2 = 3 KiB); buffer 2 x 64^2 x 4 B = 32 KiB
+  tile_transpose TILE = 128: rafaga 512 B -> 14 % (N1/2 = 3 KiB); buffer 2 x 128^2 x 4 B = 128 KiB
+  4 bancos de 16 URAM (uno por region de reloj): la cascada no cruza regiones; mux 4:1 de 64 b
+    a la salida (~64 LUT + 64 FF) y decodificacion de 2 bits para EN/BWE; misma capacidad.
+  ping-pong de 2 bobinas: 4 MiB contra 2.25 MiB de URAM + 0.63 MiB de BRAM: no entra

@@ -1,0 +1,21 @@
+  [OK ] B = 512, coil-major: stream (o, l) == lo que espera unfold 
+  [OK ] B = 512, coil-major: i_last cada 8 
+  [OK ] B = 512, por bloques: stream (o, l) == lo que espera unfold 
+  [OK ] B = 512, por bloques: i_last cada 8 
+     B = 512: trozos de 2048 B (coil-major: 8 por bloque, separados 2 MiB) o bloques de 16384 B seguidos; BRAM ping-pong 2 x 8 x 512 x 32 b = 32 KiB = 8 RAMB36
+  [OK ] B = 1024, coil-major: stream (o, l) == lo que espera unfold 
+  [OK ] B = 1024, coil-major: i_last cada 8 
+  [OK ] B = 1024, por bloques: stream (o, l) == lo que espera unfold 
+  [OK ] B = 1024, por bloques: i_last cada 8 
+     B = 1024: trozos de 4096 B (coil-major: 8 por bloque, separados 2 MiB) o bloques de 32768 B seguidos; BRAM ping-pong 2 x 8 x 1024 x 32 b = 64 KiB = 16 RAMB36
+
+3) U'' en pos_coil_a: el MAC con el stream da el producto directo
+  [OK ] P del stream == U''[o] . A[o] (64 x 32, L = 8) 
+     U'': 2 palabras de 32 b por ciclo = 1.6 GB/s, en secuencia
+
+4) Escritura de la imagen (u16) con direcciones, imagen x-major (m^T)
+  [OK ] imagen x-major con sin fftshift: cada pixel en su lugar 
+  [OK ] imagen x-major con fftshift: cada pixel en su lugar 
+     columna: 1024 x 16 b = 2048 B por rafaga; BRAM ping-pong 2 x 2 KiB = 1 RAMB36
+
+== OK

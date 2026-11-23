@@ -1,0 +1,21 @@
+N = 1024, L = 8, Af = 2
+1) K = fft2(c): el hardware da la imagen plegada en coordenadas verdaderas
+  [OK ] y_hw == fold(c): 5.61e-16
+2) K = fftshift(fft2(c)) (gen_kspace --fftshift, check D): solo signos
+  [OK ] y_hw == (-1)^(x+p) fold(c): 5.61e-16
+  [OK ] |unfold(y_hw, U(S))| == |m|: 1.11e-15
+3) K = fftshift(fft2(ifftshift(c))) (fastMRI fft2c): cuadrantes cambiados
+  [OK ] y_hw == (-1)^(x+p) fold(ifftshift(c)): 5.61e-16
+     con los mapas en coordenadas verdaderas, |unfold| - |m| = 1.00 (relativo): MAL, como se espera
+  [OK ] |unfold(y_hw, U(ifftshift(S)))| == |ifftshift(m)|: 1.33e-15
+  [OK ] fftshift de eso == |m|: 1.33e-15
+   3b) todo en orden del hardware (stream de la fft2d, opcion A) y escritura con direcciones
+  [OK ] imagen escrita con x = br10(j1)^512, y = br9(j2) + 512(1-a) == |m|: 1.33e-15
+   3c) opcion B con el fftshift de x absorbido en el corner-turn (columna x ^ 512)
+  [OK ] imagen con x = contador natural, y = br9(j2) + 512(1-a) == |m|: 1.33e-15
+4) Submuestreo en las lineas impares (delta = 1): (-1)^a entre replicas, va a U
+  [OK ] y_hw == fold(c * e^{-j 2 pi y/N}): 9.87e-16
+  [OK ] |unfold(y_hw, U(S * e^{-j2pi y/N}))| == |m|: 1.22e-15
+  [OK ] equivalente: S_eff[l, a] = (-1)^a S[l, a] (el resto es una fase comun): 1.11e-15
+
+== OK

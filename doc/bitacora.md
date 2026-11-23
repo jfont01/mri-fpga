@@ -18,7 +18,9 @@ Desde el 2026-11-15 está separada en archivos. Este es el índice. La numeraci�
 | Entender la teoría de **SENSE y el cálculo de U** | [teoria_sense.md](teoria_sense.md) |
 | Entender la teoría de la **FFT R2²SDF**, la IFFT, la 2D y las arquitecturas comparadas | [teoria_fft.md](teoria_fft.md) |
 | Entender el **CORDIC** de magnitud | [teoria_cordic.md](teoria_cordic.md) |
-| **Seguir con D2** (modelos C++ del MAC y del CORDIC) | [diseno_unfold_cordic.md](diseno_unfold_cordic.md) |
+| **Retomar en otra PC** (trabajo en curso de agentes) | [estado.md](estado.md) "Cómo retomar" y [wip/README.md](wip/README.md) |
+| **Seguir con D2** (MAC y CORDIC: modelos C++ y RTL) | [diseno_unfold_cordic.md](diseno_unfold_cordic.md) |
+| [datasets_reales.md](datasets_reales.md) | datasets públicos de k-space multibobina: comparación, licencias, recomendación, preprocesamiento a 8 × 512 × 1024 con Af = 2, medición de σ en LSB (2026-11-20) | — |
 
 ## Mapa de archivos
 

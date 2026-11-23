@@ -1,0 +1,117 @@
+`timescale 1ns/1ps
+`default_nettype none
+`ifndef CORNER_TURN_WRAPPER_@KIND_UC@_V
+`define CORNER_TURN_WRAPPER_@KIND_UC@_V
+`include "corner_turn.v"
+
+/*
+ * Parametros: mismos defines y defaults que el RTL, el modelo y el tb.sv. Un caso
+ * del JSON que no los menciona sintetiza la configuracion de produccion
+ * (1024 x 512, 16 + 16 bits, RD_LAT = 8, memoria inferida).
+ */
+`ifndef CORNER_TURN_N1
+`define CORNER_TURN_N1 1024
+`endif
+`ifndef CORNER_TURN_N2
+`define CORNER_TURN_N2 512
+`endif
+`ifndef CORNER_TURN_NB
+`define CORNER_TURN_NB 16
+`endif
+`ifndef CORNER_TURN_RD_LAT
+`define CORNER_TURN_RD_LAT 8
+`endif
+`ifndef CORNER_TURN_K0
+`define CORNER_TURN_K0 0
+`endif
+`ifndef CORNER_TURN_MEM_IMPL
+`define CORNER_TURN_MEM_IMPL 0
+`endif
+
+// -----------------------------------------------------------------------------
+// corner_turn_wrapper_@KIND@@COPY@
+//
+// Igual que los arneses del nucleo FFT: se registran las entradas y las salidas
+// para aislar los tramos IBUF -> primer registro y ultimo registro -> OBUF (sin
+// set_input_delay / set_output_delay no estan restringidos). Asi el WNS es el de
+// los caminos internos: generador de direcciones (contador -> rotador ->
+// registro de direccion), entrada de la cascada de URAM, la cascada misma
+// (REG_CAS), la salida de la ultima URAM -> mux de la mitad -> o_data, y el
+// comparador del o_err.
+//
+// Pines: reloj, i_rst, i_valid, 2*NB de datos de entrada; o_valid, o_last,
+// o_err y 2*NB de salida: con NB = 16, 35 + 35 = 70 pines de los 186 de I/O de
+// la PL del XCK26 en el SFVC784 (H34): los buses van enteros, sin plegar.
+// -----------------------------------------------------------------------------
+module corner_turn_wrapper_@KIND@ #(
+    parameter int N1       = `CORNER_TURN_N1,
+    parameter int N2       = `CORNER_TURN_N2,
+    parameter int NB       = `CORNER_TURN_NB,
+    parameter int RD_LAT   = `CORNER_TURN_RD_LAT,
+    parameter int K0       = `CORNER_TURN_K0,
+    parameter int MEM_IMPL = `CORNER_TURN_MEM_IMPL
+)(
+    input  wire             i_clock,
+    input  wire             i_rst,
+    input  wire             i_valid,
+    input  wire [2*NB-1:0]  i_data,
+    output wire             o_valid,
+    output wire             o_last,
+    output wire             o_err,
+    output wire [2*NB-1:0]  o_data
+);
+
+    // -------------------------------------------------- registros de entrada
+    reg             r_rst   = 1'b1;
+    reg             r_valid = 1'b0;
+    reg [2*NB-1:0]  r_data  = '0;
+
+    always @(posedge i_clock) begin
+        r_rst   <= i_rst;
+        r_valid <= i_valid;
+        r_data  <= i_data;
+    end
+
+    // --------------------------------------------------------------- DUT
+    wire             w_o_valid, w_o_last, w_o_err;
+    wire [2*NB-1:0]  w_o_data;
+
+    corner_turn #(
+        .N1       (N1),
+        .N2       (N2),
+        .NB       (NB),
+        .RD_LAT   (RD_LAT),
+        .K0       (K0),
+        .MEM_IMPL (MEM_IMPL)
+    ) u_dut (
+        .i_clock  (i_clock),
+        .i_rst    (r_rst),
+        .i_valid  (r_valid),
+        .i_data   (r_data),
+        .o_valid  (w_o_valid),
+        .o_last   (w_o_last),
+        .o_err    (w_o_err),
+        .o_data   (w_o_data)
+    );
+
+    // -------------------------------------------------- registros de salida
+    reg             r_o_valid = 1'b0;
+    reg             r_o_last  = 1'b0;
+    reg             r_o_err   = 1'b0;
+    reg [2*NB-1:0]  r_o_data  = '0;
+
+    always @(posedge i_clock) begin
+        r_o_valid <= w_o_valid;
+        r_o_last  <= w_o_last;
+        r_o_err   <= w_o_err;
+        r_o_data  <= w_o_data;
+    end
+
+    assign o_valid = r_o_valid;
+    assign o_last  = r_o_last;
+    assign o_err   = r_o_err;
+    assign o_data  = r_o_data;
+
+endmodule
+`endif
+`default_nettype wire

@@ -1,0 +1,52 @@
+diff --git a/modules/cast/cpp/cast.hpp b/modules/cast/cpp/cast.hpp
+index 86ca081..419486d 100644
+--- a/modules/cast/cpp/cast.hpp
++++ b/modules/cast/cpp/cast.hpp
+@@ -78,6 +78,16 @@ static_assert(
+     "cast: ROUND_CONV = 1 needs ROUND_MODE = 1"
+ );
+ 
++/*
++ * Same guard as the RTL: its internal word has NB_IN + 2 bits, so with
++ * NB_OUT > NB_IN + 2 the upper output bits are X. ap_fixed would just
++ * sign-extend; the model rejects it so both sides accept the same set.
++ */
++static_assert(
++    NB_OUT <= NB_IN + 2,
++    "cast: NB_OUT > NB_IN + 2 is not supported (the RTL gives X in the upper bits)"
++);
++
+ /*
+  * Input fixed-point type.
+  *
+diff --git a/modules/cast/rtl/cast.v b/modules/cast/rtl/cast.v
+index 3a6e6e9..e5aa0b6 100644
+--- a/modules/cast/rtl/cast.v
++++ b/modules/cast/rtl/cast.v
+@@ -28,6 +28,13 @@ module cast
+ 
+   /*
+    * ROUND_CONV only changes how ties are broken, so it needs ROUND_MODE = 1.
++   *
++   * NB_OUT <= NB_IN + 2: shifted_word has W_SHIFT = NB_IN + 2 bits. With
++   * NB_OUT > W_SHIFT, UPPER_W = 0 always selects gen_out_no_sat, whose
++   * shifted_word[NB_OUT-1:0] is out of range: o_word[NB_OUT-1:W_SHIFT] is X
++   * for every input, whatever NBF_IN, NBF_OUT, ROUND_MODE and ROUND_CONV.
++   * Same restriction as the model (static_assert).
++   *
+    * Double $fatal: Vivado and XSim honor the elaboration one; iverilog ignores
+    * it silently, so the initial one stops it at time 0.
+    */
+@@ -37,6 +44,12 @@ module cast
+       $fatal(1, "cast: ROUND_CONV = 1 needs ROUND_MODE = 1");
+       initial $fatal(1, "cast: ROUND_CONV = 1 needs ROUND_MODE = 1");
+     end
++    if (NB_OUT > W_SHIFT) begin : gen_err_nb_out
++      $fatal(1, "cast: NB_OUT = %0d > NB_IN + 2 = %0d is not supported (o_word[%0d:%0d] would be X)",
++             NB_OUT, W_SHIFT, NB_OUT - 1, W_SHIFT);
++      initial $fatal(1, "cast: NB_OUT = %0d > NB_IN + 2 = %0d is not supported (o_word[%0d:%0d] would be X)",
++                     NB_OUT, W_SHIFT, NB_OUT - 1, W_SHIFT);
++    end
+   endgenerate
+ `endif
+ 

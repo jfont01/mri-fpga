@@ -2,9 +2,35 @@
 
 *Parte de la bitácora de la tesis. Índice general: [bitacora.md](bitacora.md).*
 
-*Última actualización: 2026-11-17 (D2: P1–P7 y C1–C8 confirmados; modelo C++ de `cordic_mag` escrito y verificado con un arnés).* **Este es el archivo que se actualiza siempre**: cada vez que se cierra una tarea, una decisión o un resultado, se marca acá (y el detalle va al archivo de la sección que corresponda).
+*Última actualización: 2026-11-21 (pase a la PC con Ubuntu: ver "Cómo retomar" abajo).* **Este es el archivo que se actualiza siempre**: cada vez que se cierra una tarea, una decisión o un resultado, se marca acá (y el detalle va al archivo de la sección que corresponda).
 
 Marcas: ✅ hecho y verificado · 🟡 estimado o provisorio (cuenta en papel, fantoma, NumPy ideal) · ⏳ pendiente · — no aplica.
+
+## Cómo retomar (2026-11-21, de la PC con WSL2 a la de Ubuntu)
+
+**Dónde quedó:** rama `new-IT`. D2 está cerrado en simulación: modelos C++ y RTL de `unfold` (un carril) y `cordic_mag` con gtest, sim y vm verdes (`a8f5fac`, `2c91b4b`, `ddf9b72`); faltan sus síntesis e implementaciones, que corre Julián. Decisiones de arquitectura propuestas por Claude y **pendientes de que Julián las confirme**: un carril por bloque con fases solapadas, y corner-turn in situ en las 64 URAM con 2 muestras por palabra ([02](02_arquitectura.md), estrategia 1; H33). Datasets reales investigados ([datasets_reales.md](datasets_reales.md)).
+
+**Trabajo cortado a mitad**, traído en **[wip/README.md](wip/README.md)** (no estaba en el repo; nada revisado ni aplicado):
+1. `wip/chicos/`: casos `small` y `g0` del JSON de `unfold` y la guarda de `cast.v`, casi terminado; falta terminar el vm de `fft1d_r22sdf` con la guarda (iba 46 de 103, sin fallas) y mostrarle a Julián el diff.
+2. `wip/fft2d_teoria/`: teoría del RTL de la FFT 2D (scripts s1–s5 hechos, falta el borrador `diseno_fft2d.md`) y el módulo de prueba `corner_turn` para la síntesis de la URAM (sin empezar). Pedido para relanzarlo: `wip/prompts/fft2d_teoria.md`.
+
+**Próximos pasos, en orden:**
+1. Julián: `run_regression_synth` y `run_regression_impl` de `unfold` y `cordic_mag` (mirar en `unfold` los 8 DSP, si el acumulador entró en el DSP y el WNS de la etapa 4).
+2. Cerrar `wip/chicos/` (verificar y aplicar con el OK de Julián).
+3. Relanzar el agente de la FFT 2D (o seguirlo en el chat); explicarle a Julián el diseño decisión por decisión; Julián sintetiza `corner_turn`.
+4. Recién después: modelo ciclo a ciclo de la `fft2d` con memoria, RTL y vm.
+5. En paralelo: datos reales (Julián baja mridata y pide fastMRI), H32 (rehacer §4.8–4.11 con convergente), la placa (medición 4b, v1).
+
+**Prompt para el chat nuevo:**
+
+```
+Leé CLAUDE.md, doc/estado.md (sobre todo "Cómo retomar") y doc/wip/README.md.
+Venimos de la PC con WSL2 (2026-11-21). Hay trabajo de dos agentes que se cortó y está en doc/wip/.
+Empezá por revisar doc/wip/chicos/ (guarda de cast.v y casos small/g0 de unfold): verificalo en un
+clon del HEAD, terminá el vm de fft1d_r22sdf con la guarda y mostrame el diff de cast.v antes de aplicar.
+Después relanzá el agente de doc/wip/prompts/fft2d_teoria.md (ajustá las rutas a esta PC) y mientras
+tanto charlamos el corner-turn. Teoría antes que código; explicame todo en el chat.
+```
 
 ## La cadena completa
 
@@ -30,8 +56,8 @@ Teoría de cada pieza: [teoria_sense.md](teoria_sense.md) (SENSE y el cálculo d
 | **Memoria y *corner-turn*** (URAM o DDR por bloques; cantidad de carriles) | 🟡 cuentas | — (ideal en el modelo) | ⏳ | ⏳ | ⏳ | [02](02_arquitectura.md), [07](07_integracion.md) |
 | **Mapas de sensibilidad** (PS) | 🟡 solo mapas sintéticos | ⏳ | — (software) | — | ⏳ | [teoria_sense §6](teoria_sense.md) |
 | **Cálculo de U** (PS: LDLᴴ, Tikhonov, escalas, buffer) | ✅ con el fantoma | ✅ `modules/ps_sense`, bit a bit con `unfold_ref.py`: regresión de 18 casos + 2 de 1024 × 1024, en la PC y en el A53 (qemu) | — (software) | — | ⏳ tiempo en el A53 | [04 §4.10](04_precision.md), [05 §5.8](05_verificacion.md), [teoria_sense](teoria_sense.md) |
-| **MAC de desplegado** | ✅ con el fantoma; anchos de D2 ✅ (§4.13) | ✅ `unfold.hpp` + regresión (18 casos, 201 tests, punta a punta con `cordic_mag` y el fantoma), aplicado el 2026-11-19 (D2) | 🟡 un carril, vm 18/18 en un clon; aplicado el 2026-11-20, falta la regresión en el repo de Julián | ⏳ arneses y JSON listos, sin correr | ⏳ | [04 §4.9, §4.13](04_precision.md), [diseño D2](diseno_unfold_cordic.md) |
-| **CORDIC de magnitud** | ✅ n = 12, G = 5; anchos ✅ (§4.13) | ✅ `cordic_mag.hpp` y su regresión (gtest 12 casos / 96 tests, sim 12/12; 2026-11-18) | 🟡 vm 12/12 en un clon; aplicado el 2026-11-20, falta la regresión en el repo de Julián | ⏳ wrappers y JSON listos, sin correr | ⏳ | [04 §4.11, §4.13](04_precision.md), [teoria_cordic](teoria_cordic.md), [diseño D2](diseno_unfold_cordic.md) |
+| **MAC de desplegado** | ✅ con el fantoma; anchos de D2 ✅ (§4.13) | ✅ `unfold.hpp` + regresión (18 casos, 201 tests, punta a punta con `cordic_mag` y el fantoma), aplicado el 2026-11-19 (D2) | ✅ un carril, vm 18/18; commiteado en `2c91b4b` (2026-11-20) | ⏳ arneses y JSON listos, sin correr | ⏳ | [04 §4.9, §4.13](04_precision.md), [diseño D2](diseno_unfold_cordic.md) |
+| **CORDIC de magnitud** | ✅ n = 12, G = 5; anchos ✅ (§4.13) | ✅ `cordic_mag.hpp` y su regresión (gtest 12 casos / 96 tests, sim 12/12; 2026-11-18) | ✅ vm 12/12; commiteado en `ddf9b72` (2026-11-20) | ⏳ wrappers y JSON listos, sin correr | ⏳ | [04 §4.11, §4.13](04_precision.md), [teoria_cordic](teoria_cordic.md), [diseño D2](diseno_unfold_cordic.md) |
 | **Reordenamiento de la imagen de salida** (bit-reversed en x y p) | 🟡 | — | ⏳ | ⏳ | ⏳ | [04 §4.11](04_precision.md) |
 | **Integración PS–PL** (DMA, AXI, DDR, Vivado, Vitis) | 🟡 cuentas | — | ⏳ wrappers | ⏳ | 🟡 loopback v0 y 1 puerto medido | [07](07_integracion.md) |
 | **Validación con datos reales** (fastMRI) | ⏳ | — | — | — | — | [04 §4.4, §4.8](04_precision.md) |
@@ -84,7 +110,7 @@ Teoría de cada pieza: [teoria_sense.md](teoria_sense.md) (SENSE y el cálculo d
 - [x] D2, teoría (2026-11-16, §4.13): P de 36 bits (H31), M de 17 + G = 22 bits (suficiente y mínimo), CORDIC de 23 bits, redondeo *half-up* por defecto con `ROUND_CONV` (el modo mueve la media 0,016 LSB). Decisiones de Julián: dos módulos (`unfold` y `cordic_mag`), modelo rtlsim de un carril, *half-up* + parámetro, corregir antes `mac_cordic_fxp.py`. Diseño y propuesta en **[diseno_unfold_cordic.md](diseno_unfold_cordic.md)**. 2026-11-17: P1–P7 confirmados (P4: D por puerto; el código se muestra en el chat antes de entregarlo) y `modules/cordic_mag` creado. C1–C8 del modelo de `cordic_mag` confirmados; `cpp/cordic_mag.{hpp,cpp}` escritos, verificados contra el Python con un arnés (0 diferencias, 9/9 mutaciones; [diseño D2](diseno_unfold_cordic.md) §4.5) y **aplicados en el repo** (sin commitear). 2026-11-18: generador, estímulo, gtest, tb y JSON de `cordic_mag` hechos por un agente y rechequeados (parche `d2_cordic_mag_paso2.patch`, [diseño D2](diseno_unfold_cordic.md) §5). Aplicado por Julián y verde en su repo. 2026-11-18: diseño del modelo de `unfold` confirmado (U1–U8 con `i_last`, [diseño D2](diseno_unfold_cordic.md) §4.6, decisión 13) y lanzado un agente que lo implementa en una copia. Como la PC se apagaba antes de que terminara, guarda su avance fuera del repo y fuera de /tmp: `/home/jfont/mri-fpga-wip/d2_unfold/` (`wip.patch` sobre 8449e37 + el parche de `cordic_mag`, `base_cordic_mag.patch` y `NOTAS.md` con lo hecho y lo que falta, para que otro agente retome). 2026-11-19: el agente se retomó sobre `480a141` (su avance aplica limpio ahí): modelo, generador, estímulo, gtest, tb y JSON de 18 casos hechos; faltan la corrida completa, sim, punta a punta, mutaciones y el parche final. ⏳ **Próximo paso:** revisar su parche; el modelo C++ de `unfold` (P2, P4; latencia con la convención de la FFT), su generador con `p_to_m` y la prueba punta a punta `unfold` → `cordic_mag` contra `output_stage`.
 - [x] D2, paso 1 (2026-11-17): parche de `model/mac_cordic_fxp.py` (`d2_mac_cordic_fxp.patch`, aplicado en `5c614a0`): defaults G = 5 y W_M = W_OUT + 1 + G = 22, `ROUND_CONV_M` y `ROUND_CONV_OUT`, `p_to_m` y `m_to_out` (los dos módulos), docstring con m̂ / K_n y H31; self-test 24/24, mutaciones 9/9, `mac_output_study.py` idéntico antes y después (detalle en [diseño D2](diseno_unfold_cordic.md) §5).
 - [x] Modelo C++ y su gtest contra Python (D2, 2026-11-19): `unfold.hpp`, 18 casos, 201 tests, punta a punta con `cordic_mag`.
-- [x] RTL de un carril + vm (2026-11-19, parche `rtl_unfold.patch`, aplicado el 2026-11-20): vm 18/18, mutaciones 11/11.
+- [x] RTL de un carril + vm (2026-11-19, commit `2c91b4b`): vm 18/18, mutaciones 11/11.
 - [ ] RTL con M = 4 (presupuesto: 10,5 ms). *Aclaración (2026-11-18):* en el presupuesto de [02](02_arquitectura.md), M cuenta MAC complejos por ciclo; un carril de `unfold` (P2) hace 2 (una bobina por ciclo, AF = 2), así que M = 4 son **2 carriles**, que leen U'' a 2 × 2 × 4 B × 200 MHz = 3,2 GB/s y A a 1,6 GB/s. Lo mismo con P = 4: 2 núcleos por pasada de la `fft2d`.
 - [ ] **H32:** los estudios del fantoma (`fft2d_mask_study.py`, `mac_unfold_study.py`, `mac_output_study.py`) heredan `ROUND_CONV = 1` desde el 2026-11-15 (por el código: `CORE` no lo fija), así que no reproducen sus tablas (§4.8–4.11, *half-up*); corrido y comprobado solo con `mac_output_study.py`. **Decisión de Julián (2026-11-18): rehacer las tablas con convergente** (opción b), porque los números de la tesis tienen que ser los del diseño que se implementa. ⏳ Falta hacerlo: §4.8–4.11 (ya se sabe: imagen 52,01 dB, m̂ complejo 51,12 dB con el fantoma).
 - [ ] Cómo traer U'' de la DDR (32 MiB por trama × 20 fps = 640 MiB/s = 671 MB/s) y en qué orden (`pos_coil_a` o `coil_pos_a`). No entra en el chip: BRAM + URAM del XCK26 son 2,88 MiB (DS987 v1.6, *Programmable Logic*, tabla 5: 144 × 36 Kb y 64 × 288 Kb). Se lee entero en cada trama, en secuencia y en el orden en que lo consume el MAC. ⚠ Revisar la opción "guardar S y resolver el 2 × 2 en la PL (16 MiB)" de [02](02_arquitectura.md): S restringido a una posición plegada también son L·Af = 16 complejos, igual que U'' (8 388 608 en los dos casos), así que a igual precisión no ahorra memoria (2026-11-17).
@@ -97,7 +123,7 @@ Teoría de cada pieza: [teoria_sense.md](teoria_sense.md) (SENSE y el cálculo d
 - [x] Estudio: n = 12 iteraciones, G = 5 bits de guarda, error < 1 LSB; la ganancia 1/K_c va adentro de U'' (§4.11).
 - [x] Modelo bit-exacto en Python.
 - [x] Modelo C++ y su regresión (2026-11-17/18).
-- [x] RTL y vm (2026-11-19, parche `rtl_cordic_mag.patch`, aplicado el 2026-11-20): vm 12/12, mutaciones 9/9. Estimado: ~23 sumadores efectivos de 23 bits, ~605 FF, 0 DSP.
+- [x] RTL y vm (2026-11-19, commit `ddf9b72`): vm 12/12, mutaciones 9/9. Estimado: ~23 sumadores efectivos de 23 bits, ~605 FF, 0 DSP.
 - [ ] Síntesis e implementación a 200 MHz (`n12_g5`, `n12_g5_conv`; preguntar antes).
 
 ### Integración PS–PL
@@ -112,6 +138,10 @@ Teoría de cada pieza: [teoria_sense.md](teoria_sense.md) (SENSE y el cálculo d
 
 ### Datos reales (fastMRI)
 
+*2026-11-20: investigación de datasets hecha por un agente (informe en [datasets_reales.md](datasets_reales.md); Claude rechequeó el tamaño de un archivo de mridata, el listado de OCMR en S3 y corrió `verify_noise.py`). Ninguno es 1024 × 1024 nativo; en PE siempre hay zero-padding ≥ ×2. Recomendación: **fastMRI brain multicoil** (principal: crudo, completo, Siemens, readout ×2 sobremuestreado, FLAIR hasta 512 → RO de 1024; fondo de aire para medir ruido, sin pre-scan; DSA y permiso por mail para publicar imágenes); **mridata "NYU machine learning data"** (arranque y respaldo: rodilla, 15 bobinas, completo, hasta 768 × 770, CC BY-NC 4.0, sin registro, ~1,9 GB por archivo); **OCMR** (cine completo, por archivo de ~0,2 GB: película para el tiempo real; probablemente cine segmentado en apnea, no tiempo real). Preprocesamiento: blanqueo con Ψ → compresión SVD a 8 (conmuta con la FFT) → zero-padding a 1024 × 1024 → Af = 2 con una de cada dos líneas (el pliegue coincide con el del hardware, error 7·10⁻¹⁶). El zero-padding no cambia σ en LSB. El ancho de entrada se decide con σ_LSB = σ_k · g_l · 2^15 por bobina, no con el SNR en dB.*
+
+- [ ] Decidir si el readout sobremuestreado ×2 se mantiene (640 → 1024) o se recorta (320 → 1024): cambia σ en LSB por 1/√2 (−3 dB). Tiene que representar al sistema real.
+- [ ] Julián: leer los términos y bajar 2–3 archivos de mridata (uno de 768 × 770); pedir fastMRI brain (DSA) y el permiso para publicar imágenes; elegir 3–5 series `fs`/`sym`/`noa` de OCMR.
 - [ ] Conseguir y preprocesar datos *multicoil* (cómo se obtienen, formato, recorte a 1024 × 1024, submuestreo Af = 2).
 - [ ] Medir el SNR de la adquisición → ancho de entrada 16 o 18 bits (§4.4).
 - [ ] Revisar las máscaras 801 / 384 con datos reales, incluida la saturación interna (dividen casi todo al final).

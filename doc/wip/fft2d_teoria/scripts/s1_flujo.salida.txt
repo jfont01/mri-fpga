@@ -1,0 +1,48 @@
+N1 = 1024, N2 = 512, T = 524288 ciclos = 2.621 ms por bobina; L1 = 1040, L2 = 527, DW = 1, RL = 4
+
+1) Entrada continua, 3 tramas (24 bobinas encadenadas), K0 = 0 (adelanto m = 1023)
+  [OK ] RAW >= 1 en todas las bobinas (min 512)
+  [OK ] WAR >= 1 en todas las bobinas (min 1023 = adelanto)
+  [OK ] lector sin huecos entre bobinas (R_j+1 - R_j == T) 
+     primera salida (bobina 0): ciclo 524837 = 2.624 ms; el modelo ping-pong da L1 + T + 2 + L2 = 525857 (1020 ciclos mas)
+  [OK ] latencia in situ = L1 + DW + (N2-1)*N1 + K0 + 1 + RL + L2 
+  [OK ] periodo de trama en regimen = 8 T (4194304 = 20.972 ms)
+     trama 0 (arranque): de la primera entrada a la ultima salida 4719141 ciclos = 23.596 ms = 9 T + 549
+     tramas siguientes: una cada 8 T = 20.972 ms (47.68 tramas/s de FFT 2D)
+
+2) K0 = N1 - 1: el lector arranca justo despues de la ultima escritura (m = 0)
+  [OK ] RAW >= 1 
+  [OK ] WAR == 0: lectura y escritura en la misma direccion y el mismo ciclo (solo vale si el puerto A lee antes que el B escriba)
+
+3) Huecos al azar entre filas (0..64 ciclos) y pausa de 1 ms entre tramas, K0 = 0
+  [OK ] RAW >= 1 (min 512)
+  [OK ] WAR >= 1 (min 1023)
+     huecos del lector entre bobinas: min 15799, max 215986 ciclos (la pasada 2 los acepta: son entre tramas de 512)
+  [OK ] el lector nunca se superpone (R_j+1 >= R_j + T) 
+
+4) Disparo en la PENULTIMA fila: por que el disparo va en la ultima
+     disparo en la muestra 1000 de la penultima fila, sin hueco: RAW min = 488
+  [OK ] sin hueco RAW = k - 512 
+     disparo en la muestra 1000 de la penultima fila, hueco de 600 antes de la ultima fila: RAW min = -112
+  [OK ] con el hueco el lector lee antes de que se escriba (RAW < 1) 
+
+5) Ventana del arranque del lector con entrada continua
+     R_j - w[j, 0] en [522754, 524287] para RAW y WAR >= 1: 1534 ciclos de ventana (N1 + N2 - 2 = 1534)
+  [OK ] ventana = N1 + N2 - 2 ciclos 
+
+6) Solapamiento FFT (trama n + 1) con unfold (trama n); A_l en la DDR
+     unfold, un carril: 524288 posiciones x 8 bobinas = 4194304 ciclos = 20.972 ms
+     FFT 2D en regimen: 8 T = 20.972 ms  ->  periodo = max = 20.972 ms
+     2 buffers, unfold x1.00: periodo 22.025 ms (45.4 tramas/s); ningun bloque pisado: True
+     2 buffers, unfold x1.10: periodo 23.283 ms (42.9 tramas/s); ningun bloque pisado: True
+     3 buffers, unfold x1.00: periodo 20.972 ms (47.7 tramas/s); ningun bloque pisado: True
+  [OK ] 3 buffers, x1.00: sin pisar bloques 
+     3 buffers, unfold x1.10: periodo 23.069 ms (43.3 tramas/s); ningun bloque pisado: True
+  [OK ] 3 buffers, x1.10: sin pisar bloques 
+     (con 2 buffers y la regla simple, la entrada de la trama f espera el fin del unfold
+      de la f - 2 y el periodo crece ~1 ms; con 3 buffers no espera)
+
+7) Sin solapar (FFT y unfold en serie, una trama por vez)
+     44.577 ms por trama (22.4 tramas/s): tambien entra en 50 ms
+
+== OK
